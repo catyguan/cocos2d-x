@@ -43,11 +43,11 @@ LUALIB_API int (luaopen_package) (lua_State *L);
 /* open all previous libraries */
 LUALIB_API void (luaL_openlibs) (lua_State *L); 
 
-
-
 #ifndef lua_assert
 #define lua_assert(x)    ((void)0)
 #endif
+
+LUALIB_API void (luaL_module) (lua_State* L,const char* name,lua_CFunction fun);
 
 
 #endif

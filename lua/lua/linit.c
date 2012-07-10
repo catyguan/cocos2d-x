@@ -36,3 +36,10 @@ LUALIB_API void luaL_openlibs (lua_State *L) {
   }
 }
 
+LUALIB_API void luaL_module(lua_State* L,char* name,lua_CFunction fun) {
+  lua_settop(L, 1);  /* _LOADED table will be at index 2 */
+  lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+  lua_pushstring(L, name);  /* pass name as argument to module */
+  fun(L);
+  lua_setfield(L, 2, name);  /* _LOADED[name] = returned value */
+}
