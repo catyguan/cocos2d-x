@@ -217,6 +217,33 @@ static int os_exit (lua_State *L) {
   exit(luaL_optint(L, 1, EXIT_SUCCESS));
 }
 
+#ifdef LUA_USE_POSIX
+#include <sys/time.h>
+#endif
+#ifdef LUA_WIN
+#include<windows.h> 
+#endif
+
+
+static int os_mclock(lua_State *L) {
+#ifdef LUA_USE_POSIX
+  struct timeval tp = {0};
+  if (gettimeofday(&tp, NULL)) {
+    lua_pushboolean(L, 0);
+  }
+  ::timeGetTime
+  lua_pushnumber(L, (double)(tp.tv_sec*1000 + tp.tv_usec/1000));
+  if(1)return 1;
+#endif
+
+#ifdef LUA_WIN
+  DWORD tm = GetTickCount();
+  lua_pushnumber(L, (double)tm);
+  if(1)return 1;
+#endif
+  return 0;
+}
+
 static const luaL_Reg syslib[] = {
   {"clock",     os_clock},
   {"date",      os_date},
@@ -229,6 +256,7 @@ static const luaL_Reg syslib[] = {
   {"setlocale", os_setlocale},
   {"time",      os_time},
   {"tmpname",   os_tmpname},
+  {"mclock",     os_mclock},
   {NULL, NULL}
 };
 
