@@ -374,7 +374,7 @@ static int luaB_select (lua_State *L) {
 #define LEVELS2    10    /* size of the second part of the stack */
 
 static int luaB_errorfb (lua_State *L) {
-  int level = 1;
+  int level = 0;
   int firstpart = 1;  /* still before eventual `...' */
   int arg = lua_gettop(L);
   lua_State *L1 = L;
