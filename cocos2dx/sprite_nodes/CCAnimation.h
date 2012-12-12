@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -67,7 +67,7 @@ public:
     /**  how many units of time the frame takes */
     CC_SYNTHESIZE(float, m_fDelayUnits, DelayUnits)
 
-    /**  A CCAnimationFrameDisplayedNotification notification will be broadcasted when the frame is displayed with this dictionary as UserInfo. If UserInfo is nil, then no notification will be broadcasted. */
+    /**  A CCAnimationFrameDisplayedNotification notification will be broadcast when the frame is displayed with this dictionary as UserInfo. If UserInfo is nil, then no notification will be broadcast. */
     CC_SYNTHESIZE_RETAIN(CCDictionary*, m_pUserInfo, UserInfo)
 };
 
@@ -89,25 +89,6 @@ public:
     ~CCAnimation(void);
 public:
     /** Creates an animation
-    @deprecated: This interface will be deprecated sooner or later.
-    @since v0.99.5
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCAnimation* animation(void);
-
-    /* Creates an animation with an array of CCSpriteFrame and a delay between frames in seconds.
-     The frames will be added with one "delay unit".
-     @deprecated: This interface will be deprecated sooner or later.
-     @since v0.99.5
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCAnimation* animationWithSpriteFrames(CCArray* arrayOfSpriteFrameNames, float delay = 0.0f);
-
-    /* Creates an animation with an array of CCAnimationFrame, the delay per units in seconds and and how many times it should be executed.
-     @deprecated: This interface will be deprecated sooner or later.
-     @since v2.0
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCAnimation* animationWithAnimationFrames(CCArray *arrayOfAnimationFrameNames, float delayPerUnit, unsigned int loops);
-
-        /** Creates an animation
     @since v0.99.5
     */
     static CCAnimation* create(void);
@@ -116,12 +97,15 @@ public:
      The frames will be added with one "delay unit".
      @since v0.99.5
     */
-    static CCAnimation* create(CCArray* arrayOfSpriteFrameNames, float delay = 0.0f);
+    static CCAnimation* createWithSpriteFrames(CCArray* arrayOfSpriteFrameNames, float delay = 0.0f);
 
     /* Creates an animation with an array of CCAnimationFrame, the delay per units in seconds and and how many times it should be executed.
      @since v2.0
      */
     static CCAnimation* create(CCArray *arrayOfAnimationFrameNames, float delayPerUnit, unsigned int loops);
+    static CCAnimation* create(CCArray *arrayOfAnimationFrameNames, float delayPerUnit) {
+        return CCAnimation::create(arrayOfAnimationFrameNames, delayPerUnit, 1);
+    }
 
     /** Adds a CCSpriteFrame to a CCAnimation.
      The frame will be added with one "delay unit".

@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -40,8 +40,7 @@ NS_CC_BEGIN
 
 class CCTextureAtlas;
 
-/** @brief CCAtlasNode is a subclass of CCNode that implements the CCRGBAProtocol and
-CCTextureProtocol protocol
+/** @brief CCAtlasNode is a subclass of CCNode that implements the CCRGBAProtocol and CCTextureProtocol protocol
 
 It knows how to render a TextureAtlas object.
 If you are going to render a TextureAtlas consider subclassing CCAtlasNode (or a subclass of CCAtlasNode)
@@ -84,12 +83,6 @@ public:
     CCAtlasNode();
     virtual ~CCAtlasNode();
 
-    /** creates a CCAtlasNode  with an Atlas file the width and height of each item and the quantity of items to render
-	@deprecated: This interface will be deprecated sooner or later.
-	*/
-    CC_DEPRECATED_ATTRIBUTE static CCAtlasNode * atlasWithTileFile(const char* tile,unsigned int tileWidth, unsigned int tileHeight, 
-         unsigned int itemsToRender);
-
 	/** creates a CCAtlasNode  with an Atlas file the width and height of each item and the quantity of items to render*/
 	static CCAtlasNode * create(const char* tile,unsigned int tileWidth, unsigned int tileHeight, 
 		unsigned int itemsToRender);
@@ -98,7 +91,7 @@ public:
     bool initWithTileFile(const char* tile, unsigned int tileWidth, unsigned int tileHeight, unsigned int itemsToRender);
 
     /** updates the Atlas (indexed vertex array).
-    * Shall be overriden in subclasses
+    * Shall be overridden in subclasses
     */
     virtual void updateAtlasValues();
 

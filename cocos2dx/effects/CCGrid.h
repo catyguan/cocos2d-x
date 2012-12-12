@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2009      On-Core
  
 http://www.cocos2d-x.org
@@ -46,12 +46,12 @@ class CCGLProgram;
 
 /** Base class for other
 */
-class CCGridBase : public CCObject
+class CC_DLL CCGridBase : public CCObject
 {
 public:
     virtual ~CCGridBase(void);
 
-    /** wheter or not the grid is active */
+    /** whether or not the grid is active */
     inline bool isActive(void) { return m_bActive; }
     void setActive(bool bActive);
 
@@ -81,14 +81,6 @@ public:
     virtual void calculateVertexPoints(void);
 
 public:
-    /** create one Grid 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCGridBase* gridWithSize(const ccGridSize& gridSize, CCTexture2D *texture, bool flipped);
-    /** create one Grid 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCGridBase* gridWithSize(const ccGridSize& gridSize);
 
     /** create one Grid */
     static CCGridBase* create(const ccGridSize& gridSize, CCTexture2D *texture, bool flipped);
@@ -112,7 +104,7 @@ protected:
 /**
  CCGrid3D is a 3D grid implementation. Each vertex has 3 dimensions: x,y,z
  */
-class CCGrid3D : public CCGridBase
+class CC_DLL CCGrid3D : public CCGridBase
 {
 public:
     CCGrid3D();
@@ -130,9 +122,11 @@ public:
     virtual void calculateVertexPoints(void);
 
 public:
-    static CCGrid3D* gridWithSize(const ccGridSize& gridSize, CCTexture2D *pTexture, bool bFlipped);
-    static CCGrid3D* gridWithSize(const ccGridSize& gridSize);
-
+    /** create one Grid */
+    static CCGrid3D* create(const ccGridSize& gridSize, CCTexture2D *pTexture, bool bFlipped);
+    /** create one Grid */
+    static CCGrid3D* create(const ccGridSize& gridSize);
+    
 protected:
     GLvoid *m_pTexCoordinates;
     GLvoid *m_pVertices;
@@ -144,7 +138,7 @@ protected:
  CCTiledGrid3D is a 3D grid implementation. It differs from Grid3D in that
  the tiles can be separated from the grid.
 */
-class CCTiledGrid3D : public CCGridBase
+class CC_DLL CCTiledGrid3D : public CCGridBase
 {
 public:
     CCTiledGrid3D();
@@ -162,9 +156,12 @@ public:
     virtual void calculateVertexPoints(void);
 
 public:
-    static CCTiledGrid3D* gridWithSize(const ccGridSize& gridSize, CCTexture2D *pTexture, bool bFlipped);
-    static CCTiledGrid3D* gridWithSize(const ccGridSize& gridSize);
 
+    /** create one Grid */
+    static CCTiledGrid3D* create(const ccGridSize& gridSize, CCTexture2D *pTexture, bool bFlipped);
+    /** create one Grid */
+    static CCTiledGrid3D* create(const ccGridSize& gridSize);
+    
 protected:
     GLvoid *m_pTexCoordinates;
     GLvoid *m_pVertices;

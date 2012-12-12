@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 
 http://www.cocos2d-x.org
@@ -51,45 +51,34 @@ public:
     const char* description();    
     
     /** creates a CCLabelTTF with a font name and font size in points
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCLabelTTF * labelWithString(const char *string, const char *fontName, float fontSize);
-    
-    /** creates a CCLabelTTF from a fontname, horizontal alignment, dimension in points,  and font size in points.
-     @deprecated: This interface will be deprecated sooner or later.
-     @since v1.0
+     @since v2.0.1
      */
-    CC_DEPRECATED_ATTRIBUTE static CCLabelTTF * labelWithString(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, 
-                                        const char *fontName, float fontSize);
-    
-    /** creates a CCLabel from a fontname, alignment, dimension in points and font size in points
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCLabelTTF * labelWithString(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, 
-                                        CCVerticalTextAlignment vAlignment, const char *fontName, float fontSize);
-    
-    /** creates a CCLabelTTF with a font name and font size in points*/
     static CCLabelTTF * create(const char *string, const char *fontName, float fontSize);
     
     /** creates a CCLabelTTF from a fontname, horizontal alignment, dimension in points,  and font size in points.
-     @since v1.0
+     @since v2.0.1
      */
-    static CCLabelTTF * create(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, 
-                                        const char *fontName, float fontSize);
-    
-    /** creates a CCLabel from a fontname, alignment, dimension in points and font size in points*/
-    static CCLabelTTF * create(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, 
-                                        CCVerticalTextAlignment vAlignment, const char *fontName, float fontSize);
-
-    /** initializes the CCLabelTTF with a font name, alignment, dimension and font size */
-    bool initWithString(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, const char *fontName, float fontSize);
-    
-    /** initializes the CCLabelTTF with a font name, alignment, dimension and font size */
-    bool initWithString(const char *string, const CCSize& dimensions, CCTextAlignment hAlignment, 
-                        CCVerticalTextAlignment vAlignment, const char *fontName, float fontSize);
+    static CCLabelTTF * create(const char *string, const char *fontName, float fontSize,
+                               const CCSize& dimensions, CCTextAlignment hAlignment);
+  
+    /** creates a CCLabel from a fontname, alignment, dimension in points and font size in points
+     @since v2.0.1
+     */
+    static CCLabelTTF * create(const char *string, const char *fontName, float fontSize,
+                               const CCSize& dimensions, CCTextAlignment hAlignment, 
+                               CCVerticalTextAlignment vAlignment);
     
     /** initializes the CCLabelTTF with a font name and font size */
     bool initWithString(const char *string, const char *fontName, float fontSize);
+    
+    /** initializes the CCLabelTTF with a font name, alignment, dimension and font size */
+    bool initWithString(const char *string, const char *fontName, float fontSize,
+                        const CCSize& dimensions, CCTextAlignment hAlignment);
+
+    /** initializes the CCLabelTTF with a font name, alignment, dimension and font size */
+    bool initWithString(const char *string, const char *fontName, float fontSize,
+                        const CCSize& dimensions, CCTextAlignment hAlignment, 
+                        CCVerticalTextAlignment vAlignment);
     
     /** initializes the CCLabelTTF */
     bool init();
@@ -114,7 +103,7 @@ public:
     void setVerticalAlignment(CCVerticalTextAlignment verticalAlignment);
     
     CCSize getDimensions();
-    void setDimensions(CCSize &dim);
+    void setDimensions(const CCSize &dim);
     
     float getFontSize();
     void setFontSize(float fontSize);
@@ -123,7 +112,7 @@ public:
     void setFontName(const char *fontName);
 
 private:
-    void updateTexture();
+    bool updateTexture();
 protected:
     /** Dimensions of the label in Points */
     CCSize m_tDimensions;
@@ -138,6 +127,7 @@ protected:
     
     std::string m_string;
 };
+
 
 // end of GUI group
 /// @}

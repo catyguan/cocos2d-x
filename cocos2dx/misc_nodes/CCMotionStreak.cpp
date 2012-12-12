@@ -66,11 +66,6 @@ CCMotionStreak::~CCMotionStreak()
     CC_SAFE_FREE(m_pTexCoords);
 }
 
-CCMotionStreak* CCMotionStreak::streakWithFade(float fade, float minSeg, float stroke, ccColor3B color, const char* path)
-{
-    return CCMotionStreak::create(fade, minSeg, stroke, color, path);
-}
-
 CCMotionStreak* CCMotionStreak::create(float fade, float minSeg, float stroke, ccColor3B color, const char* path)
 {
     CCMotionStreak *pRet = new CCMotionStreak();
@@ -82,11 +77,6 @@ CCMotionStreak* CCMotionStreak::create(float fade, float minSeg, float stroke, c
 
     CC_SAFE_DELETE(pRet);
     return NULL;
-}
-
-CCMotionStreak* CCMotionStreak::streakWithFade(float fade, float minSeg, float stroke, ccColor3B color, CCTexture2D* texture)
-{
-    return CCMotionStreak::create(fade, minSeg, stroke, color, texture);
 }
 
 CCMotionStreak* CCMotionStreak::create(float fade, float minSeg, float stroke, ccColor3B color, CCTexture2D* texture)
@@ -195,7 +185,7 @@ void CCMotionStreak::setColor(const ccColor3B& color)
     m_tColor = color;
 }
 
-const ccColor3B& CCMotionStreak::getColor(void)
+ccColor3B CCMotionStreak::getColor(void)
 {
     return m_tColor;
 }
@@ -299,7 +289,7 @@ void CCMotionStreak::update(float delta)
         m_pPointVertexes[m_uNuPoints] = m_tPositionR;
         m_pPointState[m_uNuPoints] = 1.0f;
 
-        // Color asignation
+        // Color assignment
         const unsigned int offset = m_uNuPoints*8;
         *((ccColor3B*)(m_pColorPointer + offset)) = m_tColor;
         *((ccColor3B*)(m_pColorPointer + offset+4)) = m_tColor;

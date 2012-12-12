@@ -50,29 +50,29 @@ bool ChipmunkPhysicsSprite::isDirty(void)
 
 CCAffineTransform ChipmunkPhysicsSprite::nodeToParentTransform(void)
 {
-    CCFloat x = m_pBody->p.x;
-    CCFloat y = m_pBody->p.y;
+    float x = m_pBody->p.x;
+    float y = m_pBody->p.y;
 
     if ( isIgnoreAnchorPointForPosition() ) {
-        x += m_tAnchorPointInPoints.x;
-        y += m_tAnchorPointInPoints.y;
+        x += m_obAnchorPointInPoints.x;
+        y += m_obAnchorPointInPoints.y;
     }
 
     // Make matrix
-    CCFloat c = m_pBody->rot.x;
-    CCFloat s = m_pBody->rot.y;
+    float c = m_pBody->rot.x;
+    float s = m_pBody->rot.y;
 
-    if( ! CCPoint::CCPointEqualToPoint(m_tAnchorPointInPoints, CCPointZero) ){
-        x += c*-m_tAnchorPointInPoints.x + -s*-m_tAnchorPointInPoints.y;
-        y += s*-m_tAnchorPointInPoints.x + c*-m_tAnchorPointInPoints.y;
+    if( ! m_obAnchorPointInPoints.equals(CCPointZero) ){
+        x += c*-m_obAnchorPointInPoints.x + -s*-m_obAnchorPointInPoints.y;
+        y += s*-m_obAnchorPointInPoints.x + c*-m_obAnchorPointInPoints.y;
     }
 
     // Rot, Translate Matrix
-    m_tTransform = CCAffineTransformMake( c,  s,
+    m_sTransform = CCAffineTransformMake( c,  s,
         -s,    c,
         x,    y );
 
-    return m_tTransform;
+    return m_sTransform;
 }
 
 HelloWorld::HelloWorld()
@@ -183,7 +183,7 @@ void HelloWorld::update(float delta)
 {
     // Should use a fixed size step based on the animation interval.
     int steps = 2;
-    CCFloat dt = CCDirector::sharedDirector()->getAnimationInterval()/(CCFloat)steps;
+    float dt = CCDirector::sharedDirector()->getAnimationInterval()/(float)steps;
 
     for(int i=0; i<steps; i++){
         cpSpaceStep(m_pSpace, dt);
@@ -243,7 +243,7 @@ void HelloWorld::ccTouchesEnded(CCSet* touches, CCEvent* event)
         if(!touch)
             break;
 
-        CCPoint location = touch->locationInView();
+        CCPoint location = touch->getLocationInView();
 
         location = CCDirector::sharedDirector()->convertToGL(location);
 

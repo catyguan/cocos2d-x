@@ -58,12 +58,8 @@ CCParticleBatchNode::~CCParticleBatchNode()
 /*
  * creation with CCTexture2D
  */
-CCParticleBatchNode* CCParticleBatchNode::batchNodeWithTexture(CCTexture2D *tex, unsigned int capacity/* = kCCParticleDefaultCapacity*/)
-{
-    return CCParticleBatchNode::create(tex, capacity);
-}
 
-CCParticleBatchNode* CCParticleBatchNode::create(CCTexture2D *tex, unsigned int capacity/* = kCCParticleDefaultCapacity*/)
+CCParticleBatchNode* CCParticleBatchNode::createWithTexture(CCTexture2D *tex, unsigned int capacity/* = kCCParticleDefaultCapacity*/)
 {
     CCParticleBatchNode * p = new CCParticleBatchNode();
     if( p && p->initWithTexture(tex, capacity))
@@ -78,10 +74,6 @@ CCParticleBatchNode* CCParticleBatchNode::create(CCTexture2D *tex, unsigned int 
 /*
  * creation with File Image
  */
-CCParticleBatchNode* CCParticleBatchNode::batchNodeWithFile(const char* imageFile, unsigned int capacity/* = kCCParticleDefaultCapacity*/)
-{
-    return CCParticleBatchNode::create(imageFile, capacity);
-}
 
 CCParticleBatchNode* CCParticleBatchNode::create(const char* imageFile, unsigned int capacity/* = kCCParticleDefaultCapacity*/)
 {
@@ -135,9 +127,9 @@ void CCParticleBatchNode::visit()
     // with the exception that it doesn't call visit on it's children
     //
     // The alternative is to have a void CCSprite#visit, but
-    // although this is less mantainable, is faster
+    // although this is less maintainable, is faster
     //
-    if (!m_bIsVisible)
+    if (!m_bVisible)
     {
         return;
     }
@@ -185,7 +177,7 @@ void CCParticleBatchNode::addChild(CCNode * child, int zOrder, int tag)
         setBlendFunc(pChild->getBlendFunc());
     }
 
-    CCAssert( m_tBlendFunc.src  == pChild->getBlendFunc().src && m_tBlendFunc.dst  == pChild->getBlendFunc().dst, "Can't add a PaticleSystem that uses a differnt blending function");
+    CCAssert( m_tBlendFunc.src  == pChild->getBlendFunc().src && m_tBlendFunc.dst  == pChild->getBlendFunc().dst, "Can't add a PaticleSystem that uses a different blending function");
 
     //no lazy sorting, so don't call super addChild, call helper instead
     unsigned int pos = addChildHelper(pChild,zOrder,tag);
@@ -235,7 +227,7 @@ unsigned int CCParticleBatchNode::addChildHelper(CCParticleSystem* child, int z,
 
     child->setParent(this);
 
-    if( m_bIsRunning ) 
+    if( m_bRunning ) 
     {
         child->onEnter();
         child->onEnterTransitionDidFinish();
@@ -388,7 +380,7 @@ void  CCParticleBatchNode::removeChild(CCNode* child, bool cleanup)
     // after memmove of data, empty the quads at the end of array
     m_pTextureAtlas->fillWithEmptyQuadsFromIndex(m_pTextureAtlas->getTotalQuads(), pChild->getTotalParticles());
 
-    // paticle could be reused for self rendering
+    // particle could be reused for self rendering
     pChild->setBatchNode(NULL);
 
     updateAllAtlasIndexes();
@@ -469,7 +461,7 @@ void CCParticleBatchNode::insertChild(CCParticleSystem* pSystem, unsigned int in
         m_pTextureAtlas->moveQuadsFromIndex(index, index+pSystem->getTotalParticles());
     }
 
-    // increase totalParticles here for new particles, update method of particlesystem will fill the quads
+    // increase totalParticles here for new particles, update method of particle-system will fill the quads
     m_pTextureAtlas->increaseTotalQuadsWith(pSystem->getTotalParticles());
 
     updateAllAtlasIndexes();

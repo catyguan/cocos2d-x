@@ -31,6 +31,48 @@
 #include "CCPlatformConfig.h"
 #include "CCPlatformDefine.h"
 
+/**
+ * define a create function for a specific type, such as CCLayer
+ * @__TYPE__ class type to add create(), such as CCLayer
+ */
+#define CREATE_FUNC(__TYPE__) \
+static __TYPE__* create() \
+{ \
+    __TYPE__ *pRet = new __TYPE__(); \
+    if (pRet && pRet->init()) \
+    { \
+        pRet->autorelease(); \
+        return pRet; \
+    } \
+    else \
+    { \
+        delete pRet; \
+        pRet = NULL; \
+        return NULL; \
+    } \
+}
+
+/**
+ * define a node function for a specific type, such as CCLayer
+ * @__TYPE__ class type to add node(), such as CCLayer
+ * @deprecated: This interface will be deprecated sooner or later.
+ */
+#define NODE_FUNC(__TYPE__) \
+CC_DEPRECATED_ATTRIBUTE static __TYPE__* node() \
+{ \
+    __TYPE__ *pRet = new __TYPE__(); \
+    if (pRet && pRet->init()) \
+    { \
+        pRet->autorelease(); \
+        return pRet; \
+    } \
+    else \
+    { \
+        delete pRet; \
+        pRet = NULL; \
+        return NULL; \
+    } \
+}
 
 /** @def CC_ENABLE_CACHE_TEXTURE_DATA
 Enable it if you want to cache the texture data.
@@ -60,16 +102,10 @@ It's new in cocos2d-x since v0.99.5
     #define NS_CC_BEGIN                     namespace cocos2d {
     #define NS_CC_END                       }
     #define USING_NS_CC                     using namespace cocos2d
-    #define NS_CC_EXT_BEGIN                 namespace cocos2d { namespace extension { 
-    #define NS_CC_EXT_END                   }} 
-    #define USING_NS_CC_EXT                 using namespace cocos2d::extension
 #else
-    #define NS_CC_BEGIN                     
-    #define NS_CC_END
-    #define USING_NS_CC                     
-    #define NS_CC_EXT_BEGIN                 
-    #define NS_CC_EXT_END    
-    #define USING_NS_CC_EXT 
+    #define NS_CC_BEGIN 
+    #define NS_CC_END 
+    #define USING_NS_CC 
 #endif 
 
 /** CC_PROPERTY_READONLY is used to declare a protected variable.
@@ -106,7 +142,7 @@ public: virtual void set##funName(varType var);
 
 #define CC_PROPERTY_PASS_BY_REF(varType, varName, funName)\
 protected: varType varName;\
-public: virtual const varType& get##funName(void);\
+public: virtual varType get##funName(void);\
 public: virtual void set##funName(const varType& var);
 
 /** CC_SYNTHESIZE_READONLY is used to declare a protected variable.
@@ -143,7 +179,7 @@ public: virtual void set##funName(varType var){ varName = var; }
 
 #define CC_SYNTHESIZE_PASS_BY_REF(varType, varName, funName)\
 protected: varType varName;\
-public: virtual const varType& get##funName(void) const { return varName; }\
+public: virtual varType get##funName(void) const { return varName; }\
 public: virtual void set##funName(const varType& var){ varName = var; }
 
 #define CC_SYNTHESIZE_RETAIN(varType, varName, funName)    \
@@ -203,7 +239,7 @@ public: virtual void set##funName(varType var)   \
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
     #define CC_DEPRECATED_ATTRIBUTE __attribute__((deprecated))
 #elif _MSC_VER >= 1400 //vs 2005 or higher
-#define CC_DEPRECATED_ATTRIBUTE __declspec(deprecated) 
+    #define CC_DEPRECATED_ATTRIBUTE __declspec(deprecated) 
 #else
     #define CC_DEPRECATED_ATTRIBUTE
 #endif 

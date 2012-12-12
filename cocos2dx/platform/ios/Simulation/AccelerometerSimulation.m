@@ -38,12 +38,14 @@
 @end
 
 @implementation UIAccelerometer (Simulation)
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-protocol-method-implementation"
 // override the static method and return our simulated version instead
 + (UIAccelerometer *)sharedAccelerometer
 {
     return [AccelerometerSimulation getAccelerometer];
 }
+#pragma clang diagnostic pop
 @end
 /*
  // callback that never got called with CFSocket UDP...
@@ -64,6 +66,14 @@
 static AccelerometerSimulation *sharedAccelerometer = NULL;
 
 @implementation AccelerometerSimulation
+
+- (void) dealloc {
+    if (sharedAccelerometer) {
+        [sharedAccelerometer release];
+        sharedAccelerometer = NULL;
+    }
+    [super dealloc];
+}
 
 // this is straight from developer guide example for multi-threaded notifications
 - (void) setUpThreadingSupport {
@@ -124,7 +134,7 @@ static AccelerometerSimulation *sharedAccelerometer = NULL;
     };
     [notificationLock unlock];
 }
-
+#ifndef __clang_analyzer__
 + (AccelerometerSimulation *)getAccelerometer
 {
     if( sharedAccelerometer == NULL )
@@ -132,7 +142,7 @@ static AccelerometerSimulation *sharedAccelerometer = NULL;
     
     return sharedAccelerometer;
 }
-
+#endif
 - (void)threadLoop:(id)object
 {
     char buffer[1024];
@@ -157,7 +167,7 @@ static AccelerometerSimulation *sharedAccelerometer = NULL;
     accObject = [UIAccelerationSimulation alloc];
     isExiting = false;
     
-    // couldn't get the CFSocket version to work with UDP and runloop, so used Berkely sockets and a thread instead
+    // couldn't get the CFSocket version to work with UDP and runloop, so used Berkeley sockets and a thread instead
     
     udpSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     struct sockaddr_in sin;

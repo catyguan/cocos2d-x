@@ -38,6 +38,10 @@ THE SOFTWARE.
     #define isnan   _isnan
 #endif
 
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -49,6 +53,12 @@ THE SOFTWARE.
 
 #define MIN     min
 #define MAX     max
+
+#if _MSC_VER >= 1600
+    #include <stdint.h>
+#else
+    #include "./compat/stdint.h"
+#endif
 
 // Structure timeval has define in winsock.h, include windows.h for it.
 #include <Windows.h>

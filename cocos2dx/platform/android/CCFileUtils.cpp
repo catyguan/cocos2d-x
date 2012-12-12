@@ -24,24 +24,26 @@ THE SOFTWARE.
 
 #define __CC_PLATFORM_FILEUTILS_CPP__
 #include "platform/CCFileUtilsCommon_cpp.h"
+#include "support/zip_support/ZipUtils.h"
 
 using namespace std;
 
 NS_CC_BEGIN
 
 #include "platform/CCCommon.h"
-#include "jni/SystemInfoJni.h"
+#include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 
-// record the resource path
-static string s_strResourcePath = "";
-    
 static CCFileUtils* s_pFileUtils = NULL;
+// record the zip on the resource path
+static ZipFile *s_pZipFile = NULL;
 
 CCFileUtils* CCFileUtils::sharedFileUtils()
 {
     if (s_pFileUtils == NULL)
     {
         s_pFileUtils = new CCFileUtils();
+        std::string resourcePath = getApkPath();
+        s_pZipFile = new ZipFile(resourcePath, "assets/");
     }
     return s_pFileUtils;
 }
@@ -53,6 +55,7 @@ void CCFileUtils::purgeFileUtils()
         s_pFileUtils->purgeCachedEntries();
     }
 
+    CC_SAFE_DELETE(s_pZipFile);
     CC_SAFE_DELETE(s_pFileUtils);
 }
 
@@ -61,25 +64,7 @@ void CCFileUtils::purgeCachedEntries()
 
 }
 
-/*
- * This function is implemented for jni to set apk path.
- */
-void CCFileUtils::setResourcePath(const char* pszResourcePath)
-{
-    CCAssert(pszResourcePath != NULL, "[FileUtils setRelativePath] -- wrong relative path");
-    
-    string tmp(pszResourcePath);
-
-    if ((! pszResourcePath) || tmp.find(".apk") == string::npos)
-    {
-        return;
-    }
-
-    s_strResourcePath = pszResourcePath;
-}
-
-const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath,
-                                                  ccResolutionType *pResolutionType)
+const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath)
 {
     return pszRelativePath;
 }
@@ -107,8 +92,18 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
     if (pszFileName[0] != '/')
     {
         // read from apk
+        string pathWithoutDirectory = fullPath;
+        
+        fullPath.insert(0, m_obDirectory.c_str());
         fullPath.insert(0, "assets/");
-        pData =  CCFileUtils::getFileDataFromZip(s_strResourcePath.c_str(), fullPath.c_str(), pSize);
+        pData = s_pZipFile->getFileData(fullPath, pSize);
+        
+        if (! pData && m_obDirectory.size() > 0)
+        {
+            // search from root
+            pathWithoutDirectory.insert(0, "assets/");
+            pData = s_pZipFile->getFileData(pathWithoutDirectory, pSize);
+        }
     }
     else
     {
@@ -146,9 +141,10 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
 
 string CCFileUtils::getWriteablePath()
 {
-    // the path is: /data/data/ + package name
-    string dir("/data/data/");
-    const char *tmp = getPackageNameJNI();
+    // Fix for Nexus 10 (Android 4.2 multi-user environment)
+    // the path is retrieved through Java Context.getCacheDir() method
+    string dir("");
+    const char *tmp = getCacheDirectoryJNI();
 
     if (tmp)
     {

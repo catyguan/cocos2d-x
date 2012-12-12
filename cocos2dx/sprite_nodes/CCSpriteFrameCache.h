@@ -57,6 +57,9 @@ class CCSprite;
  */
 class CC_DLL CCSpriteFrameCache : public CCObject
 {
+protected:
+    // MARMALADE: Made this protected not private, as deriving from this class is pretty useful
+    CCSpriteFrameCache(void) : m_pSpriteFrames(NULL), m_pSpriteFramesAliases(NULL){}
 public:
     bool init(void);
     ~CCSpriteFrameCache(void);
@@ -104,7 +107,7 @@ public:
 
     /** Removes multiple Sprite Frames from a plist file.
     * Sprite Frames stored in this file will be removed.
-    * It is convinient to call this method when a specific texture needs to be removed.
+    * It is convenient to call this method when a specific texture needs to be removed.
     * @since v0.99.5
     */
     void removeSpriteFramesFromFile(const char* plist);
@@ -116,7 +119,7 @@ private:
     void removeSpriteFramesFromDictionary(CCDictionary* dictionary);
 public:
     /** Removes all Sprite Frames associated with the specified textures.
-    * It is convinient to call this method when a specific texture needs to be removed.
+    * It is convenient to call this method when a specific texture needs to be removed.
     * @since v0.995.
     */
     void removeSpriteFramesFromTexture(CCTexture2D* texture);
@@ -135,7 +138,8 @@ public:
     static void purgeSharedSpriteFrameCache(void);
 
 private:
-    CCSpriteFrameCache(void) : m_pSpriteFrames(NULL), m_pSpriteFramesAliases(NULL){}
+    // MARMALADE: Made this protected not private, as deriving from this class is pretty useful
+//    CCSpriteFrameCache(void) : m_pSpriteFrames(NULL), m_pSpriteFramesAliases(NULL){}
 protected:
     CCDictionary* m_pSpriteFrames;
     CCDictionary* m_pSpriteFramesAliases;

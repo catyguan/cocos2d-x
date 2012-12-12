@@ -45,7 +45,7 @@ public:
     virtual ~CCSet(void);
 
     /**
-    *@brief Return a copy of the CCSet, it will copy all the elelments.
+    *@brief Return a copy of the CCSet, it will copy all the elements.
     */
     CCSet* copy();
     /**
@@ -65,6 +65,10 @@ public:
     */
     void removeObject(CCObject *pObject);
     /**
+     *@brief Remove all elements of the set
+     */
+    void removeAllObjects();
+    /**
     *@brief Check if CCSet contains a element equals pObject.
     */
     bool containsObject(CCObject *pObject);
@@ -73,7 +77,7 @@ public:
     */
     CCSetIterator begin();
     /**
-    *@brief Return the iterator that points to the poisition after the last element.
+    *@brief Return the iterator that points to the position after the last element.
     */
     CCSetIterator end();
     /**

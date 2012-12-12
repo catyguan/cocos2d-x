@@ -35,8 +35,6 @@ NS_CC_BEGIN
  * @{
  */
 
-typedef float CCFloat;
-
 class CC_DLL CCPoint : public CCObject
 {
 public:
@@ -50,9 +48,7 @@ public:
     CCPoint& operator= (const CCPoint& other);
     void setPoint(float x, float y);
     virtual CCObject* copyWithZone(CCZone* pZone);
-
-public:
-    static bool CCPointEqualToPoint(const CCPoint& point1, const CCPoint& point2);
+    bool equals(const CCPoint& target) const;
 };
 
 class CC_DLL CCSize : public CCObject
@@ -68,8 +64,7 @@ public:
     CCSize& operator= (const CCSize& other);
     void setSize(float width, float height);
     virtual CCObject* copyWithZone(CCZone* pZone);
-public:
-    static bool CCSizeEqualToSize(const CCSize& size1, const CCSize& size2);
+    bool equals(const CCSize& target) const;
 };
 
 class CC_DLL CCRect : public CCObject
@@ -82,33 +77,18 @@ public:
     CCRect();    
     CCRect(float x, float y, float width, float height);
     CCRect(const CCRect& other);
-    CCRect& operator= (const CCRect& other);
+    CCRect& operator= (const CCRect& other); 
     void setRect(float x, float y, float width, float height);
     virtual CCObject* copyWithZone(CCZone* pZone);
-public:
-    //! return the leftmost x-value of 'rect'
-    static CCFloat CCRectGetMinX(const CCRect& rect);
-
-    //! return the rightmost x-value of 'rect'
-    static CCFloat CCRectGetMaxX(const CCRect& rect);
-
-    //! return the midpoint x-value of 'rect'
-    static CCFloat CCRectGetMidX(const CCRect& rect);
-
-    //! Return the bottommost y-value of `rect'
-    static CCFloat CCRectGetMinY(const CCRect& rect);
-
-    //! Return the topmost y-value of `rect'
-    static CCFloat CCRectGetMaxY(const CCRect& rect);
-
-    //! Return the midpoint y-value of `rect'
-    static CCFloat CCRectGetMidY(const CCRect& rect);
-
-    static bool CCRectEqualToRect(const CCRect& rect1, const CCRect& rect2);
-
-    static bool CCRectContainsPoint(const CCRect& rect, const CCPoint& point);
-
-    static bool CCRectIntersectsRect(const CCRect& rectA, const CCRect& rectB);
+    float getMinX() const; /// return the leftmost x-value of current rect
+    float getMidX() const; /// return the midpoint x-value of current rect
+    float getMaxX() const; /// return the rightmost x-value of current rect
+    float getMinY() const; /// return the bottommost y-value of current rect
+    float getMidY() const; /// return the midpoint y-value of current rect
+    float getMaxY() const; /// return the topmost y-value of current rect
+    bool equals(const CCRect& rect) const;   
+    bool containsPoint(const CCPoint& point) const;
+    bool intersectsRect(const CCRect& rect) const;
 };
 
 

@@ -154,6 +154,10 @@
             glRenderbufferStorage(GL_RENDERBUFFER, depthFormat_, backingWidth_, backingHeight_);
 
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer_);
+        
+        if (depthFormat_ == GL_DEPTH24_STENCIL8_OES) {
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuffer_);
+		}
 
         // bind color buffer
         glBindRenderbuffer(GL_RENDERBUFFER, colorRenderbuffer_);        
@@ -178,7 +182,7 @@
 
 - (NSString*) description
 {
-    return [NSString stringWithFormat:@"<%@ = %08X | size = %ix%i>", [self class], self, backingWidth_, backingHeight_];
+    return [NSString stringWithFormat:@"<%@ = %08X | size = %ix%i>", [self class], (unsigned int)self, backingWidth_, backingHeight_];
 }
 
 - (unsigned int) colorRenderBuffer

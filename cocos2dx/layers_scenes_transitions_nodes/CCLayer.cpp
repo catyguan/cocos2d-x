@@ -43,39 +43,40 @@ NS_CC_BEGIN
 
 // CCLayer
 CCLayer::CCLayer()
-:m_bIsTouchEnabled(false)
-,m_bIsAccelerometerEnabled(false)
-,m_bIsKeypadEnabled(false)
-,m_pScriptHandlerEntry(NULL)
+: m_bTouchEnabled(false)
+, m_bAccelerometerEnabled(false)
+, m_bKeypadEnabled(false)
+,m_pScriptTouchHandlerEntry(NULL)
+,m_pScriptKeypadHandlerEntry(NULL)
+,m_pScriptAccelerateHandlerEntry(NULL)
+, m_eTouchMode(kCCTouchesAllAtOnce)
+, m_nTouchPriority(0)
 {
-    setAnchorPoint(ccp(0.5f, 0.5f));
     m_bIgnoreAnchorPointForPosition = true;
+    setAnchorPoint(ccp(0.5f, 0.5f));
 }
 
 CCLayer::~CCLayer()
 {
     unregisterScriptTouchHandler();
+    unregisterScriptKeypadHandler();
+    unregisterScriptAccelerateHandler();
 }
 
 bool CCLayer::init()
 {
     bool bRet = false;
     do 
-    {
+    {        
         CCDirector * pDirector;
         CC_BREAK_IF(!(pDirector = CCDirector::sharedDirector()));
         this->setContentSize(pDirector->getWinSize());
-        m_bIsTouchEnabled = false;
-        m_bIsAccelerometerEnabled = false;
+        m_bTouchEnabled = false;
+        m_bAccelerometerEnabled = false;
         // success
         bRet = true;
     } while(0);
     return bRet;
-}
-
-CCLayer *CCLayer::node()
-{
-    return CCLayer::create();
 }
 
 CCLayer *CCLayer::create()
@@ -97,64 +98,68 @@ CCLayer *CCLayer::create()
 
 void CCLayer::registerWithTouchDispatcher()
 {
-    CCDirector* pDirector = CCDirector::sharedDirector();
-    if (m_pScriptHandlerEntry)
+    CCTouchDispatcher* pDispatcher = CCDirector::sharedDirector()->getTouchDispatcher();
+
+    // Using LuaBindings
+    if (m_pScriptTouchHandlerEntry)
     {
-        if (m_pScriptHandlerEntry->isMultiTouches())
-        {
-            pDirector->getTouchDispatcher()->addStandardDelegate(this, 0);
-            LUALOG("[LUA] Add multi-touches event handler: %d", m_pScriptHandlerEntry->getHandler());
-        }
-        else
-        {
-            pDirector->getTouchDispatcher()->addTargetedDelegate(this,
-                                                                       m_pScriptHandlerEntry->getPriority(),
-                                                                       m_pScriptHandlerEntry->getSwallowsTouches());
-            LUALOG("[LUA] Add touch event handler: %d", m_pScriptHandlerEntry->getHandler());
-        }
-        return;
+	    if (m_pScriptTouchHandlerEntry->isMultiTouches())
+	    {
+	       pDispatcher->addStandardDelegate(this, 0);
+	       LUALOG("[LUA] Add multi-touches event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
+	    }
+	    else
+	    {
+	       pDispatcher->addTargetedDelegate(this,
+						m_pScriptTouchHandlerEntry->getPriority(),
+						m_pScriptTouchHandlerEntry->getSwallowsTouches());
+	       LUALOG("[LUA] Add touch event handler: %d", m_pScriptTouchHandlerEntry->getHandler());
+	    }
     }
-    pDirector->getTouchDispatcher()->addStandardDelegate(this,0);
+    else
+    {
+        if( m_eTouchMode == kCCTouchesAllAtOnce ) {
+            pDispatcher->addStandardDelegate(this, 0);
+        } else {
+            pDispatcher->addTargetedDelegate(this, m_nTouchPriority, true);
+        }
+    }
 }
 
 void CCLayer::registerScriptTouchHandler(int nHandler, bool bIsMultiTouches, int nPriority, bool bSwallowsTouches)
 {
     unregisterScriptTouchHandler();
-    m_pScriptHandlerEntry = CCTouchScriptHandlerEntry::entryWithHandler(nHandler, bIsMultiTouches, nPriority, bSwallowsTouches);
-    m_pScriptHandlerEntry->retain();
+    m_pScriptTouchHandlerEntry = CCTouchScriptHandlerEntry::create(nHandler, bIsMultiTouches, nPriority, bSwallowsTouches);
+    m_pScriptTouchHandlerEntry->retain();
 }
 
 void CCLayer::unregisterScriptTouchHandler(void)
 {
-    if (m_pScriptHandlerEntry)
-    {
-        m_pScriptHandlerEntry->release();
-        m_pScriptHandlerEntry = NULL;
+    CC_SAFE_RELEASE_NULL(m_pScriptTouchHandlerEntry);
     }
-}
 
 int CCLayer::excuteScriptTouchHandler(int nEventType, CCTouch *pTouch)
 {
-    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeTouchEvent(m_pScriptHandlerEntry->getHandler(), nEventType, pTouch);
+    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeLayerTouchEvent(this, nEventType, pTouch);
 }
 
 int CCLayer::excuteScriptTouchHandler(int nEventType, CCSet *pTouches)
 {
-    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeTouchesEvent(m_pScriptHandlerEntry->getHandler(), nEventType, pTouches);
+    return CCScriptEngineManager::sharedManager()->getScriptEngine()->executeLayerTouchesEvent(this, nEventType, pTouches);
 }
 
 /// isTouchEnabled getter
 bool CCLayer::isTouchEnabled()
 {
-    return m_bIsTouchEnabled;
+    return m_bTouchEnabled;
 }
 /// isTouchEnabled setter
 void CCLayer::setTouchEnabled(bool enabled)
 {
-    if (m_bIsTouchEnabled != enabled)
+    if (m_bTouchEnabled != enabled)
     {
-        m_bIsTouchEnabled = enabled;
-        if (m_bIsRunning)
+        m_bTouchEnabled = enabled;
+        if (m_bRunning)
         {
             if (enabled)
             {
@@ -163,26 +168,63 @@ void CCLayer::setTouchEnabled(bool enabled)
             else
             {
                 // have problems?
-                CCDirector* pDirector = CCDirector::sharedDirector();
-                pDirector->getTouchDispatcher()->removeDelegate(this);
+                CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
             }
         }
     }
 }
 
+void CCLayer::setTouchMode(ccTouchesMode mode)
+{
+    if(m_eTouchMode != mode)
+    {
+        m_eTouchMode = mode;
+        
+		if( m_bTouchEnabled)
+        {
+			setTouchEnabled(false);
+			setTouchEnabled(true);
+		}
+    }
+}
+
+void CCLayer::setTouchPriority(int priority)
+{
+    if (m_nTouchPriority != priority)
+    {
+        m_nTouchPriority = priority;
+        
+		if( m_bTouchEnabled)
+        {
+			setTouchEnabled(false);
+			setTouchEnabled(true);
+		}
+    }
+}
+
+int CCLayer::getTouchPriority()
+{
+    return m_nTouchPriority;
+}
+
+int CCLayer::getTouchMode()
+{
+    return m_eTouchMode;
+}
+
 /// isAccelerometerEnabled getter
 bool CCLayer::isAccelerometerEnabled()
 {
-    return m_bIsAccelerometerEnabled;
+    return m_bAccelerometerEnabled;
 }
 /// isAccelerometerEnabled setter
 void CCLayer::setAccelerometerEnabled(bool enabled)
 {
-    if (enabled != m_bIsAccelerometerEnabled)
+    if (enabled != m_bAccelerometerEnabled)
     {
-        m_bIsAccelerometerEnabled = enabled;
+        m_bAccelerometerEnabled = enabled;
 
-        if (m_bIsRunning)
+        if (m_bRunning)
         {
             CCDirector* pDirector = CCDirector::sharedDirector();
             if (enabled)
@@ -197,19 +239,53 @@ void CCLayer::setAccelerometerEnabled(bool enabled)
     }
 }
 
+
+void CCLayer::setAccelerometerInterval(double interval) {
+    if (m_bAccelerometerEnabled)
+    {
+        if (m_bRunning)
+        {
+            CCDirector* pDirector = CCDirector::sharedDirector();
+            pDirector->getAccelerometer()->setAccelerometerInterval(interval);
+        }
+    }
+}
+
+
+void CCLayer::didAccelerate(CCAcceleration* pAccelerationValue)
+{
+   CC_UNUSED_PARAM(pAccelerationValue);
+   if ( m_eScriptType != kScriptTypeNone)
+   {
+       CCScriptEngineManager::sharedManager()->getScriptEngine()->executeAccelerometerEvent(this, pAccelerationValue);
+   }
+}
+
+void CCLayer::registerScriptAccelerateHandler(int nHandler)
+{
+    unregisterScriptAccelerateHandler();
+    m_pScriptAccelerateHandlerEntry = CCScriptHandlerEntry::create(nHandler);
+    m_pScriptAccelerateHandlerEntry->retain();
+}
+
+void CCLayer::unregisterScriptAccelerateHandler(void)
+{
+    CC_SAFE_RELEASE_NULL(m_pScriptAccelerateHandlerEntry);
+}
+
 /// isKeypadEnabled getter
 bool CCLayer::isKeypadEnabled()
 {
-    return m_bIsKeypadEnabled;
+    return m_bKeypadEnabled;
 }
 /// isKeypadEnabled setter
 void CCLayer::setKeypadEnabled(bool enabled)
 {
-    if (enabled != m_bIsKeypadEnabled)
+    if (enabled != m_bKeypadEnabled)
     {
-        m_bIsKeypadEnabled = enabled;
+        m_bKeypadEnabled = enabled;
 
-        if (m_bIsRunning)
+        if (m_bRunning)
         {
             CCDirector* pDirector = CCDirector::sharedDirector();
             if (enabled)
@@ -224,13 +300,41 @@ void CCLayer::setKeypadEnabled(bool enabled)
     }
 }
 
+void CCLayer::registerScriptKeypadHandler(int nHandler)
+{
+    unregisterScriptKeypadHandler();
+    m_pScriptKeypadHandlerEntry = CCScriptHandlerEntry::create(nHandler);
+    m_pScriptKeypadHandlerEntry->retain();
+}
+
+void CCLayer::unregisterScriptKeypadHandler(void)
+{
+    CC_SAFE_RELEASE_NULL(m_pScriptKeypadHandlerEntry);
+}
+
+void CCLayer::keyBackClicked(void)
+{
+    if (m_pScriptKeypadHandlerEntry)
+    {
+        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeLayerKeypadEvent(this, kTypeBackClicked);
+    }
+}
+
+void CCLayer::keyMenuClicked(void)
+{
+    if (m_pScriptKeypadHandlerEntry)
+    {
+        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeLayerKeypadEvent(this, kTypeMenuClicked);
+    }
+}
+
 /// Callbacks
 void CCLayer::onEnter()
 {
     CCDirector* pDirector = CCDirector::sharedDirector();
     // register 'parent' nodes first
     // since events are propagated in reverse order
-    if (m_bIsTouchEnabled)
+    if (m_bTouchEnabled)
     {
         this->registerWithTouchDispatcher();
     }
@@ -239,13 +343,13 @@ void CCLayer::onEnter()
     CCNode::onEnter();
 
     // add this layer to concern the Accelerometer Sensor
-    if (m_bIsAccelerometerEnabled)
+    if (m_bAccelerometerEnabled)
     {
         pDirector->getAccelerometer()->setDelegate(this);
     }
 
-    // add this layer to concern the kaypad msg
-    if (m_bIsKeypadEnabled)
+    // add this layer to concern the keypad msg
+    if (m_bKeypadEnabled)
     {
         pDirector->getKeypadDispatcher()->addDelegate(this);
     }
@@ -254,20 +358,21 @@ void CCLayer::onEnter()
 void CCLayer::onExit()
 {
     CCDirector* pDirector = CCDirector::sharedDirector();
-    if( m_bIsTouchEnabled )
+    if( m_bTouchEnabled )
     {
         pDirector->getTouchDispatcher()->removeDelegate(this);
-        unregisterScriptTouchHandler();
+        // [lua]:don't unregister script touch handler, or the handler will be destroyed
+        // unregisterScriptTouchHandler();
     }
 
     // remove this layer from the delegates who concern Accelerometer Sensor
-    if (m_bIsAccelerometerEnabled)
+    if (m_bAccelerometerEnabled)
     {
         pDirector->getAccelerometer()->setDelegate(NULL);
     }
 
-    // remove this layer from the delegates who concern the kaypad msg
-    if (m_bIsKeypadEnabled)
+    // remove this layer from the delegates who concern the keypad msg
+    if (m_bKeypadEnabled)
     {
         pDirector->getKeypadDispatcher()->removeDelegate(this);
     }
@@ -277,7 +382,7 @@ void CCLayer::onExit()
 
 void CCLayer::onEnterTransitionDidFinish()
 {
-    if (m_bIsAccelerometerEnabled)
+    if (m_bAccelerometerEnabled)
     {
         CCDirector* pDirector = CCDirector::sharedDirector();
         pDirector->getAccelerometer()->setDelegate(this);
@@ -288,92 +393,102 @@ void CCLayer::onEnterTransitionDidFinish()
 
 bool CCLayer::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent)
 {
-    if (m_pScriptHandlerEntry)
+    if (kScriptTypeNone != m_eScriptType)
     {
         return excuteScriptTouchHandler(CCTOUCHBEGAN, pTouch) == 0 ? false : true;
     }
+
     CC_UNUSED_PARAM(pTouch);
     CC_UNUSED_PARAM(pEvent);
     CCAssert(false, "Layer#ccTouchBegan override me");
     return true;
 }
 
-void CCLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) {
-    if (m_pScriptHandlerEntry)
+void CCLayer::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent)
+{
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHMOVED, pTouch);
         return;
     }
+
     CC_UNUSED_PARAM(pTouch);
     CC_UNUSED_PARAM(pEvent);
 }
     
-void CCLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) {
-    if (m_pScriptHandlerEntry)
+void CCLayer::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent)
+{
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHENDED, pTouch);
         return;
     }
+
     CC_UNUSED_PARAM(pTouch);
     CC_UNUSED_PARAM(pEvent);
 }
 
-void CCLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) {
-    if (m_pScriptHandlerEntry)
+void CCLayer::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent)
+{
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouch);
         return;
     }
+
     CC_UNUSED_PARAM(pTouch);
     CC_UNUSED_PARAM(pEvent);
 }    
 
 void CCLayer::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent)
 {
-    if (m_pScriptHandlerEntry)
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHBEGAN, pTouches);
         return;
     }
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }
 
 void CCLayer::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent)
 {
-    if (m_pScriptHandlerEntry)
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHMOVED, pTouches);
         return;
     }
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }
 
 void CCLayer::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
 {
-    if (m_pScriptHandlerEntry)
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHENDED, pTouches);
         return;
     }
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }
 
 void CCLayer::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent)
 {
-    if (m_pScriptHandlerEntry)
+    if (kScriptTypeNone != m_eScriptType)
     {
         excuteScriptTouchHandler(CCTOUCHCANCELLED, pTouches);
         return;
     }
+
     CC_UNUSED_PARAM(pTouches);
     CC_UNUSED_PARAM(pEvent);
 }
 
 /// ColorLayer
-
 
 CCLayerColor::CCLayerColor()
 : m_cOpacity(0)
@@ -402,7 +517,7 @@ void CCLayerColor::setOpacity(GLubyte var)
 }
 
 /// color getter
-const ccColor3B& CCLayerColor::getColor()
+ccColor3B CCLayerColor::getColor()
 {
     return m_tColor;
 }
@@ -426,9 +541,23 @@ void CCLayerColor::setBlendFunc(ccBlendFunc var)
     m_tBlendFunc = var;
 }
 
-CCLayerColor * CCLayerColor::layerWithColor(const ccColor4B& color, GLfloat width, GLfloat height)
+CCLayerColor* CCLayerColor::node()
 {
-    return CCLayerColor::create(color,width,height);
+    return CCLayerColor::create();
+}
+
+CCLayerColor* CCLayerColor::create()
+{
+    CCLayerColor* pRet = new CCLayerColor();
+    if (pRet && pRet->init())
+    {
+        pRet->autorelease();
+    }
+    else
+    {
+        CC_SAFE_DELETE(pRet);
+    }
+    return pRet;
 }
 
 CCLayerColor * CCLayerColor::create(const ccColor4B& color, GLfloat width, GLfloat height)
@@ -441,11 +570,6 @@ CCLayerColor * CCLayerColor::create(const ccColor4B& color, GLfloat width, GLflo
     }
     CC_SAFE_DELETE(pLayer);
     return NULL;
-}
-
-CCLayerColor * CCLayerColor::layerWithColor(const ccColor4B& color)
-{
-    return CCLayerColor::create(color);
 }
 
 CCLayerColor * CCLayerColor::create(const ccColor4B& color)
@@ -500,7 +624,7 @@ bool CCLayerColor::initWithColor(const ccColor4B& color)
 }
 
 /// override contentSize
-void CCLayerColor::setContentSize(const CCSize& size)
+void CCLayerColor::setContentSize(const CCSize & size)
 {
     m_pSquareVertices[1].x = size.width;
     m_pSquareVertices[2].y = size.height;
@@ -517,12 +641,12 @@ void CCLayerColor::changeWidthAndHeight(GLfloat w ,GLfloat h)
 
 void CCLayerColor::changeWidth(GLfloat w)
 {
-    this->setContentSize(CCSizeMake(w, m_tContentSize.height));
+    this->setContentSize(CCSizeMake(w, m_obContentSize.height));
 }
 
 void CCLayerColor::changeHeight(GLfloat h)
 {
-    this->setContentSize(CCSizeMake(m_tContentSize.width, h));
+    this->setContentSize(CCSizeMake(m_obContentSize.width, h));
 }
 
 void CCLayerColor::updateColor()
@@ -558,10 +682,6 @@ void CCLayerColor::draw()
 //
 // CCLayerGradient
 // 
-CCLayerGradient* CCLayerGradient::layerWithColor(const ccColor4B& start, const ccColor4B& end)
-{
-    return CCLayerGradient::create(start, end);
-}
 
 CCLayerGradient* CCLayerGradient::create(const ccColor4B& start, const ccColor4B& end)
 {
@@ -575,11 +695,6 @@ CCLayerGradient* CCLayerGradient::create(const ccColor4B& start, const ccColor4B
     return NULL;
 }
 
-CCLayerGradient* CCLayerGradient::layerWithColor(const ccColor4B& start, const ccColor4B& end, const CCPoint& v)
-{
-    return CCLayerGradient::create(start, end, v);
-}
-
 CCLayerGradient* CCLayerGradient::create(const ccColor4B& start, const ccColor4B& end, const CCPoint& v)
 {
     CCLayerGradient * pLayer = new CCLayerGradient();
@@ -590,6 +705,30 @@ CCLayerGradient* CCLayerGradient::create(const ccColor4B& start, const ccColor4B
     }
     CC_SAFE_DELETE(pLayer);
     return NULL;
+}
+
+CCLayerGradient* CCLayerGradient::node()
+{
+    return CCLayerGradient::create();
+}
+
+CCLayerGradient* CCLayerGradient::create()
+{
+    CCLayerGradient* pRet = new CCLayerGradient();
+    if (pRet && pRet->init())
+    {
+        pRet->autorelease();
+    }
+    else
+    {
+        CC_SAFE_DELETE(pRet);
+    }
+    return pRet;
+}
+
+bool CCLayerGradient::init()
+{
+	return initWithColor(ccc4(0, 0, 0, 255), ccc4(0, 0, 0, 255));
 }
 
 bool CCLayerGradient::initWithColor(const ccColor4B& start, const ccColor4B& end)
@@ -668,7 +807,7 @@ void CCLayerGradient::updateColor()
     m_pSquareColors[3].a = E.a + (S.a - E.a) * ((c - u.x - u.y) / (2.0f * c));
 }
 
-const ccColor3B& CCLayerGradient::getStartColor()
+ccColor3B CCLayerGradient::getStartColor()
 {
     return m_tColor;
 }
@@ -684,7 +823,7 @@ void CCLayerGradient::setEndColor(const ccColor3B& color)
     updateColor();
 }
 
-const ccColor3B& CCLayerGradient::getEndColor()
+ccColor3B CCLayerGradient::getEndColor()
 {
     return m_endColor;
 }
@@ -717,7 +856,7 @@ void CCLayerGradient::setVector(const CCPoint& var)
     updateColor();
 }
 
-const CCPoint& CCLayerGradient::getVector()
+CCPoint CCLayerGradient::getVector()
 {
     return m_AlongVector;
 }
@@ -745,23 +884,6 @@ CCLayerMultiplex::~CCLayerMultiplex()
     CC_SAFE_RELEASE(m_pLayers);
 }
 
-CCLayerMultiplex * CCLayerMultiplex::layerWithLayers(CCLayer * layer, ...)
-{
-    va_list args;
-    va_start(args,layer);
-
-    CCLayerMultiplex * pMultiplexLayer = new CCLayerMultiplex();
-    if(pMultiplexLayer && pMultiplexLayer->initWithLayers(layer, args))
-    {
-        pMultiplexLayer->autorelease();
-        va_end(args);
-        return pMultiplexLayer;
-    }
-    va_end(args);
-    CC_SAFE_DELETE(pMultiplexLayer);
-    return NULL;
-}
-
 CCLayerMultiplex * CCLayerMultiplex::create(CCLayer * layer, ...)
 {
     va_list args;
@@ -779,14 +901,42 @@ CCLayerMultiplex * CCLayerMultiplex::create(CCLayer * layer, ...)
     return NULL;
 }
 
-CCLayerMultiplex * CCLayerMultiplex::layerWithLayer(CCLayer* layer)
-{
-    return CCLayerMultiplex::createWithLayer(layer);
-}
-
 CCLayerMultiplex * CCLayerMultiplex::createWithLayer(CCLayer* layer)
 {
     return CCLayerMultiplex::create(layer, NULL);
+}
+
+CCLayerMultiplex* CCLayerMultiplex::node()
+{
+    return CCLayerMultiplex::create();
+}
+
+CCLayerMultiplex* CCLayerMultiplex::create()
+{
+    CCLayerMultiplex* pRet = new CCLayerMultiplex();
+    if (pRet && pRet->init())
+    {
+        pRet->autorelease();
+    }
+    else
+    {
+        CC_SAFE_DELETE(pRet);
+    }
+    return pRet;
+}
+
+CCLayerMultiplex* CCLayerMultiplex::createWithArray(CCArray* arrayOfLayers)
+{
+    CCLayerMultiplex* pRet = new CCLayerMultiplex();
+    if (pRet && pRet->initWithArray(arrayOfLayers))
+    {
+        pRet->autorelease();
+    }
+    else
+    {
+        CC_SAFE_DELETE(pRet);
+    }
+    return pRet;
 }
 
 void CCLayerMultiplex::addLayer(CCLayer* layer)
@@ -797,23 +947,40 @@ void CCLayerMultiplex::addLayer(CCLayer* layer)
 
 bool CCLayerMultiplex::initWithLayers(CCLayer *layer, va_list params)
 {
-    m_pLayers = CCArray::create(5);
-    m_pLayers->retain();
+    if (CCLayer::init())
+    {
+        m_pLayers = CCArray::createWithCapacity(5);
+        m_pLayers->retain();
+        m_pLayers->addObject(layer);
 
-    m_pLayers->addObject(layer);
+        CCLayer *l = va_arg(params,CCLayer*);
+        while( l ) {
+            m_pLayers->addObject(l);
+            l = va_arg(params,CCLayer*);
+        }
 
-    CCLayer *l = va_arg(params,CCLayer*);
-    while( l ) {
-        m_pLayers->addObject(l);
-        l = va_arg(params,CCLayer*);
+        m_nEnabledLayer = 0;
+        this->addChild((CCNode*)m_pLayers->objectAtIndex(m_nEnabledLayer));
+        return true;
     }
 
-    m_nEnabledLayer = 0;
-    this->addChild((CCNode*)m_pLayers->objectAtIndex(m_nEnabledLayer));
-
-    return true;
+    return false;
 }
 
+bool CCLayerMultiplex::initWithArray(CCArray* arrayOfLayers)
+{
+    if (CCLayer::init())
+    {
+        m_pLayers = CCArray::createWithCapacity(arrayOfLayers->count());
+        m_pLayers->addObjectsFromArray(arrayOfLayers);
+        m_pLayers->retain();
+
+        m_nEnabledLayer = 0;
+        this->addChild((CCNode*)m_pLayers->objectAtIndex(m_nEnabledLayer));
+        return true;
+    }
+    return false;
+}
 
 void CCLayerMultiplex::switchTo(unsigned int n)
 {

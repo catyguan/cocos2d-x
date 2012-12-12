@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -28,8 +28,8 @@ THE SOFTWARE.
 #define __COCOS2D_H__
 
 // 0x00 HI ME LO
-// 00   02 00 00
-#define COCOS2D_VERSION 0x00020000
+// 00   02 01 00
+#define COCOS2D_VERSION 0x00020100
 
 //
 // all cocos2d include files
@@ -69,6 +69,10 @@ THE SOFTWARE.
 #include "cocoa/CCNS.h"
 #include "cocoa/CCZone.h"
 
+// draw nodes
+#include "draw_nodes/CCDrawingPrimitives.h"
+#include "draw_nodes/CCDrawNode.h"
+
 // effects
 #include "effects/CCGrabber.h"
 #include "effects/CCGrid.h"
@@ -79,7 +83,6 @@ THE SOFTWARE.
 #include "ccConfig.h"
 #include "ccMacros.h"
 #include "ccTypes.h"
-#include "cocos2dExt.h"
 
 // kazmath
 #include "kazmath/include/kazmath/kazmath.h"
@@ -106,6 +109,7 @@ THE SOFTWARE.
 #include "menu_nodes/CCMenuItem.h"
 
 // misc_nodes
+#include "misc_nodes/CCClippingNode.h"
 #include "misc_nodes/CCMotionStreak.h"
 #include "misc_nodes/CCProgressTimer.h"
 #include "misc_nodes/CCRenderTexture.h"
@@ -141,15 +145,49 @@ THE SOFTWARE.
     #include "platform/android/CCEGLView.h"
     #include "platform/android/CCGL.h"
     #include "platform/android/CCStdC.h"
-#endif // CC_TARGET_PLATFROM == CC_PLATFORM_ANDROID
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_BLACKBERRY)
+    #include "platform/blackberry/CCAccelerometer.h"
+    #include "platform/blackberry/CCApplication.h"
+    #include "platform/blackberry/CCEGLView.h"
+    #include "platform/blackberry/CCGL.h"
+    #include "platform/blackberry/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_BLACKBERRY
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-#include "platform/win32/CCAccelerometer.h"
-#include "platform/win32/CCApplication.h"
-#include "platform/win32/CCEGLView.h"
-#include "platform/win32/CCGL.h"
-#include "platform/win32/CCStdC.h"
-#endif // CC_TARGET_PLATFROM == CC_PLATFORM_WIN32
+	#include "platform/win32/CCAccelerometer.h"
+	#include "platform/win32/CCApplication.h"
+	#include "platform/win32/CCEGLView.h"
+	#include "platform/win32/CCGL.h"
+	#include "platform/win32/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+	#include "platform/mac/CCAccelerometer.h"
+	#include "platform/mac/CCApplication.h"
+	#include "platform/mac/CCEGLView.h"
+	#include "platform/mac/CCGL.h"
+	#include "platform/mac/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
+	#include "platform/linux/CCAccelerometer.h"
+	#include "platform/linux/CCApplication.h"
+	#include "platform/linux/CCEGLView.h"
+	#include "platform/linux/CCGL.h"
+	#include "platform/linux/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+
+// MARMALADE CHANGE
+// Added for Marmalade support
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MARMALADE)
+	#include "platform/Marmalade/CCAccelerometer.h"
+	#include "platform/Marmalade/CCApplication.h"
+	#include "platform/Marmalade/CCEGLView.h"
+	#include "platform/Marmalade/CCGL.h"
+	#include "platform/Marmalade/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
 
 
 // script_support
@@ -170,6 +208,7 @@ THE SOFTWARE.
 #include "sprite_nodes/CCSpriteFrameCache.h"
 
 // support
+#include "support/CCNotificationCenter.h"
 #include "support/CCPointExtension.h"
 #include "support/CCProfiling.h"
 #include "support/CCUserDefault.h"
@@ -186,13 +225,13 @@ THE SOFTWARE.
 #include "textures/CCTextureCache.h"
 #include "textures/CCTexturePVR.h"
 
-// tileMap_parallax_nodes
-#include "tileMap_parallax_nodes/CCParallaxNode.h"
-#include "tileMap_parallax_nodes/CCTMXLayer.h"
-#include "tileMap_parallax_nodes/CCTMXObjectGroup.h"
-#include "tileMap_parallax_nodes/CCTMXTiledMap.h"
-#include "tileMap_parallax_nodes/CCTMXXMLParser.h"
-#include "tileMap_parallax_nodes/CCTileMapAtlas.h"
+// tilemap_parallax_nodes
+#include "tilemap_parallax_nodes/CCParallaxNode.h"
+#include "tilemap_parallax_nodes/CCTMXLayer.h"
+#include "tilemap_parallax_nodes/CCTMXObjectGroup.h"
+#include "tilemap_parallax_nodes/CCTMXTiledMap.h"
+#include "tilemap_parallax_nodes/CCTMXXMLParser.h"
+#include "tilemap_parallax_nodes/CCTileMapAtlas.h"
 
 // touch_dispatcher
 #include "touch_dispatcher/CCTouch.h"
@@ -204,12 +243,11 @@ THE SOFTWARE.
 #include "CCCamera.h"
 #include "CCConfiguration.h"
 #include "CCDirector.h"
-#include "CCDrawingPrimitives.h"
 #include "CCScheduler.h"
 
 NS_CC_BEGIN
 
-const char* cocos2dVersion();
+CC_DLL const char* cocos2dVersion();
 
 NS_CC_END
 

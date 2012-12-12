@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2009      Sindesso Pty Ltd http://www.sindesso.com/
 
 http://www.cocos2d-x.org
@@ -38,11 +38,6 @@ CCTransitionPageTurn::CCTransitionPageTurn()
 
 CCTransitionPageTurn::~CCTransitionPageTurn()
 {
-}
-
-CCTransitionPageTurn * CCTransitionPageTurn::transitionWithDuration(float t, CCScene *scene, bool backwards)
-{
-    return CCTransitionPageTurn::create(t,scene,backwards);
 }
 
 /** creates a base transition with duration and incoming scene */

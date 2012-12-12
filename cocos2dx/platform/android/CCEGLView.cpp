@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include "ccMacros.h"
 #include "touch_dispatcher/CCTouchDispatcher.h"
 #include "jni/IMEJni.h"
-#include "jni/MessageJni.h"
+#include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 #include "CCGL.h"
 
 #include <stdlib.h>
@@ -36,10 +36,13 @@ THE SOFTWARE.
 
 
 #if CC_TEXTURE_ATLAS_USE_VAO
-  #include <EGL/egl.h>
-  PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT = 0;
-  PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT = 0;
-  PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT = 0;
+
+// <EGL/egl.h> exists since android 2.3
+#include <EGL/egl.h>
+PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOESEXT = 0;
+PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOESEXT = 0;
+PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOESEXT = 0;
+
 #endif
 
 void initExtensions() {
@@ -64,7 +67,7 @@ CCEGLView::~CCEGLView()
 
 bool CCEGLView::isOpenGLReady()
 {
-    return (m_sSizeInPixel.width != 0 && m_sSizeInPixel.height != 0);
+    return (m_obScreenSize.width != 0 && m_obScreenSize.height != 0);
 }
 
 void CCEGLView::end()
@@ -76,15 +79,14 @@ void CCEGLView::swapBuffers()
 {
 }
 
-CCEGLView& CCEGLView::sharedOpenGLView()
+CCEGLView* CCEGLView::sharedOpenGLView()
 {
     static CCEGLView instance;
-    return instance;
+    return &instance;
 }
 
 void CCEGLView::setIMEKeyboardState(bool bOpen)
 {
-
     setKeyboardStateJNI((int)bOpen);
 }
 

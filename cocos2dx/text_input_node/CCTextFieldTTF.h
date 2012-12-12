@@ -42,7 +42,7 @@ class CC_DLL CCTextFieldDelegate
 {
 public:
     /**
-    @brief    If the sender doesn't want to attach with IME, return true;
+    @brief    If the sender doesn't want to attach to the IME, return true;
     */
     virtual bool onTextFieldAttachWithIME(CCTextFieldTTF * sender)
     { 
@@ -51,7 +51,7 @@ public:
     }
 
     /**
-    @brief    If the sender doesn't want to detach with IME, return true;
+    @brief    If the sender doesn't want to detach from the IME, return true;
     */
     virtual bool onTextFieldDetachWithIME(CCTextFieldTTF * sender)
     {
@@ -82,7 +82,7 @@ public:
     }
 
     /**
-    @brief    If doesn't want draw sender as default, return true.
+    @brief    If the sender doesn't want to draw, return true.
     */
     virtual bool onDraw(CCTextFieldTTF * sender)
     {
@@ -117,7 +117,7 @@ public:
     virtual bool attachWithIME();
 
     /**
-    @brief    End text input  and close keyboard.
+    @brief    End text input and close keyboard.
     */
     virtual bool detachWithIME();
 
@@ -127,7 +127,8 @@ public:
     
     CC_SYNTHESIZE(CCTextFieldDelegate *, m_pDelegate, Delegate);
     CC_SYNTHESIZE_READONLY(int, m_nCharCount, CharCount);
-    CC_SYNTHESIZE_PASS_BY_REF(ccColor3B, m_ColorSpaceHolder, ColorSpaceHolder);
+    virtual ccColor3B getColorSpaceHolder();
+    virtual void setColorSpaceHolder(const ccColor3B& color);
 
     // input text property
 public:
@@ -143,6 +144,7 @@ public:
     virtual const char * getPlaceHolder(void);
 protected:
     std::string * m_pPlaceHolder;
+    ccColor3B m_ColorSpaceHolder;
 protected:
 
     virtual void draw();

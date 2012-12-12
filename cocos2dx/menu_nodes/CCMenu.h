@@ -51,7 +51,7 @@ enum {
 * 
 * Features and Limitation:
 *  - You can add MenuItem objects in runtime using addChild:
-*  - But the only accecpted children are MenuItem objects
+*  - But the only accepted children are MenuItem objects
 */
 class CC_DLL CCMenu : public CCLayer, public CCRGBAProtocol
 {
@@ -69,48 +69,26 @@ public:
     {}
     virtual ~CCMenu(){}
 
-    /** creates an empty CCMenu 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCMenu* node();
-
-    /** creates a CCMenu with it's items 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCMenu* menuWithItems(CCMenuItem* item, ...);
-
-    /** creates a CCMenu with a NSArray of CCMenuItem objects 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCMenu* menuWithArray(CCArray* pArrayOfItems);
-
-    /** creates a CCMenu with it's item, then use addChild() to add 
-      * other items. It is used for script, it can't init with undetermined
-      * number of variables.
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCMenu* menuWithItem(CCMenuItem* item);
-
     /** creates an empty CCMenu */
     static CCMenu* create();
 
-    /** creates a CCMenu with it's items */
+    /** creates a CCMenu with CCMenuItem objects */
     static CCMenu* create(CCMenuItem* item, ...);
 
     /** creates a CCMenu with a CCArray of CCMenuItem objects */
-    static CCMenu* create(CCArray* pArrayOfItems);
+    static CCMenu* createWithArray(CCArray* pArrayOfItems);
 
     /** creates a CCMenu with it's item, then use addChild() to add 
       * other items. It is used for script, it can't init with undetermined
       * number of variables.
     */
     static CCMenu* createWithItem(CCMenuItem* item);
+    
+    /** creates a CCMenu with CCMenuItem objects */
+    static CCMenu* createWithItems(CCMenuItem *firstItem, va_list args);
 
     /** initializes an empty CCMenu */
     bool init();
-
-    /** initializes a CCMenu with it's items */
-    bool initWithItems(CCMenuItem* item, va_list args);
 
     /** initializes a CCMenu with a NSArray of CCMenuItem objects */
     bool initWithArray(CCArray* pArrayOfItems);
@@ -132,10 +110,12 @@ public:
     /** align items in rows of columns */
     void alignItemsInColumns(unsigned int columns, ...);
     void alignItemsInColumns(unsigned int columns, va_list args);
+    void alignItemsInColumnsWithArray(CCArray* rows);
 
     /** align items in columns of rows */
     void alignItemsInRows(unsigned int rows, ...);
     void alignItemsInRows(unsigned int rows, va_list args);
+    void alignItemsInRowsWithArray(CCArray* columns);
 
     /** set event handler priority. By default it is: kCCMenuTouchPriority */
     void setHandlerPriority(int newPriority);

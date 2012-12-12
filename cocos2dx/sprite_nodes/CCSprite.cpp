@@ -32,13 +32,12 @@ THE SOFTWARE.
 #include "CCSpriteFrame.h"
 #include "CCSpriteFrameCache.h"
 #include "textures/CCTextureCache.h"
-#include "CCDrawingPrimitives.h"
+#include "draw_nodes/CCDrawingPrimitives.h"
 #include "shaders/CCShaderCache.h"
 #include "shaders/ccGLStateCache.h"
 #include "shaders/CCGLProgram.h"
 #include "CCDirector.h"
 #include "support/CCPointExtension.h"
-#include "CCDrawingPrimitives.h"
 #include "cocoa/CCGeometry.h"
 #include "textures/CCTexture2D.h"
 #include "cocoa/CCAffineTransform.h"
@@ -55,15 +54,10 @@ NS_CC_BEGIN
 #if CC_SPRITEBATCHNODE_RENDER_SUBPIXEL
 #define RENDER_IN_SUBPIXEL
 #else
-#define RENDER_IN_SUBPIXEL(__A__) ( (int)(__A__))
+#define RENDER_IN_SUBPIXEL(__ARGS__) (ceil(__ARGS__))
 #endif
 
-CCSprite* CCSprite::spriteWithTexture(CCTexture2D *pTexture)
-{
-    return CCSprite::create(pTexture);
-}
-
-CCSprite* CCSprite::create(CCTexture2D *pTexture)
+CCSprite* CCSprite::createWithTexture(CCTexture2D *pTexture)
 {
     CCSprite *pobSprite = new CCSprite();
     if (pobSprite && pobSprite->initWithTexture(pTexture))
@@ -75,12 +69,7 @@ CCSprite* CCSprite::create(CCTexture2D *pTexture)
     return NULL;
 }
 
-CCSprite* CCSprite::spriteWithTexture(CCTexture2D *pTexture, const CCRect& rect)
-{
-    return CCSprite::create(pTexture, rect);
-}
-
-CCSprite* CCSprite::create(CCTexture2D *pTexture, const CCRect& rect)
+CCSprite* CCSprite::createWithTexture(CCTexture2D *pTexture, const CCRect& rect)
 {
     CCSprite *pobSprite = new CCSprite();
     if (pobSprite && pobSprite->initWithTexture(pTexture, rect))
@@ -90,11 +79,6 @@ CCSprite* CCSprite::create(CCTexture2D *pTexture, const CCRect& rect)
     }
     CC_SAFE_DELETE(pobSprite);
     return NULL;
-}
-
-CCSprite* CCSprite::spriteWithFile(const char *pszFileName)
-{
-    return CCSprite::create(pszFileName);
 }
 
 CCSprite* CCSprite::create(const char *pszFileName)
@@ -109,11 +93,6 @@ CCSprite* CCSprite::create(const char *pszFileName)
     return NULL;
 }
 
-CCSprite* CCSprite::spriteWithFile(const char *pszFileName, const CCRect& rect)
-{
-    return CCSprite::create(pszFileName, rect);
-}
-
 CCSprite* CCSprite::create(const char *pszFileName, const CCRect& rect)
 {
     CCSprite *pobSprite = new CCSprite();
@@ -126,15 +105,10 @@ CCSprite* CCSprite::create(const char *pszFileName, const CCRect& rect)
     return NULL;
 }
 
-CCSprite* CCSprite::spriteWithSpriteFrame(CCSpriteFrame *pSpriteFrame)
-{
-    return CCSprite::create(pSpriteFrame);
-}
-
-CCSprite* CCSprite::create(CCSpriteFrame *pSpriteFrame)
+CCSprite* CCSprite::createWithSpriteFrame(CCSpriteFrame *pSpriteFrame)
 {
     CCSprite *pobSprite = new CCSprite();
-    if (pobSprite && pobSprite->initWithSpriteFrame(pSpriteFrame))
+    if (pSpriteFrame && pobSprite && pobSprite->initWithSpriteFrame(pSpriteFrame))
     {
         pobSprite->autorelease();
         return pobSprite;
@@ -143,24 +117,17 @@ CCSprite* CCSprite::create(CCSpriteFrame *pSpriteFrame)
     return NULL;
 }
 
-CCSprite* CCSprite::spriteWithSpriteFrameName(const char *pszSpriteFrameName)
-{
-    return CCSprite::createWithSpriteFrameName(pszSpriteFrameName);
-}
-
 CCSprite* CCSprite::createWithSpriteFrameName(const char *pszSpriteFrameName)
 {
     CCSpriteFrame *pFrame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(pszSpriteFrameName);
-
+    
+#if COCOS2D_DEBUG > 0
     char msg[256] = {0};
     sprintf(msg, "Invalid spriteFrameName: %s", pszSpriteFrameName);
     CCAssert(pFrame != NULL, msg);
-    return create(pFrame);
-}
-
-CCSprite* CCSprite::node()
-{
-    return CCSprite::create();
+#endif
+    
+    return createWithSpriteFrame(pFrame);
 }
 
 CCSprite* CCSprite::create()
@@ -300,7 +267,7 @@ bool CCSprite::initWithSpriteFrameName(const char *pszSpriteFrameName)
 CCSprite* CCSprite::initWithCGImage(CGImageRef pImage)
 {
     // todo
-    // because it is deprecated, so we do not impelment it
+    // because it is deprecated, so we do not implement it
 
     return NULL;
 }
@@ -314,7 +281,7 @@ CCSprite* CCSprite::initWithCGImage(CGImageRef pImage, const char *pszKey)
     // XXX: possible bug. See issue #349. New API should be added
     CCTexture2D *pTexture = CCTextureCache::sharedTextureCache()->addCGImage(pImage, pszKey);
 
-    const CCSize& size = pTexture->getContentSize();
+    CCSize size = pTexture->getContentSize();
     CCRect rect = CCRectMake(0 ,0, size.width, size.height);
 
     return initWithTexture(texture, rect);
@@ -358,8 +325,8 @@ void CCSprite::setTextureRect(const CCRect& rect, bool rotated, const CCSize& un
         relativeOffset.y = -relativeOffset.y;
     }
 
-    m_obOffsetPosition.x = relativeOffset.x + (m_tContentSize.width - m_obRect.size.width) / 2;
-    m_obOffsetPosition.y = relativeOffset.y + (m_tContentSize.height - m_obRect.size.height) / 2;
+    m_obOffsetPosition.x = relativeOffset.x + (m_obContentSize.width - m_obRect.size.width) / 2;
+    m_obOffsetPosition.y = relativeOffset.y + (m_obContentSize.height - m_obRect.size.height) / 2;
 
     // rendering using batch node
     if (m_pobBatchNode)
@@ -478,11 +445,11 @@ void CCSprite::updateTransform(void)
 {
     CCAssert(m_pobBatchNode, "updateTransform is only valid when CCSprite is being rendered using an CCSpriteBatchNode");
 
-    // recaculate matrix only if it is dirty
+    // recalculate matrix only if it is dirty
     if( isDirty() ) {
 
         // If it is not visible, or one of its ancestors is not visible, then do nothing:
-        if( !m_bIsVisible || ( m_pParent && m_pParent != m_pobBatchNode && ((CCSprite*)m_pParent)->m_bShouldBeHidden) )
+        if( !m_bVisible || ( m_pParent && m_pParent != m_pobBatchNode && ((CCSprite*)m_pParent)->m_bShouldBeHidden) )
         {
             m_sQuad.br.vertices = m_sQuad.tl.vertices = m_sQuad.tr.vertices = m_sQuad.bl.vertices = vertex3(0,0,0);
             m_bShouldBeHidden = true;
@@ -537,16 +504,26 @@ void CCSprite::updateTransform(void)
             m_sQuad.tr.vertices = vertex3( RENDER_IN_SUBPIXEL(cx), RENDER_IN_SUBPIXEL(cy), m_fVertexZ );
         }
 
-        m_pobTextureAtlas->updateQuad(&m_sQuad, m_uAtlasIndex);
+        // MARMALADE CHANGE: ADDED CHECK FOR NULL, TO PERMIT SPRITES WITH NO BATCH NODE / TEXTURE ATLAS
+        if (m_pobTextureAtlas)
+		{
+            m_pobTextureAtlas->updateQuad(&m_sQuad, m_uAtlasIndex);
+        }
+		
         m_bRecursiveDirty = false;
         setDirty(false);
     }
 
+    // MARMALADE CHANGED
     // recursively iterate over children
-    if( m_bHasChildren ) 
+/*    if( m_bHasChildren ) 
     {
+        // MARMALADE: CHANGED TO USE CCNode*
+        // NOTE THAT WE HAVE ALSO DEFINED virtual CCNode::updateTransform()
         arrayMakeObjectsPerformSelector(m_pChildren, updateTransform, CCSprite*);
-    }
+    }*/
+    CCNode::updateTransform();
+
 #if CC_SPRITE_DEBUG_DRAW
     // draw bounding box
     CCPoint vertices[4] = {
@@ -810,6 +787,18 @@ void CCSprite::setRotation(float fRotation)
     SET_DIRTY_RECURSIVELY();
 }
 
+void CCSprite::setRotationX(float fRotationX)
+{
+    CCNode::setRotationX(fRotationX);
+    SET_DIRTY_RECURSIVELY();
+}
+
+void CCSprite::setRotationY(float fRotationY)
+{
+    CCNode::setRotationY(fRotationY);
+    SET_DIRTY_RECURSIVELY();
+}
+
 void CCSprite::setSkewX(float sx)
 {
     CCNode::setSkewX(sx);
@@ -869,7 +858,7 @@ void CCSprite::setFlipX(bool bFlipX)
     if (m_bFlipX != bFlipX)
     {
         m_bFlipX = bFlipX;
-        setTextureRect(m_obRect, m_bRectRotated, m_tContentSize);
+        setTextureRect(m_obRect, m_bRectRotated, m_obContentSize);
     }
 }
 
@@ -883,7 +872,7 @@ void CCSprite::setFlipY(bool bFlipY)
     if (m_bFlipY != bFlipY)
     {
         m_bFlipY = bFlipY;
-        setTextureRect(m_obRect, m_bRectRotated, m_tContentSize);
+        setTextureRect(m_obRect, m_bRectRotated, m_obContentSize);
     }
 }
 
@@ -942,7 +931,7 @@ void CCSprite::setOpacity(GLubyte opacity)
     updateColor();
 }
 
-const ccColor3B& CCSprite::getColor(void)
+ccColor3B CCSprite::getColor(void)
 {
     if (m_bOpacityModifyRGB)
     {
@@ -1015,19 +1004,18 @@ bool CCSprite::isFrameDisplayed(CCSpriteFrame *pFrame)
 {
     CCRect r = pFrame->getRect();
 
-    return (CCRect::CCRectEqualToRect(r, m_obRect) &&
-        pFrame->getTexture()->getName() == m_pobTexture->getName() &&
-        CCPoint::CCPointEqualToPoint( pFrame->getOffset(), m_obUnflippedOffsetPositionFromCenter ) 
-        );
+    return (r.equals(m_obRect) &&
+            pFrame->getTexture()->getName() == m_pobTexture->getName() &&
+            pFrame->getOffset().equals(m_obUnflippedOffsetPositionFromCenter));
 }
 
 CCSpriteFrame* CCSprite::displayFrame(void)
 {
-    return CCSpriteFrame::create(m_pobTexture,
+    return CCSpriteFrame::createWithTexture(m_pobTexture,
                                            CC_RECT_POINTS_TO_PIXELS(m_obRect),
                                            m_bRectRotated,
-                                           m_obUnflippedOffsetPositionFromCenter,
-                                           CC_SIZE_POINTS_TO_PIXELS(m_tContentSize));
+                                           CC_POINT_POINTS_TO_PIXELS(m_obUnflippedOffsetPositionFromCenter),
+                                           CC_SIZE_POINTS_TO_PIXELS(m_obContentSize));
 }
 
 CCSpriteBatchNode* CCSprite::getBatchNode(void)

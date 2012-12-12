@@ -32,7 +32,8 @@ NS_CC_BEGIN
 
 CCEGLView::CCEGLView()
 {
-
+    m_obScreenSize.width = m_obDesignResolutionSize.width = [[EAGLView sharedEGLView] getWidth];
+    m_obScreenSize.height = m_obDesignResolutionSize.height = [[EAGLView sharedEGLView] getHeight];
 }
 
 CCEGLView::~CCEGLView()
@@ -40,33 +41,19 @@ CCEGLView::~CCEGLView()
 
 }
 
-CCSize CCEGLView::getSize()
-{
-    cocos2d::CCSize size([[EAGLView sharedEGLView] getWidth], [[EAGLView sharedEGLView] getHeight]);
-
-    return size;
-}
-
-bool CCEGLView::isIpad()
-{
-    return UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
-}
-
 bool CCEGLView::isOpenGLReady()
 {
     return [EAGLView sharedEGLView] != NULL;
 }
     
-bool CCEGLView::canSetContentScaleFactor()
+bool CCEGLView::setContentScaleFactor(float contentScaleFactor)
 {
-   return [[EAGLView sharedEGLView] respondsToSelector:@selector(setContentScaleFactor:)];
-}
-    
-void CCEGLView::setContentScaleFactor(float contentScaleFactor)
-{
-    UIView * view = [EAGLView sharedEGLView];
-    view.contentScaleFactor = contentScaleFactor;
-    [view setNeedsLayout];
+    assert(m_eResolutionPolicy == kResolutionUnKnown); // cannot enable retina mode
+	
+	m_fScaleX = m_fScaleY = contentScaleFactor;
+	[[EAGLView sharedEGLView] setNeedsLayout];
+        
+	return true;
 }
 
 void CCEGLView::end()
@@ -83,12 +70,6 @@ void CCEGLView::swapBuffers()
     [[EAGLView sharedEGLView] swapBuffers];
 }
 
-CCSize  CCEGLView::getFrameSize()
-{
-    assert(false);
-	return CCSizeMake(0, 0);
-}
-
 void CCEGLView::setIMEKeyboardState(bool bOpen)
 {
     if (bOpen)
@@ -101,15 +82,10 @@ void CCEGLView::setIMEKeyboardState(bool bOpen)
     }
 }
 
-CCEGLView& CCEGLView::sharedOpenGLView()
+CCEGLView* CCEGLView::sharedOpenGLView()
 {
     static CCEGLView instance;
-    return instance;
-}
-
-float CCEGLView::getMainScreenScale()
-{
-    return [[UIScreen mainScreen] scale];
+    return &instance;
 }
 
 NS_CC_END

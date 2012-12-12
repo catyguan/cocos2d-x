@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
  
@@ -48,11 +48,6 @@ CCAction::~CCAction()
     CCLOGINFO("cocos2d: deallocing");
 }
 
-CCAction * CCAction::action()
-{
-    return CCAction::create();
-}
-
 CCAction* CCAction::create()
 {
     CCAction * pRet = new CCAction();
@@ -76,7 +71,7 @@ CCObject* CCAction::copyWithZone(CCZone *pZone)
     else
     {
         pRet = new CCAction();
-        pZone = pNewZone = new CCZone(pRet);
+        pNewZone = new CCZone(pRet);
     }
     //copy member data
     pRet->m_nTag = m_nTag;
@@ -127,11 +122,6 @@ CCFiniteTimeAction *CCFiniteTimeAction::reverse()
 CCSpeed::~CCSpeed()
 {
     CC_SAFE_RELEASE(m_pInnerAction);
-}
-
-CCSpeed * CCSpeed::actionWithAction(CCActionInterval *pAction, float fSpeed)
-{
-    return CCSpeed::create(pAction, fSpeed);
 }
 
 CCSpeed* CCSpeed::create(CCActionInterval* pAction, float fSpeed)
@@ -221,11 +211,6 @@ CCFollow::~CCFollow()
     CC_SAFE_RELEASE(m_pobFollowedNode);
 }
 
-CCFollow *CCFollow::actionWithTarget(CCNode *pFollowedNode, const CCRect& rect/* = CCRectZero*/)
-{
-    return CCFollow::create(pFollowedNode, rect);
-}
-
 CCFollow* CCFollow::create(CCNode *pFollowedNode, const CCRect& rect/* = CCRectZero*/)
 {
     CCFollow *pRet = new CCFollow();
@@ -244,7 +229,7 @@ bool CCFollow::initWithTarget(CCNode *pFollowedNode, const CCRect& rect/* = CCRe
  
     pFollowedNode->retain();
     m_pobFollowedNode = pFollowedNode;
-    if (CCRect::CCRectEqualToRect(rect, CCRectZero))
+    if (rect.equals(CCRectZero))
     {
         m_bBoundarySet = false;
     }

@@ -67,20 +67,14 @@ public:
     virtual ~CCParticleSystemQuad();
 
     /** creates an initializes a CCParticleSystemQuad from a plist file.
-    This plist files can be creted manually or with Particle Designer:  
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCParticleSystemQuad * particleWithFile(const char *plistFile);
-
-    /** creates an initializes a CCParticleSystemQuad from a plist file.
-    This plist files can be creted manually or with Particle Designer:  
+    This plist files can be created manually or with Particle Designer:  
     */
     static CCParticleSystemQuad * create(const char *plistFile);
 
-    /** initialices the indices for the vertices*/
+    /** initializes the indices for the vertices*/
     void setupIndices();
 
-    /** initilizes the texture with a rectangle measured Points */
+    /** initializes the texture with a rectangle measured Points */
     void initTexCoordsWithRect(const CCRect& rect);
 
     /** Sets a new CCSpriteFrame as particle.
@@ -106,10 +100,8 @@ public:
      */
     void listenBackToForeground(CCObject *obj);
 
-    //@deprecated: This interface will be deprecated sooner or later.
-    CC_DEPRECATED_ATTRIBUTE static CCParticleSystemQuad * node();
-
     static CCParticleSystemQuad * create();
+    static CCParticleSystemQuad * createWithTotalParticles(unsigned int numberOfParticles);
 private:
 #if CC_TEXTURE_ATLAS_USE_VAO
     void setupVBOandVAO();

@@ -42,9 +42,17 @@ public:
         : m_nId(0)
     {}
 
-    CCPoint locationInView() { return m_point; }
-    CCPoint previousLocationInView() { return m_prevPoint; }
-
+    /** returns the current touch location in OpenGL coordinates */
+    CCPoint getLocation() const;
+    /** returns the previous touch location in OpenGL coordinates */
+    CCPoint getPreviousLocation() const;
+    /** returns the delta of 2 current touches locations in screen coordinates */
+    CCPoint getDelta() const;
+    /** returns the current touch location in screen coordinates */
+    CCPoint getLocationInView() const;
+    /** returns the previous touch location in screen coordinates */
+    CCPoint getPreviousLocationInView() const;
+    
     void setTouchInfo(int id, float x, float y)
     {
         m_nId = id;

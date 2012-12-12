@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (C) 2010      Lam Pham
  
 http://www.cocos2d-x.org
@@ -31,11 +31,6 @@ NS_CC_BEGIN
 #define kProgressTimerCast CCProgressTimer*
 
 // implementation of CCProgressTo
-
-CCProgressTo* CCProgressTo::actionWithDuration(float duration, float fPercent)
-{
-    return CCProgressTo::create(duration, fPercent);
-}
 
 CCProgressTo* CCProgressTo::create(float duration, float fPercent)
 {
@@ -100,11 +95,6 @@ void CCProgressTo::update(float time)
 }
 
 // implementation of CCProgressFromTo
-
-CCProgressFromTo* CCProgressFromTo::actionWithDuration(float duration, float fFromPercentage, float fToPercentage)
-{
-    return CCProgressFromTo::create(duration, fFromPercentage, fToPercentage);
-}
 
 CCProgressFromTo* CCProgressFromTo::create(float duration, float fFromPercentage, float fToPercentage)
 {

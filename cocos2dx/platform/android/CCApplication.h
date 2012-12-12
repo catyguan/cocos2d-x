@@ -15,8 +15,8 @@ public:
     virtual ~CCApplication();
 
     /**
-    @brief    Callback by CCDirector for limit FPS.
-    @interval       The time, which expressed in second in second, between current frame and next. 
+    @brief    Callback by CCDirector to limit FPS.
+    @interval       The time, expressed in seconds, between current frame and next. 
     */
     void setAnimationInterval(double interval);
 
@@ -33,8 +33,8 @@ public:
     } Orientation;
 
     /**
-    @brief    Callback by CCDirector for change device orientation.
-    @orientation    The defination of orientation which CCDirector want change to.
+    @brief    Callback by CCDirector to change device orientation.
+    @orientation    The desired orientation.
     @return         The actual orientation of the application.
     */
     Orientation setOrientation(Orientation orientation);
@@ -45,16 +45,21 @@ public:
     int run();
 
     /**
-    @brief    Get current applicaiton instance.
+    @brief    Get current application instance.
     @return Current application instance pointer.
     */
-    static CCApplication& sharedApplication();
+    static CCApplication* sharedApplication();
 
     /**
     @brief Get current language config
     @return Current language config
     */
     virtual ccLanguageType getCurrentLanguage();
+    
+    /**
+     @brief Get target platform
+     */
+    virtual TargetPlatform getTargetPlatform();
 
 protected:
     static CCApplication * sm_pSharedApplication;

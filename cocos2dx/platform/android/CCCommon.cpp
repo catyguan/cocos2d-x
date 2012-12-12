@@ -23,7 +23,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "platform/CCCommon.h"
-#include "jni/MessageJni.h"
+#include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 #include <android/log.h>
 #include <stdio.h>
 #include <jni.h>
@@ -38,7 +38,7 @@ void CCLog(const char * pszFormat, ...)
 
     va_list args;
     va_start(args, pszFormat);        
-    vsprintf(buf, pszFormat, args);
+    vsnprintf(buf, MAX_LEN, pszFormat, args);
     va_end(args);
 
     __android_log_print(ANDROID_LOG_DEBUG, "cocos2d-x debug info",  buf);
@@ -46,7 +46,7 @@ void CCLog(const char * pszFormat, ...)
 
 void CCMessageBox(const char * pszMsg, const char * pszTitle)
 {
-    showMessageBoxJNI(pszMsg, pszTitle);
+    showDialogJNI(pszMsg, pszTitle);
 }
 
 void CCLuaLog(const char * pszFormat)

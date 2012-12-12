@@ -26,10 +26,7 @@ THE SOFTWARE.
 #define __CC_PLATFORM_CONFIG_H__
 
 /**
-Config of cocos2d-x project.
-
-There are config below:
-build for which target platform
+Config of cocos2d-x project, per target platform.
 */
 
 //////////////////////////////////////////////////////////////////////////
@@ -44,53 +41,61 @@ build for which target platform
 #define CC_PLATFORM_MARMALADE          4
 #define CC_PLATFORM_LINUX              5
 #define CC_PLATFORM_BADA               6
-#define CC_PLATFORM_QNX                   7
+#define CC_PLATFORM_BLACKBERRY         7
+#define CC_PLATFORM_MAC                8
 
-// Determine tartet platform by compile environment macro.
+// Determine target platform by compile environment macro.
 #define CC_TARGET_PLATFORM             CC_PLATFORM_UNKNOWN
 
+// mac
+#if defined(CC_TARGET_OS_MAC)
+#undef  CC_TARGET_PLATFORM
+#define CC_TARGET_PLATFORM         CC_PLATFORM_MAC
+#endif
+
 // iphone
-#if ! CC_TARGET_PLATFORM && (defined(TARGET_OS_IPHONE) || defined(TARGET_IPHONE_SIMULATOR))
+#if defined(CC_TARGET_OS_IPHONE)
     #undef  CC_TARGET_PLATFORM
     #define CC_TARGET_PLATFORM         CC_PLATFORM_IOS
     #define CC_SUPPORT_PVRTC
 #endif
 
 // android
-#if ! CC_TARGET_PLATFORM && defined(ANDROID)
+#if defined(ANDROID)
     #undef  CC_TARGET_PLATFORM
     #define CC_TARGET_PLATFORM         CC_PLATFORM_ANDROID
 #endif
 
 // win32
-#if ! CC_TARGET_PLATFORM && (defined(WIN32) && defined(_WINDOWS))
+#if defined(WIN32) && defined(_WINDOWS)
     #undef  CC_TARGET_PLATFORM
     #define CC_TARGET_PLATFORM         CC_PLATFORM_WIN32
 #endif
 
 // linux
-#if ! CC_TARGET_PLATFORM && defined(LINUX)
+#if defined(LINUX)
     #undef  CC_TARGET_PLATFORM
     #define CC_TARGET_PLATFORM         CC_PLATFORM_LINUX
 #endif
 
 // marmalade
-#if ! CC_TARGET_PLATFORM && defined(MARMALADE)
+#if defined(MARMALADE)
 #undef  CC_TARGET_PLATFORM
 #define CC_TARGET_PLATFORM         CC_PLATFORM_MARMALADE
 #endif
 
 // bada
-#if ! CC_TARGET_PLATFORM && defined(SHP)
+#if defined(SHP)
 #undef  CC_TARGET_PLATFORM
 #define CC_TARGET_PLATFORM         CC_PLATFORM_BADA
 #endif
 
 // qnx
-#if ! CC_TARGET_PLATFORM && defined(__QNX__)
+#if defined(__QNX__)
     #undef  CC_TARGET_PLATFORM
-    #define CC_TARGET_PLATFORM     CC_PLATFORM_QNX
+    #define CC_TARGET_PLATFORM     CC_PLATFORM_BLACKBERRY
 #endif
+
 
 //////////////////////////////////////////////////////////////////////////
 // post configure
@@ -98,10 +103,9 @@ build for which target platform
 
 // check user set platform
 #if ! CC_TARGET_PLATFORM
-    #error  "Can not recognize the target platform, compling under a unsupported platform?"
+    #error  "Cannot recognize the target platform; are you targeting an unsupported platform?"
 #endif 
 
-// Check the supportive of platform
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
 #pragma warning (disable:4127)  
 #endif  // CC_PLATFORM_WIN32

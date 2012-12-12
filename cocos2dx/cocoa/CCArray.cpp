@@ -40,11 +40,6 @@ CCArray::CCArray(unsigned int capacity)
     initWithCapacity(capacity);
 }
 
-CCArray* CCArray::array()
-{
-    return CCArray::create();
-}
-
 CCArray* CCArray::create()
 {
     CCArray* pArray = new CCArray();
@@ -61,11 +56,6 @@ CCArray* CCArray::create()
     return pArray;
 }
 
-CCArray* CCArray::arrayWithObject(CCObject* pObject)
-{
-    return CCArray::createWithObject(pObject);
-}
-
 CCArray* CCArray::createWithObject(CCObject* pObject)
 {
     CCArray* pArray = new CCArray();
@@ -79,32 +69,6 @@ CCArray* CCArray::createWithObject(CCObject* pObject)
         CC_SAFE_DELETE(pArray);
     }
 
-    return pArray;
-}
-
-CCArray* CCArray::arrayWithObjects(CCObject* pObject, ...)
-{
-    va_list args;
-    va_start(args,pObject);
-    
-    CCArray* pArray = create();
-    if (pArray && pObject)
-    {
-        pArray->addObject(pObject);
-        CCObject *i = va_arg(args, CCObject*);
-        while(i) 
-        {
-            pArray->addObject(i);
-            i = va_arg(args, CCObject*);
-        }
-    }
-    else
-    {
-        CC_SAFE_DELETE(pArray);
-    }
-
-    va_end(args);
-    
     return pArray;
 }
 
@@ -134,15 +98,17 @@ CCArray* CCArray::create(CCObject* pObject, ...)
     return pArray;
 }
 
-CCArray* CCArray::arrayWithCapacity(unsigned int capacity)
+CCArray* CCArray::createWithArray(CCArray* otherArray)
 {
-    return CCArray::create(capacity);
+    CCArray* pRet = (CCArray*)otherArray->copy();
+    pRet->autorelease();
+    return pRet;
 }
 
-CCArray* CCArray::create(unsigned int capacity)
+CCArray* CCArray::createWithCapacity(unsigned int capacity)
 {
     CCArray* pArray = new CCArray();
-
+    
     if (pArray && pArray->initWithCapacity(capacity))
     {
         pArray->autorelease();
@@ -151,28 +117,11 @@ CCArray* CCArray::create(unsigned int capacity)
     {
         CC_SAFE_DELETE(pArray);
     }
-
+    
     return pArray;
 }
 
-CCArray* CCArray::arrayWithArray(CCArray* otherArray)
-{
-    return CCArray::create(otherArray);
-}
-
-CCArray* CCArray::create(CCArray* otherArray)
-{
-    CCArray* pRet = (CCArray*)otherArray->copy();
-    pRet->autorelease();
-    return pRet;
-}
-
-CCArray* CCArray::arrayWithContentsOfFile(const char* pFileName)
-{
-    return CCArray::create(pFileName);
-}
-
-CCArray* CCArray::create(const char* pFileName)
+CCArray* CCArray::createWithContentsOfFile(const char* pFileName)
 {
     CCArray* pRet = CCArray::createWithContentsOfFileThreadSafe(pFileName);
     if (pRet != NULL)
@@ -183,11 +132,6 @@ CCArray* CCArray::create(const char* pFileName)
 }
 
 extern CCArray* ccFileUtils_arrayWithContentsOfFileThreadSafe(const char* pFileName);
-
-CCArray* CCArray::arrayWithContentsOfFileThreadSafe(const char* pFileName)
-{
-    return CCArray::createWithContentsOfFileThreadSafe(pFileName);
-}
 
 CCArray* CCArray::createWithContentsOfFileThreadSafe(const char* pFileName)
 {
@@ -299,9 +243,19 @@ CCObject* CCArray::lastObject()
 
 CCObject* CCArray::randomObject()
 {
-    if(data->num==0) return NULL;
+    if (data->num==0)
+    {
+        return NULL;
+    }
 
-    return data->arr[(int)(data->num*CCRANDOM_0_1())];
+    float r = CCRANDOM_0_1();
+    
+    if (r == 1) // to prevent from accessing data-arr[data->num], out of range.
+    {
+        r = 0;
+    }
+    
+    return data->arr[(int)(data->num * r)];
 }
 
 bool CCArray::containsObject(CCObject* object)
@@ -404,7 +358,7 @@ void CCArray::reverseObjects()
 {
     if (data->num > 1)
     {
-        //floor it since in case of a oneven number the number of swaps stays the same
+        // floorf(), since in the case of an even number, the number of swaps stays the same
         int count = (int) floorf(data->num/2.f); 
         unsigned int maxIndex = data->num - 1;
 

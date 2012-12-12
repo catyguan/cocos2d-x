@@ -24,11 +24,9 @@ THE SOFTWARE.
 #define __CC_PLATFORM_FILEUTILS_CPP__
 #include "platform/CCFileUtilsCommon_cpp.h"
 #include <windows.h>
+#include <Shlobj.h>
 #include "CCDirector.h"
-
-#define CC_RETINA_DISPLAY_FILENAME_SUFFIX "-hd"
-#define CC_IPAD_FILENAME_SUFFIX "-ipad"
-#define CC_IPAD_DISPLAY_RETINA_SUPPFIX "-ipadhd"
+#include "CCApplication.h"
 
 using namespace std;
 
@@ -41,9 +39,9 @@ static void _CheckPath()
 {
     if (! s_pszResourcePath[0])
     {
-        WCHAR  wszPath[MAX_PATH];
-        int nNum = WideCharToMultiByte(CP_ACP, 0, wszPath, 
-            GetCurrentDirectoryW(sizeof(wszPath), wszPath), 
+        WCHAR  wszPath[MAX_PATH] = {0};
+        int nNum = WideCharToMultiByte(CP_ACP, 0, wszPath,
+            GetCurrentDirectoryW(sizeof(wszPath), wszPath),
             s_pszResourcePath, MAX_PATH, NULL, NULL);
         s_pszResourcePath[nNum] = '\\';
     }
@@ -56,6 +54,7 @@ CCFileUtils* CCFileUtils::sharedFileUtils()
     if (s_pFileUtils == NULL)
     {
         s_pFileUtils = new CCFileUtils();
+        _CheckPath();
     }
     return s_pFileUtils;
 }
@@ -66,7 +65,7 @@ void CCFileUtils::purgeFileUtils()
     {
         s_pFileUtils->purgeCachedEntries();
     }
-    
+
     CC_SAFE_DELETE(s_pFileUtils);
 }
 
@@ -75,26 +74,19 @@ void CCFileUtils::purgeCachedEntries()
 
 }
 
-void CCFileUtils::setResourcePath(const char *pszResourcePath)
+const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath)
 {
-    CCAssert(pszResourcePath != NULL, "[FileUtils setResourcePath] -- wrong resource path");
-    CCAssert(strlen(pszResourcePath) <= MAX_PATH, "[FileUtils setResourcePath] -- resource path too long");
+    bool bFileExist = true;
+    const char* resDir = m_obDirectory.c_str();
+    CCString* pRet = CCString::create("");
 
-    strcpy(s_pszResourcePath, pszResourcePath);
-}
-
-const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath, ccResolutionType *pResolutionType)
-{
-    _CheckPath();
-
-    CCString * pRet = new CCString();
-    pRet->autorelease();
+    const std::string& resourceRootPath = CCApplication::sharedApplication()->getResourceRootPath();
     if ((strlen(pszRelativePath) > 1 && pszRelativePath[1] == ':'))
     {
         // path start with "x:", is absolute path
         pRet->m_sString = pszRelativePath;
     }
-    else if (strlen(pszRelativePath) > 0 
+    else if (strlen(pszRelativePath) > 0
         && ('/' == pszRelativePath[0] || '\\' == pszRelativePath[0]))
     {
         // path start with '/' or '\', is absolute path without driver name
@@ -102,77 +94,34 @@ const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath, c
         pRet->m_sString = szDriver;
         pRet->m_sString += pszRelativePath;
     }
+    else if (resourceRootPath.length() > 0)
+    {
+        pRet->m_sString = resourceRootPath.c_str();
+        pRet->m_sString += m_obDirectory.c_str();
+        pRet->m_sString += pszRelativePath;
+    }
     else
     {
         pRet->m_sString = s_pszResourcePath;
+        pRet->m_sString += resDir;
         pRet->m_sString += pszRelativePath;
     }
 
-    // is ipad?
-    CCSize winSize = CCDirector::sharedDirector()->getWinSize();
-    bool isIpad = (winSize.width == 1024 || winSize.height == 768);
-
-    std::string hiRes = pRet->m_sString.c_str();
-    std::string::size_type pos = hiRes.find_last_of("/\\");
-    std::string::size_type dotPos = hiRes.find_last_of(".");
-    *pResolutionType = kCCResolutioniPhone;
-
-    if (isIpad)
+    // If file or directory doesn't exist, try to find it in the root path.
+    if (GetFileAttributesA(pRet->m_sString.c_str()) == -1)
     {
-        if (CC_CONTENT_SCALE_FACTOR() == 1.0f)
-        {
-            // ipad
+        pRet->m_sString = s_pszResourcePath;
+        pRet->m_sString += pszRelativePath;
 
-            if (std::string::npos != dotPos && dotPos > pos)
-            {
-                hiRes.insert(dotPos, CC_IPAD_FILENAME_SUFFIX);
-            }
-            else
-            {
-                hiRes.append(CC_IPAD_FILENAME_SUFFIX);
-            }
-            
-            *pResolutionType = kCCResolutioniPad;
-        }
-        else
+        if (GetFileAttributesA(pRet->m_sString.c_str()) == -1)
         {
-            // ipad retina
-
-            if (std::string::npos != dotPos && dotPos > pos)
-            {
-                hiRes.insert(dotPos, CC_IPAD_DISPLAY_RETINA_SUPPFIX);
-            }
-            else
-            {
-                hiRes.append(CC_IPAD_DISPLAY_RETINA_SUPPFIX);
-            }
-            
-            *pResolutionType = kCCResolutioniPadRetinaDisplay;
+            bFileExist = false;
         }
     }
-    else
-    {    
-        if (CC_CONTENT_SCALE_FACTOR() != 1.0f)
-        {
-            // iphone retina
 
-            if (std::string::npos != dotPos && dotPos > pos)
-            {
-                hiRes.insert(dotPos, CC_RETINA_DISPLAY_FILENAME_SUFFIX);
-            }
-            else
-            {
-                hiRes.append(CC_RETINA_DISPLAY_FILENAME_SUFFIX);
-            }
-            
-            *pResolutionType = kCCResolutioniPhoneRetinaDisplay;
-        }
-    }  
-
-    DWORD attrib = GetFileAttributesA(hiRes.c_str());
-    if (attrib != INVALID_FILE_ATTRIBUTES && ! (FILE_ATTRIBUTE_DIRECTORY & attrib))
-    {
-        pRet->m_sString.swap(hiRes);
+    if (!bFileExist)
+    { // Can't find the file, return the relative path.
+        pRet->m_sString = pszRelativePath;
     }
 
     return pRet->m_sString.c_str();
@@ -180,11 +129,9 @@ const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath, c
 
 const char *CCFileUtils::fullPathFromRelativeFile(const char *pszFilename, const char *pszRelativeFile)
 {
-    _CheckPath();
     // std::string relativeFile = fullPathFromRelativePath(pszRelativeFile);
     std::string relativeFile = pszRelativeFile;
-    CCString *pRet = new CCString();
-    pRet->autorelease();
+    CCString *pRet = CCString::create("");
     pRet->m_sString = relativeFile.substr(0, relativeFile.find_last_of("/\\") + 1);
     pRet->m_sString += pszFilename;
     return pRet->m_sString.c_str();
@@ -195,7 +142,7 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
     unsigned char* pBuffer = NULL;
     CCAssert(pszFileName != NULL && pSize != NULL && pszMode != NULL, "Invaild parameters.");
     *pSize = 0;
-    do 
+    do
     {
         // read the file from hardware
         FILE *fp = fopen(pszFileName, pszMode);
@@ -222,17 +169,48 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
 
 string CCFileUtils::getWriteablePath()
 {
-    // return the path that the exe file saved in
+	// Get full path of executable, e.g. c:\Program Files (x86)\My Game Folder\MyGame.exe
+	char full_path[_MAX_PATH + 1];
+	::GetModuleFileNameA(NULL, full_path, _MAX_PATH + 1);
 
-    char full_path[_MAX_PATH + 1];
-    ::GetModuleFileNameA(NULL, full_path, _MAX_PATH + 1);
+	// Debug app uses executable directory; Non-debug app uses local app data directory
+#ifndef _DEBUG
+		// Get filename of executable only, e.g. MyGame.exe
+		char *base_name = strrchr(full_path, '\\');
 
-    string ret((char*)full_path);
+		if(base_name)
+		{
+			char app_data_path[_MAX_PATH + 1];
 
-    // remove xxx.exe
-    ret =  ret.substr(0, ret.rfind("\\") + 1);
+			// Get local app data directory, e.g. C:\Documents and Settings\username\Local Settings\Application Data
+			if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, app_data_path)))
+			{
+				string ret((char*)app_data_path);
 
-    return ret;
+				// Adding executable filename, e.g. C:\Documents and Settings\username\Local Settings\Application Data\MyGame.exe
+				ret += base_name;
+
+				// Remove ".exe" extension, e.g. C:\Documents and Settings\username\Local Settings\Application Data\MyGame
+				ret = ret.substr(0, ret.rfind("."));
+
+				ret += "\\";
+
+				// Create directory
+				if (SUCCEEDED(SHCreateDirectoryExA(NULL, ret.c_str(), NULL)))
+				{
+					return ret;
+				}
+			}
+		}
+#endif // not defined _DEBUG
+
+	// If fetching of local app data directory fails, use the executable one
+	string ret((char*)full_path);
+
+	// remove xxx.exe
+	ret =  ret.substr(0, ret.rfind("\\") + 1);
+
+	return ret;
 }
 
 NS_CC_END

@@ -36,13 +36,11 @@ THE SOFTWARE.
 #include <string>
 #include <ctype.h>
 
-#if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS) 
-
 NS_CC_BEGIN
 
 // premultiply alpha, or the effect will wrong when want to use other pixel format in CCTexture2D,
 // such as RGB888, RGB5A1
-#define CC_RGB_PREMULTIPLY_APLHA(vr, vg, vb, va) \
+#define CC_RGB_PREMULTIPLY_ALPHA(vr, vg, vb, va) \
     (unsigned)(((unsigned)((unsigned char)(vr) * ((unsigned char)(va) + 1)) >> 8) | \
     ((unsigned)((unsigned char)(vg) * ((unsigned char)(va) + 1) >> 8) << 8) | \
     ((unsigned)((unsigned char)(vb) * ((unsigned char)(va) + 1) >> 8) << 16) | \
@@ -73,7 +71,7 @@ static void pngReadCallback(png_structp png_ptr, png_bytep data, png_size_t leng
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Impliment CCImage
+// Implement CCImage
 //////////////////////////////////////////////////////////////////////////
 
 CCImage::CCImage()
@@ -199,11 +197,64 @@ bool CCImage::initWithImageData(void * pData,
     return bRet;
 }
 
+/*
+ * ERROR HANDLING:
+ *
+ * The JPEG library's standard error handler (jerror.c) is divided into
+ * several "methods" which you can override individually.  This lets you
+ * adjust the behavior without duplicating a lot of code, which you might
+ * have to update with each future release.
+ *
+ * We override the "error_exit" method so that control is returned to the
+ * library's caller when a fatal error occurs, rather than calling exit()
+ * as the standard error_exit method does.
+ *
+ * We use C's setjmp/longjmp facility to return control.  This means that the
+ * routine which calls the JPEG library must first execute a setjmp() call to
+ * establish the return point.  We want the replacement error_exit to do a
+ * longjmp().  But we need to make the setjmp buffer accessible to the
+ * error_exit routine.  To do this, we make a private extension of the
+ * standard JPEG error handler object.  (If we were using C++, we'd say we
+ * were making a subclass of the regular error handler.)
+ *
+ * Here's the extended error handler struct:
+ */
+
+struct my_error_mgr {
+  struct jpeg_error_mgr pub;	/* "public" fields */
+
+  jmp_buf setjmp_buffer;	/* for return to caller */
+};
+
+typedef struct my_error_mgr * my_error_ptr;
+
+/*
+ * Here's the routine that will replace the standard error_exit method:
+ */
+
+METHODDEF(void)
+my_error_exit (j_common_ptr cinfo)
+{
+  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+  my_error_ptr myerr = (my_error_ptr) cinfo->err;
+
+  /* Always display the message. */
+  /* We could postpone this until after returning, if we chose. */
+  (*cinfo->err->output_message) (cinfo);
+
+  /* Return control to the setjmp point */
+  longjmp(myerr->setjmp_buffer, 1);
+}
+
 bool CCImage::_initWithJpgData(void * data, int nSize)
 {
     /* these are standard libjpeg structures for reading(decompression) */
     struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
+    /* We use our private extension JPEG error handler.
+	 * Note that this struct must live as long as the main JPEG parameter
+	 * struct, to avoid dangling-pointer problems.
+	 */
+	struct my_error_mgr jerr;
     /* libjpeg data structure for storing one row, that is, scanline of an image */
     JSAMPROW row_pointer[1] = {0};
     unsigned long location = 0;
@@ -212,8 +263,18 @@ bool CCImage::_initWithJpgData(void * data, int nSize)
     bool bRet = false;
     do 
     {
-        /* here we set up the standard libjpeg error handler */
-        cinfo.err = jpeg_std_error( &jerr );
+        /* We set up the normal JPEG error routines, then override error_exit. */
+		cinfo.err = jpeg_std_error(&jerr.pub);
+		jerr.pub.error_exit = my_error_exit;
+		/* Establish the setjmp return context for my_error_exit to use. */
+		if (setjmp(jerr.setjmp_buffer)) {
+			/* If we get here, the JPEG code has signaled an error.
+			 * We need to clean up the JPEG object, close the input file, and return.
+			 */
+			CCLog("%d", bRet);
+			jpeg_destroy_decompress(&cinfo);
+			break;
+		}
 
         /* setup decompression process and source, then read JPEG header */
         jpeg_create_decompress( &cinfo );
@@ -240,8 +301,8 @@ bool CCImage::_initWithJpgData(void * data, int nSize)
         jpeg_start_decompress( &cinfo );
 
         /* init image info */
-        m_nWidth  = (short)(cinfo.image_width);
-        m_nHeight = (short)(cinfo.image_height);
+        m_nWidth  = (short)(cinfo.output_width);
+        m_nHeight = (short)(cinfo.output_height);
         m_bHasAlpha = false;
         m_bPreMulti = false;
         m_nBitsPerComponent = 8;
@@ -253,16 +314,21 @@ bool CCImage::_initWithJpgData(void * data, int nSize)
 
         /* now actually read the jpeg into the raw buffer */
         /* read one scan line at a time */
-        while( cinfo.output_scanline < cinfo.image_height )
+        while( cinfo.output_scanline < cinfo.output_height )
         {
             jpeg_read_scanlines( &cinfo, row_pointer, 1 );
-            for( i=0; i<cinfo.image_width*cinfo.output_components;i++) 
+            for( i=0; i<cinfo.output_width*cinfo.output_components;i++) 
             {
                 m_pData[location++] = row_pointer[0][i];
             }
         }
 
-        jpeg_finish_decompress( &cinfo );
+		/* When read image file with broken data, jpeg_finish_decompress() may cause error.
+		 * Besides, jpeg_destroy_decompress() shall deallocate and release all memory associated
+		 * with the decompression object.
+		 * So it doesn't need to call jpeg_finish_decompress().
+		 */
+		//jpeg_finish_decompress( &cinfo );
         jpeg_destroy_decompress( &cinfo );
         /* wrap up decompression, destroy objects, free pointers and close open files */        
         bRet = true;
@@ -317,85 +383,80 @@ bool CCImage::_initWithPngData(void * pData, int nDatalen)
         m_nWidth = png_get_image_width(png_ptr, info_ptr);
         m_nHeight = png_get_image_height(png_ptr, info_ptr);
         m_nBitsPerComponent = png_get_bit_depth(png_ptr, info_ptr);
-        png_uint_32 channels = png_get_channels(png_ptr, info_ptr);
         png_uint_32 color_type = png_get_color_type(png_ptr, info_ptr);
 
-        CCLOG("color type %u", color_type);
-        // only support color type: PNG_COLOR_TYPE_RGB, PNG_COLOR_TYPE_RGB_ALPHA PNG_COLOR_TYPE_PALETTE
-        // and expand bit depth to 8
-        switch (color_type) {
-            case PNG_COLOR_TYPE_RGB:
-            case PNG_COLOR_TYPE_RGB_ALPHA:
-                // do nothing
-                
-                break;
-            case PNG_COLOR_TYPE_PALETTE:
-                png_set_palette_to_rgb(png_ptr);
-                channels = 3;
-                
-                break;
-            case PNG_COLOR_TYPE_GRAY:
-            case PNG_COLOR_TYPE_GRAY_ALPHA:
-                if (m_nBitsPerComponent < 8)
-                {
-                    png_set_expand_gray_1_2_4_to_8(png_ptr);
-                }
-                png_set_gray_to_rgb(png_ptr);
-                channels = 3;
-                
-                break;
-                
-            default:
-                CCLog("unsopprted color type %u", color_type);
-                goto out;
+        //CCLOG("color type %u", color_type);
+        
+        // force palette images to be expanded to 24-bit RGB
+        // it may include alpha channel
+        if (color_type == PNG_COLOR_TYPE_PALETTE)
+        {
+            png_set_palette_to_rgb(png_ptr);
         }
+        // low-bit-depth grayscale images are to be expanded to 8 bits
+        if (color_type == PNG_COLOR_TYPE_GRAY && m_nBitsPerComponent < 8)
+        {
+            png_set_expand_gray_1_2_4_to_8(png_ptr);
+        }
+        // expand any tRNS chunk data into a full alpha channel
+        if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+        {
+            png_set_tRNS_to_alpha(png_ptr);
+        }  
+        // reduce images with 16-bit samples to 8 bits
         if (m_nBitsPerComponent == 16)
         {
-            png_set_strip_16(png_ptr);
-            m_nBitsPerComponent = 8;
+            png_set_strip_16(png_ptr);            
         } 
-        
-        m_bHasAlpha = (color_type & PNG_COLOR_MASK_ALPHA) ? true : false;
-        if (m_bHasAlpha)
+        // expand grayscale images to RGB
+        if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
         {
-            channels = 4;
+            png_set_gray_to_rgb(png_ptr);
         }
 
         // read png data
         // m_nBitsPerComponent will always be 8
-        m_pData = new unsigned char[m_nWidth * m_nHeight * channels];
-        png_bytep* row_pointers = (png_bytep*)malloc(sizeof(png_bytep)*m_nHeight);
-        if (row_pointers)
+        m_nBitsPerComponent = 8;
+        png_uint_32 rowbytes;
+        png_bytep* row_pointers = (png_bytep*)malloc( sizeof(png_bytep) * m_nHeight );
+        
+        png_read_update_info(png_ptr, info_ptr);
+        
+        rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+        
+        m_pData = new unsigned char[rowbytes * m_nHeight];
+        CC_BREAK_IF(!m_pData);
+        
+        for (unsigned short i = 0; i < m_nHeight; ++i)
         {
-            const unsigned int stride = m_nWidth * channels;
-            for (unsigned short i = 0; i < m_nHeight; ++i)
-            {
-                png_uint_32 q = i * stride;
-                row_pointers[i] = (png_bytep)m_pData + q;
-            }
-            png_read_image(png_ptr, row_pointers);
-            
-            if (m_bHasAlpha)
-            {
-                unsigned int *tmp = (unsigned int *)m_pData;
-                for(unsigned short i = 0; i < m_nHeight; i++)
-                {
-                    for(unsigned int j = 0; j < m_nWidth * channels; j += 4)
-                    {
-                        *tmp++ = CC_RGB_PREMULTIPLY_APLHA( row_pointers[i][j], row_pointers[i][j + 1], 
-                                                          row_pointers[i][j + 2], row_pointers[i][j + 3] );
-                    }
-                }
-                
-                m_bPreMulti = true;
-            }
-
-            free(row_pointers);
-            bRet = true;
+            row_pointers[i] = m_pData + i*rowbytes;
         }
+        png_read_image(png_ptr, row_pointers);
+        
+        png_read_end(png_ptr, NULL);
+        
+        png_uint_32 channel = rowbytes/m_nWidth;
+        if (channel == 4)
+        {
+            m_bHasAlpha = true;
+            unsigned int *tmp = (unsigned int *)m_pData;
+            for(unsigned short i = 0; i < m_nHeight; i++)
+            {
+                for(unsigned int j = 0; j < rowbytes; j += 4)
+                {
+                    *tmp++ = CC_RGB_PREMULTIPLY_ALPHA( row_pointers[i][j], row_pointers[i][j + 1], 
+                                                      row_pointers[i][j + 2], row_pointers[i][j + 3] );
+                }
+            }
+            
+            m_bPreMulti = true;
+        }
+
+        CC_SAFE_FREE(row_pointers);
+
+        bRet = true;
     } while (0);
 
-out:
     if (png_ptr)
     {
         png_destroy_read_struct(&png_ptr, (info_ptr) ? &info_ptr : 0, 0);
@@ -560,7 +621,7 @@ bool CCImage::_initWithTiffData(void* pData, int nDataLen)
                    after invoking TIFFReadRGBAImageOriented
                 for(int j = 0; j < m_nWidth * m_nHeight * 4; j += 4)
                 {
-                    *tmp++ = CC_RGB_PREMULTIPLY_APLHA( src[j], src[j + 1], 
+                    *tmp++ = CC_RGB_PREMULTIPLY_ALPHA( src[j], src[j + 1], 
                         src[j + 2], src[j + 3] );
                 }
                 */
@@ -592,7 +653,7 @@ bool CCImage::_initWithRawData(void * pData, int nDatalen, int nWidth, int nHeig
         m_nWidth    = (short)nWidth;
         m_bHasAlpha = true;
 
-        // only RGBA8888 surported
+        // only RGBA8888 supported
         int nBytesPerComponent = 4;
         int nSize = nHeight * nWidth * nBytesPerComponent;
         m_pData = new unsigned char[nSize];
@@ -860,7 +921,3 @@ bool CCImage::_saveImageToJPG(const char * pszFilePath)
 
 NS_CC_END
 
-#endif // (CC_TARGET_PLATFORM != TARGET_OS_IPHONE)
-/* ios/CCImage_ios.mm uses "mm" as the extension, 
-   so we cannot inclue it in this CCImage.cpp.
-   It makes a little difference on ios */

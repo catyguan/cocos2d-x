@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2009      On-Core 
 
 http://www.cocos2d-x.org
@@ -29,11 +29,6 @@ THE SOFTWARE.
 
 NS_CC_BEGIN
 // implementation of CCGridAction
-
-CCGridAction* CCGridAction::actionWithSize(const ccGridSize& gridSize, float duration)
-{
-    return CCGridAction::create(gridSize, duration);
-}
 
 CCGridAction* CCGridAction::create(const ccGridSize& gridSize, float duration)
 {
@@ -138,7 +133,7 @@ CCObject* CCGridAction::copyWithZone(CCZone *pZone)
 
 CCGridBase* CCGrid3DAction::getGrid(void)
 {
-    return CCGrid3D::gridWithSize(m_sGridSize);
+    return CCGrid3D::create(m_sGridSize);
 }
 
 ccVertex3F CCGrid3DAction::vertex(const ccGridSize& pos)
@@ -163,7 +158,7 @@ void CCGrid3DAction::setVertex(const ccGridSize& pos, const ccVertex3F& vertex)
 
 CCGridBase* CCTiledGrid3DAction::getGrid(void)
 {
-    return CCTiledGrid3D::gridWithSize(m_sGridSize);
+    return CCTiledGrid3D::create(m_sGridSize);
 }
 
 ccQuad3 CCTiledGrid3DAction::tile(const ccGridSize& pos)
@@ -185,11 +180,6 @@ void CCTiledGrid3DAction::setTile(const ccGridSize& pos, const ccQuad3& coords)
 }
 
 // implementation CCAccelDeccelAmplitude
-
-CCAccelDeccelAmplitude* CCAccelDeccelAmplitude::actionWithAction(CCAction *pAction, float duration)
-{
-    return CCAccelDeccelAmplitude::create(pAction, duration);
-}
 
 CCAccelDeccelAmplitude* CCAccelDeccelAmplitude::create(CCAction *pAction, float duration)
 {
@@ -254,11 +244,6 @@ CCActionInterval* CCAccelDeccelAmplitude::reverse(void)
 
 // implementation of AccelAmplitude
 
-CCAccelAmplitude* CCAccelAmplitude::actionWithAction(CCAction *pAction, float duration)
-{
-    return CCAccelAmplitude::create(pAction, duration);
-}
-
 CCAccelAmplitude* CCAccelAmplitude::create(CCAction *pAction, float duration)
 {
     CCAccelAmplitude *pRet = new CCAccelAmplitude();
@@ -314,11 +299,6 @@ CCActionInterval* CCAccelAmplitude::reverse(void)
 }
 
 // DeccelAmplitude
-
-CCDeccelAmplitude* CCDeccelAmplitude::actionWithAction(CCAction *pAction, float duration)
-{
-    return CCDeccelAmplitude::create(pAction, duration);
-}
 
 CCDeccelAmplitude* CCDeccelAmplitude::create(CCAction *pAction, float duration)
 {
@@ -388,11 +368,6 @@ void CCStopGrid::startWithTarget(CCNode *pTarget)
     }
 }
 
-CCStopGrid* CCStopGrid::action(void)
-{
-    return CCStopGrid::create();
-}
-
 CCStopGrid* CCStopGrid::create(void)
 {
     CCStopGrid* pAction = new CCStopGrid();
@@ -401,11 +376,6 @@ CCStopGrid* CCStopGrid::create(void)
     return pAction;
 }
 // implementation of CCReuseGrid
-
-CCReuseGrid* CCReuseGrid::actionWithTimes(int times)
-{
-    return CCReuseGrid::create(times);
-}
 
 CCReuseGrid* CCReuseGrid::create(int times)
 {

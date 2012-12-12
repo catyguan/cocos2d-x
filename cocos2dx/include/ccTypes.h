@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -123,6 +123,12 @@ static inline ccColor4F ccc4FFromccc4B(ccColor4B c)
 {
     ccColor4F c4 = {c.r/255.f, c.g/255.f, c.b/255.f, c.a/255.f};
     return c4;
+}
+
+static inline ccColor4B ccc4BFromccc4F(ccColor4F c)
+{
+    ccColor4B ret = {(GLubyte)(c.r*255), (GLubyte)(c.g*255), (GLubyte)(c.b*255), (GLubyte)(c.a*255)};
+	return ret;
 }
 
 /** returns YES if both ccColor4F are equal. Otherwise it returns NO.
@@ -254,10 +260,21 @@ typedef struct _ccV3F_C4B_T2F
 //    char __padding2__[4];
 
     // tex coords (2F)
-    ccTex2F            texCoords;            // 8 byts
+    ccTex2F            texCoords;            // 8 bytes
 } ccV3F_C4B_T2F;
 
-//! 4 ccVertex2FTex2FColor4B Quad
+//! A Triangle of ccV2F_C4B_T2F
+typedef struct _ccV2F_C4B_T2F_Triangle
+{
+	//! Point A
+	ccV2F_C4B_T2F a;
+	//! Point B
+	ccV2F_C4B_T2F b;
+	//! Point B
+	ccV2F_C4B_T2F c;
+} ccV2F_C4B_T2F_Triangle;
+
+//! A Quad of ccV2F_C4B_T2F
 typedef struct _ccV2F_C4B_T2F_Quad
 {
     //! bottom left
@@ -305,23 +322,9 @@ typedef struct _ccBlendFunc
     GLenum dst;
 } ccBlendFunc;
 
-//! ccResolutionType
-typedef enum
-{
-    //! Unknonw resolution type
-    kCCResolutionUnknown,
-    //! iPhone resolution type
-    kCCResolutioniPhone,
-    //! RetinaDisplay resolution type
-    kCCResolutioniPhoneRetinaDisplay,
-    //! iPad resolution type
-    kCCResolutioniPad,
-    //! iPad Retina Display resolution type
-    kCCResolutioniPadRetinaDisplay,
-    
-} ccResolutionType;
+static const ccBlendFunc kCCBlendFuncDisable = {GL_ONE, GL_ZERO};
 
-// XXX: If any of these enums are edited and/or reordered, udpate CCTexture2D.m
+// XXX: If any of these enums are edited and/or reordered, update CCTexture2D.m
 //! Vertical text alignment type
 typedef enum
 {
@@ -330,7 +333,7 @@ typedef enum
     kCCVerticalTextAlignmentBottom,
 } CCVerticalTextAlignment;
 
-// XXX: If any of these enums are edited and/or reordered, udpate CCTexture2D.m
+// XXX: If any of these enums are edited and/or reordered, update CCTexture2D.m
 //! Horizontal text alignment type
 typedef enum
 {

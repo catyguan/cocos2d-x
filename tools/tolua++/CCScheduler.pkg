@@ -4,6 +4,8 @@ class CCTimer : public CCObject
     float getInterval(void);
     void setInterval(float fInterval);
     void update(float dt);
+
+	static CCTimer* timerWithScriptHandler(LUA_FUNCTION funcID, float fSeconds);
 };
 
 class CCScheduler : public CCObject
@@ -14,15 +16,4 @@ class CCScheduler : public CCObject
 
     unsigned int scheduleScriptFunc(LUA_FUNCTION funcID, float fInterval, bool bPaused);
     void unscheduleScriptEntry(unsigned int uScheduleScriptEntryID);
-
-    void scheduleUpdateForTarget(CCObject *pTarget, int nPriority, bool bPaused);
-    void unscheduleUpdateForTarget(CCObject *pTarget);
-
-    void unscheduleAllSelectorsForTarget(CCObject *pTarget);
-    void unscheduleAllSelectors(void);
-
-    void pauseTarget(CCObject *pTarget);
-    void resumeTarget(CCObject *pTarget);
-    bool isTargetPaused(CCObject *pTarget);
-
 };

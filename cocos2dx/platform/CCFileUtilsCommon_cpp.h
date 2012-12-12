@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include "CCDirector.h"
 #include "cocoa/CCDictionary.h"
 
-#if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS)
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS && CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
 
 #include "cocoa/CCString.h"
 #include "CCSAXParser.h"
@@ -41,10 +41,6 @@ THE SOFTWARE.
 #include <libxml/xmlmemory.h>
 
 NS_CC_BEGIN
-
-static const char *__suffixiPhoneRetinaDisplay = "-hd";
-static const char *__suffixiPad = "-ipad";
-static const char *__suffixiPadRetinaDisplay = "-ipadhd";
 
 typedef enum 
 {
@@ -203,7 +199,7 @@ public:
             }
             else if (preState == SAX_ARRAY)
             {
-                CCAssert(! m_tArrayStack.empty(), "The state is worng!");
+                CCAssert(! m_tArrayStack.empty(), "The state is wrong!");
                 CCArray* pPreArray = m_tArrayStack.top();
                 pPreArray->addObject(m_pArray);
             }
@@ -309,7 +305,7 @@ public:
             {
                 if (curState == SAX_DICT)
                 {
-                    CCAssert(!m_sCurKey.empty(), "not found key : <integet/real>");
+                    CCAssert(!m_sCurKey.empty(), "key not found : <integer/real>");
                 }
                 
                 m_sCurValue.append(pText->getCString());
@@ -321,27 +317,6 @@ public:
         pText->release();
     }
 };
-
-std::string& CCFileUtils::removeSuffixFromFile(std::string& path)
-{
-    // XXX win32 now can only support iphone retina, because 
-    // we don't know it is ipad retina or iphone retina.
-    // fixe me later
-    if( CC_CONTENT_SCALE_FACTOR() == 2 )
-    {
-        std::string::size_type pos = path.rfind("/") + 1; // the begin index of last part of path
-
-        std::string::size_type suffixPos = path.rfind(__suffixiPhoneRetinaDisplay);
-        if (std::string::npos != suffixPos && suffixPos > pos)
-        {
-            CCLog("cocos2d: FilePath(%s) contains suffix(%s), remove it.", path.c_str(),
-                __suffixiPhoneRetinaDisplay);
-            path.replace(suffixPos, strlen(__suffixiPhoneRetinaDisplay), "");
-        }
-    }
-
-    return path;
-}
 
 CCDictionary* ccFileUtils_dictionaryWithContentsOfFileThreadSafe(const char *pFileName)
 {
@@ -397,45 +372,18 @@ unsigned char* CCFileUtils::getFileDataFromZip(const char* pszZipFilePath, const
     return pBuffer;
 }
 
-
-const char* CCFileUtils::fullPathFromRelativePath(const char *pszRelativePath)
+void CCFileUtils::setResourceDirectory(const char* pszResourceDirectory)
 {
-    ccResolutionType ignore;
-    return fullPathFromRelativePath(pszRelativePath, &ignore);
+    m_obDirectory = pszResourceDirectory;
+    if (m_obDirectory.size() > 0 && m_obDirectory[m_obDirectory.size() - 1] != '/')
+    {
+        m_obDirectory.append("/");
+    }
 }
 
-/// functions iOS specific
-void CCFileUtils::setiPhoneRetinaDisplaySuffix(const char *suffix)
+const char* CCFileUtils::getResourceDirectory()
 {
-    CCAssert(0, "not implement");
-}
-
-void CCFileUtils::setiPadSuffix(const char *suffix)
-{
-    CCAssert(0, "not implement");
-}
-
-void CCFileUtils::setiPadRetinaDisplaySuffix(const char *suffix)
-{
-    CCAssert(0, "not implement");
-}
-
-bool CCFileUtils::iPadFileExistsAtPath(const char *filename)
-{
-    CCAssert(0, "not implement");
-    return false;
-}
-
-bool CCFileUtils::iPadRetinaDisplayFileExistsAtPath(const char *filename)
-{
-    CCAssert(0, "not implement");
-    return false;
-}
-
-bool CCFileUtils::iPhoneRetinaDisplayFileExistsAtPath(const char *filename)
-{
-    CCAssert(0, "not implement");
-    return false;
+    return m_obDirectory.c_str();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -455,4 +403,4 @@ bool CCFileUtils::isPopupNotify()
 
 NS_CC_END
 
-#endif // (CC_TARGET_PLATFORM != CC_PLATFORM_IOS)
+#endif // (CC_TARGET_PLATFORM != CC_PLATFORM_IOS && CC_TARGET_PLATFORM != CC_PLATFORM_MAC)

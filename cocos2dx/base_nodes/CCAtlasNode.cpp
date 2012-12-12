@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
  
@@ -60,12 +60,6 @@ CCAtlasNode::~CCAtlasNode()
     CC_SAFE_RELEASE(m_pTextureAtlas);
 }
 
-CCAtlasNode * CCAtlasNode::atlasWithTileFile(const char *tile, unsigned int tileWidth, unsigned int tileHeight, 
-                                             unsigned int itemsToRender)
-{
-    return CCAtlasNode::create(tile, tileWidth, tileHeight, itemsToRender);
-}
-
 CCAtlasNode * CCAtlasNode::create(const char *tile, unsigned int tileWidth, unsigned int tileHeight, 
 											 unsigned int itemsToRender)
 {
@@ -101,7 +95,6 @@ bool CCAtlasNode::initWithTileFile(const char *tile, unsigned int tileWidth, uns
     if (! m_pTextureAtlas)
     {
         CCLOG("cocos2d: Could not initialize CCAtlasNode. Invalid Texture.");
-        delete this;
         return false;
     }
 
@@ -124,14 +117,14 @@ bool CCAtlasNode::initWithTileFile(const char *tile, unsigned int tileWidth, uns
 
 void CCAtlasNode::calculateMaxItems()
 {
-    const CCSize& s = m_pTextureAtlas->getTexture()->getContentSize();
+    CCSize s = m_pTextureAtlas->getTexture()->getContentSize();
     m_uItemsPerColumn = (int)(s.height / m_uItemHeight);
     m_uItemsPerRow = (int)(s.width / m_uItemWidth);
 }
 
 void CCAtlasNode::updateAtlasValues()
 {
-    CCAssert(false, "CCAtlasNode:Abstract updateAtlasValue not overriden");
+    CCAssert(false, "CCAtlasNode:Abstract updateAtlasValue not overridden");
 }
 
 // CCAtlasNode - draw
@@ -149,7 +142,7 @@ void CCAtlasNode::draw(void)
 
 // CCAtlasNode - RGBA protocol
 
-const ccColor3B& CCAtlasNode:: getColor()
+ccColor3B CCAtlasNode:: getColor()
 {
     if(m_bIsOpacityModifyRGB)
     {

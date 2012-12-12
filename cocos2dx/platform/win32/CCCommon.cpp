@@ -43,10 +43,10 @@ void CCLog(const char * pszFormat, ...)
     OutputDebugStringW(wszBuf);
     OutputDebugStringA("\n");
 
-#ifdef USE_WIN32_CONSOLE
-	wprintf(wszBuf);
-	printf("\n");
-#endif
+    WideCharToMultiByte(CP_ACP, 0, wszBuf, sizeof(wszBuf), szBuf, sizeof(szBuf), NULL, FALSE);
+    printf("%s\n", szBuf);
+
+
 }
 
 void CCMessageBox(const char * pszMsg, const char * pszTitle)
@@ -54,9 +54,24 @@ void CCMessageBox(const char * pszMsg, const char * pszTitle)
     MessageBoxA(NULL, pszMsg, pszTitle, MB_OK);
 }
 
-void CCLuaLog(const char * pszFormat)
+void CCLuaLog(const char *pszMsg)
 {
-    CCLog(pszFormat);
+    int bufflen = MultiByteToWideChar(CP_UTF8, 0, pszMsg, -1, NULL, 0);
+    WCHAR* widebuff = new WCHAR[bufflen + 1];
+    memset(widebuff, 0, sizeof(WCHAR) * (bufflen + 1));
+    MultiByteToWideChar(CP_UTF8, 0, pszMsg, -1, widebuff, bufflen);
+
+    OutputDebugStringW(widebuff);
+    OutputDebugStringA("\n");
+
+	bufflen = WideCharToMultiByte(CP_ACP, 0, widebuff, -1, NULL, 0, NULL, NULL);
+	char* buff = new char[bufflen + 1];
+	memset(buff, 0, sizeof(char) * (bufflen + 1));
+	WideCharToMultiByte(CP_ACP, 0, widebuff, -1, buff, bufflen, NULL, NULL);
+	puts(buff);
+
+	delete[] widebuff;
+	delete[] buff;
 }
 
 NS_CC_END

@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 
 http://www.cocos2d-x.org
 
@@ -118,7 +118,7 @@ static void setValueForKey(const char* pKey, const char* pValue)
         if (rootNode)
         {
             // the node doesn't exist, add a new one
-            // libxml in android donesn't support xmlNewTextChild, so use this approach
+            // libxml in android doesn't support xmlNewTextChild, so use this approach
             xmlNodePtr tmpNode = xmlNewNode(NULL, BAD_CAST pKey);
             xmlNodePtr content = xmlNewText(BAD_CAST pValue);
             xmlAddChild(rootNode, tmpNode);
@@ -162,6 +162,11 @@ void CCUserDefault::purgeSharedUserDefault()
     m_spUserDefault = NULL;
 }
 
+ bool CCUserDefault::getBoolForKey(const char* pKey)
+ {
+     return getBoolForKey(pKey, false);
+ }
+
 bool CCUserDefault::getBoolForKey(const char* pKey, bool defaultValue)
 {
     const char* value = getValueForKey(pKey);
@@ -174,6 +179,11 @@ bool CCUserDefault::getBoolForKey(const char* pKey, bool defaultValue)
     }
 
     return ret;
+}
+
+int CCUserDefault::getIntegerForKey(const char* pKey)
+{
+    return getIntegerForKey(pKey, 0);
 }
 
 int CCUserDefault::getIntegerForKey(const char* pKey, int defaultValue)
@@ -190,11 +200,21 @@ int CCUserDefault::getIntegerForKey(const char* pKey, int defaultValue)
     return ret;
 }
 
+float CCUserDefault::getFloatForKey(const char* pKey)
+{
+    return getFloatForKey(pKey, 0.0f);
+}
+
 float CCUserDefault::getFloatForKey(const char* pKey, float defaultValue)
 {
     float ret = (float)getDoubleForKey(pKey, (double)defaultValue);
  
     return ret;
+}
+
+double  CCUserDefault::getDoubleForKey(const char* pKey)
+{
+    return getDoubleForKey(pKey, 0.0);
 }
 
 double CCUserDefault::getDoubleForKey(const char* pKey, double defaultValue)
@@ -209,6 +229,11 @@ double CCUserDefault::getDoubleForKey(const char* pKey, double defaultValue)
     }
 
     return ret;
+}
+
+std::string CCUserDefault::getStringForKey(const char* pKey)
+{
+    return getStringForKey(pKey, "");
 }
 
 string CCUserDefault::getStringForKey(const char* pKey, const std::string & defaultValue)
@@ -227,7 +252,7 @@ string CCUserDefault::getStringForKey(const char* pKey, const std::string & defa
 
 void CCUserDefault::setBoolForKey(const char* pKey, bool value)
 {
-    // save bool value as sring
+    // save bool value as string
 
     if (true == value)
     {
@@ -292,7 +317,7 @@ CCUserDefault* CCUserDefault::sharedUserDefault()
     initXMLFilePath();
 
     // only create xml file one time
-    // the file exists after the programe exit
+    // the file exists after the program exit
     if ((! isXMLFileExist()) && (! createXMLFile()))
     {
         return NULL;

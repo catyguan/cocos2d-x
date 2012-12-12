@@ -41,11 +41,6 @@ struct Tile
 
 // implementation of ShakyTiles3D
 
-CCShakyTiles3D* CCShakyTiles3D::actionWithRange(int nRange, bool bShakeZ,const ccGridSize& gridSize, float duration)
-{
-    return CCShakyTiles3D::create(nRange, bShakeZ, gridSize, duration);    
-}
-
 CCShakyTiles3D* CCShakyTiles3D::create(int nRange, bool bShakeZ,const ccGridSize& gridSize, float duration)
 {
     CCShakyTiles3D *pAction = new CCShakyTiles3D();
@@ -138,11 +133,6 @@ void CCShakyTiles3D::update(float time)
 }
 
 // implementation of CCShatteredTiles3D
-
-CCShatteredTiles3D* CCShatteredTiles3D::actionWithRange(int nRange, bool bShatterZ, const ccGridSize& gridSize, float duration)
-{
-    return CCShatteredTiles3D::create(nRange, bShatterZ, gridSize, duration);    
-}
 
 CCShatteredTiles3D* CCShatteredTiles3D::create(int nRange, bool bShatterZ, const ccGridSize& gridSize, float duration)
 {
@@ -242,11 +232,6 @@ void CCShatteredTiles3D::update(float time)
 }
 
 // implementation of CCShuffleTiles
-
-CCShuffleTiles* CCShuffleTiles::actionWithSeed(int s, const ccGridSize& gridSize, float duration)
-{
-    return CCShuffleTiles::create(s, gridSize, duration);    
-}
 
 CCShuffleTiles* CCShuffleTiles::create(int s, const ccGridSize& gridSize, float duration)
 {
@@ -412,11 +397,6 @@ void CCShuffleTiles::update(float time)
 
 // implementation of CCFadeOutTRTiles
 
-CCFadeOutTRTiles* CCFadeOutTRTiles::actionWithSize(const ccGridSize& gridSize, float time)
-{
-    return CCFadeOutTRTiles::create( gridSize, time);    
-}
-
 CCFadeOutTRTiles* CCFadeOutTRTiles::create(const ccGridSize& gridSize, float time)
 {
     CCFadeOutTRTiles *pAction = new CCFadeOutTRTiles();
@@ -505,10 +485,6 @@ void CCFadeOutTRTiles::update(float time)
 }
 
 // implementation of CCFadeOutBLTiles
-CCFadeOutBLTiles* CCFadeOutBLTiles::actionWithSize(const ccGridSize& gridSize, float time)
-{
-    return CCFadeOutBLTiles::create(gridSize, time);
-}
 
 CCFadeOutBLTiles* CCFadeOutBLTiles::create(const ccGridSize& gridSize, float time)
 {
@@ -541,11 +517,6 @@ float CCFadeOutBLTiles::testFunc(const ccGridSize& pos, float time)
 }
 
 // implementation of CCFadeOutUpTiles
-
-CCFadeOutUpTiles* CCFadeOutUpTiles::actionWithSize(const ccGridSize& gridSize, float time)
-{
-    return CCFadeOutUpTiles::create(gridSize, time);
-}
 
 CCFadeOutUpTiles* CCFadeOutUpTiles::create(const ccGridSize& gridSize, float time)
 {
@@ -591,10 +562,6 @@ void CCFadeOutUpTiles::transformTile(const ccGridSize& pos, float distance)
 }
 
 // implementation of CCFadeOutDownTiles
-CCFadeOutDownTiles* CCFadeOutDownTiles::actionWithSize(const ccGridSize& gridSize, float time)
-{
-    return CCFadeOutDownTiles::create(gridSize, time);
-}
 
 CCFadeOutDownTiles* CCFadeOutDownTiles::create(const ccGridSize& gridSize, float time)
 {
@@ -627,10 +594,6 @@ float CCFadeOutDownTiles::testFunc(const ccGridSize& pos, float time)
 }
 
 // implementation of TurnOffTiles
-CCTurnOffTiles* CCTurnOffTiles::actionWithSize(const ccGridSize& size, float d)
-{
-    return CCTurnOffTiles::create( size, d);
-}
 
 CCTurnOffTiles* CCTurnOffTiles::create(const ccGridSize& size, float d)
 {
@@ -644,11 +607,6 @@ CCTurnOffTiles* CCTurnOffTiles::create(const ccGridSize& size, float d)
         CC_SAFE_RELEASE_NULL(pAction);
     }
     return pAction;
-}
-
-CCTurnOffTiles* CCTurnOffTiles::actionWithSeed(int s, const ccGridSize& gridSize, float duration)
-{
-    return CCTurnOffTiles::create(s, gridSize, duration);
 }
 
 CCTurnOffTiles* CCTurnOffTiles::create(int s, const ccGridSize& gridSize, float duration)
@@ -781,11 +739,6 @@ void CCTurnOffTiles::update(float time)
 
 // implementation of CCWavesTiles3D
 
-CCWavesTiles3D* CCWavesTiles3D::actionWithWaves(int wav, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCWavesTiles3D::create(wav, amp, gridSize, duration);
-}
-
 CCWavesTiles3D* CCWavesTiles3D::create(int wav, float amp, const ccGridSize& gridSize, float duration)
 {
     CCWavesTiles3D *pAction = new CCWavesTiles3D();
@@ -851,7 +804,7 @@ void CCWavesTiles3D::update(float time)
         {
             ccQuad3 coords = originalTile(ccg(i, j));
 
-            coords.bl.z = (sinf(time * (CCFloat)M_PI  *m_nWaves * 2 + 
+            coords.bl.z = (sinf(time * (float)M_PI  *m_nWaves * 2 + 
                 (coords.bl.y+coords.bl.x) * .01f) * m_fAmplitude * m_fAmplitudeRate );
             coords.br.z    = coords.bl.z;
             coords.tl.z = coords.bl.z;
@@ -863,11 +816,6 @@ void CCWavesTiles3D::update(float time)
 }
 
 // implementation of CCJumpTiles3D
-
-CCJumpTiles3D* CCJumpTiles3D::actionWithJumps(int j, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCJumpTiles3D::create(j, amp, gridSize, duration);
-}
 
 CCJumpTiles3D* CCJumpTiles3D::create(int j, float amp, const ccGridSize& gridSize, float duration)
 {
@@ -927,8 +875,8 @@ void CCJumpTiles3D::update(float time)
 {
     int i, j;
 
-    float sinz =  (sinf((CCFloat)M_PI * time * m_nJumps * 2) * m_fAmplitude * m_fAmplitudeRate );
-    float sinz2 = (sinf((CCFloat)M_PI * (time * m_nJumps * 2 + 1)) * m_fAmplitude * m_fAmplitudeRate );
+    float sinz =  (sinf((float)M_PI * time * m_nJumps * 2) * m_fAmplitude * m_fAmplitudeRate );
+    float sinz2 = (sinf((float)M_PI * (time * m_nJumps * 2 + 1)) * m_fAmplitude * m_fAmplitudeRate );
 
     for( i = 0; i < m_sGridSize.x; i++ )
     {
@@ -957,11 +905,6 @@ void CCJumpTiles3D::update(float time)
 }
 
 // implementation of CCSplitRows
-
-CCSplitRows* CCSplitRows::actionWithRows(int nRows, float duration)
-{
-    return CCSplitRows::create(nRows, duration);
-}
 
 CCSplitRows* CCSplitRows::create(int nRows, float duration)
 {
@@ -1041,11 +984,6 @@ void CCSplitRows::update(float time)
 }
 
 // implementation of CCSplitCols
-
-CCSplitCols* CCSplitCols::actionWithCols(int nCols, float duration)
-{
-    return CCSplitCols::create(nCols, duration);
-}
 
 CCSplitCols* CCSplitCols::create(int nCols, float duration)
 {

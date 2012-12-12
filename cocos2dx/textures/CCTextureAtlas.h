@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -43,8 +43,8 @@ class CCTexture2D;
 
 /** @brief A class that implements a Texture Atlas.
 Supported features:
-* The atlas file can be a PVRTC, PNG or any other fomrat supported by Texture2D
-* Quads can be udpated in runtime
+* The atlas file can be a PVRTC, PNG or any other format supported by Texture2D
+* Quads can be updated in runtime
 * Quads can be added in runtime
 * Quads can be removed in runtime
 * Quads can be re-ordered in runtime
@@ -82,12 +82,6 @@ public:
 
     /** creates a TextureAtlas with an filename and with an initial capacity for Quads.
     * The TextureAtlas capacity can be increased in runtime.
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCTextureAtlas * textureAtlasWithFile(const char* file , unsigned int capacity);
-
-    /** creates a TextureAtlas with an filename and with an initial capacity for Quads.
-    * The TextureAtlas capacity can be increased in runtime.
     */
     static CCTextureAtlas* create(const char* file , unsigned int capacity);
 
@@ -98,18 +92,11 @@ public:
     */
     bool initWithFile(const char* file, unsigned int capacity);
 
-    /** creates a TextureAtlas with a previously initialized Texture2D object, and
-    * with an initial capacity for n Quads. 
-    * The TextureAtlas capacity can be increased in runtime.
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCTextureAtlas * textureAtlasWithTexture(CCTexture2D *texture, unsigned int capacity);
-
    /** creates a TextureAtlas with a previously initialized Texture2D object, and
     * with an initial capacity for n Quads. 
     * The TextureAtlas capacity can be increased in runtime.
     */
-    static CCTextureAtlas* create(CCTexture2D *texture, unsigned int capacity);
+    static CCTextureAtlas* createWithTexture(CCTexture2D *texture, unsigned int capacity);
 
 
     /** initializes a TextureAtlas with a previously initialized Texture2D object, and

@@ -26,7 +26,7 @@
  * THE SOFTWARE.
  *
  *
- * Orignal code by Radu Gruian: http://www.codeproject.com/Articles/30838/Overhauser-Catmull-Rom-Splines-for-Camera-Animatio.So
+ * Original code by Radu Gruian: http://www.codeproject.com/Articles/30838/Overhauser-Catmull-Rom-Splines-for-Camera-Animatio.So
  *
  * Adapted to cocos2d-x by Vit Valentin
  *
@@ -44,10 +44,6 @@ NS_CC_BEGIN;
 /*
  *  Implementation of CCPointArray
  */
-CCPointArray* CCPointArray::arrayWithCapacity(unsigned int capacity)
-{
-    return CCPointArray::create(capacity);
-}
 
 CCPointArray* CCPointArray::create(unsigned int capacity)
 {
@@ -96,12 +92,12 @@ CCPointArray::CCPointArray() :m_pControlPoints(NULL){}
 
 void CCPointArray::addControlPoint(CCPoint controlPoint)
 {
-    // should create a new object of CCPoint
-    // because developer always use this function like this
+    // should create a new object: CCPoint
+    // because developers are accustomed to using
     // addControlPoint(ccp(x, y))
-    // passing controlPoint is a temple object
-    // and CCArray::addObject() will retain the passing object, so it 
-    // should be an object created in heap
+    // which assumes controlPoint is a temporary struct
+    // but CCArray::addObject() will retain the passed object, so temp
+    // should be an object created in the heap.
     CCPoint *temp = new CCPoint(controlPoint.x, controlPoint.y);
     m_pControlPoints->addObject(temp);
     temp->release();
@@ -109,12 +105,12 @@ void CCPointArray::addControlPoint(CCPoint controlPoint)
 
 void CCPointArray::insertControlPoint(CCPoint &controlPoint, unsigned int index)
 {
-    // should create a new object of CCPoint
-    // because developer always use this function like this
+    // should create a new object: CCPoint
+    // because developers are accustomed to using
     // insertControlPoint(ccp(x, y))
-    // passing controlPoint is a temple object
-    // and CCArray::insertObject() will retain the passing object, so it 
-    // should be an object created in heap
+    // which assumes controlPoint is a temporary struct
+    // but CCArray::insertObject() will retain the passed object, so temp
+    // should be an object created in the heap.
     CCPoint *temp = new CCPoint(controlPoint.x, controlPoint.y);
     m_pControlPoints->insertObject(temp, index);
     temp->release();
@@ -130,12 +126,12 @@ CCPoint CCPointArray::getControlPointAtIndex(unsigned int index)
 
 void CCPointArray::replaceControlPoint(cocos2d::CCPoint &controlPoint, unsigned int index)
 {
-    // should create a new object of CCPoint
-    // because developer always use this function like this
+    // should create a new object: CCPoint
+    // because developers are accustomed to using
     // replaceControlPoint(ccp(x, y))
-    // passing controlPoint is a temple object
-    // and CCArray::insertObject() will retain the passing object, so it 
-    // should be an object created in heap
+    // which assumes controlPoint is a temporary struct
+    // but CCArray::insertObject() will retain the passed object, so temp
+    // should be an object created in the heap.
     CCPoint *temp = new CCPoint(controlPoint.x, controlPoint.y);
     m_pControlPoints->replaceObjectAtIndex(index, temp);
     temp->release();
@@ -199,10 +195,6 @@ CCPoint ccCardinalSplineAt(CCPoint &p0, CCPoint &p1, CCPoint &p2, CCPoint &p3, f
 
 /* Implementation of CCCardinalSplineTo
  */
-CCCardinalSplineTo* CCCardinalSplineTo::actionWithDuration(float duration, cocos2d::CCPointArray *points, float tension)
-{
-    return CCCardinalSplineTo::create(duration, points, tension);
-}
 
 CCCardinalSplineTo* CCCardinalSplineTo::create(float duration, cocos2d::CCPointArray *points, float tension)
 {
@@ -253,7 +245,10 @@ void CCCardinalSplineTo::startWithTarget(cocos2d::CCNode *pTarget)
 {
     CCActionInterval::startWithTarget(pTarget);
 	
-    m_fDeltaT = (float) 1 / m_pPoints->count();
+//    m_fDeltaT = (float) 1 / m_pPoints->count();
+    
+    // Issue #1441
+    m_fDeltaT = (float) 1 / (m_pPoints->count() - 1);
 }
 
 CCCardinalSplineTo* CCCardinalSplineTo::copyWithZone(cocos2d::CCZone *pZone)
@@ -283,7 +278,10 @@ void CCCardinalSplineTo::update(float time)
     unsigned int p;
     float lt;
 	
-	// border
+	// eg.
+	// p..p..p..p..p..p..p
+	// 1..2..3..4..5..6..7
+	// want p to be 1, 2, 3, 4, 5, 6
     if (time == 1)
     {
         p = m_pPoints->count() - 1;
@@ -320,11 +318,6 @@ CCActionInterval* CCCardinalSplineTo::reverse()
 
 /* CCCardinalSplineBy
  */
-
-CCCardinalSplineBy* CCCardinalSplineBy::actionWithDuration(float duration, cocos2d::CCPointArray *points, float tension)
-{
-    return CCCardinalSplineBy::create(duration, points, tension);
-}
 
 CCCardinalSplineBy* CCCardinalSplineBy::create(float duration, cocos2d::CCPointArray *points, float tension)
 {
@@ -405,10 +398,6 @@ void CCCardinalSplineBy::startWithTarget(cocos2d::CCNode *pTarget)
 
 /* CCCatmullRomTo
  */
-CCCatmullRomTo* CCCatmullRomTo::actionWithDuration(float dt, cocos2d::CCPointArray *points)
-{
-    return CCCatmullRomTo::create(dt, points);
-}
 
 CCCatmullRomTo* CCCatmullRomTo::create(float dt, cocos2d::CCPointArray *points)
 {
@@ -440,10 +429,6 @@ bool CCCatmullRomTo::initWithDuration(float dt, cocos2d::CCPointArray *points)
 
 /* CCCatmullRomBy
  */
-CCCatmullRomBy* CCCatmullRomBy::actionWithDuration(float dt, cocos2d::CCPointArray *points)
-{
-    return CCCatmullRomBy::create(dt, points);
-}
 
 CCCatmullRomBy* CCCatmullRomBy::create(float dt, cocos2d::CCPointArray *points)
 {

@@ -31,13 +31,16 @@ THE SOFTWARE.
 #include "ccMacros.h"
 #include "touch_dispatcher/CCTouchDispatcher.h"
 #include "support/CCPointExtension.h"
+#include "support/CCNotificationCenter.h"
 #include "layers_scenes_transitions_nodes/CCTransition.h"
 #include "textures/CCTextureCache.h"
 #include "sprite_nodes/CCSpriteFrameCache.h"
 #include "cocoa/CCAutoreleasePool.h"
 #include "platform/platform.h"
+#include "platform/CCFileUtils.h"
 #include "CCApplication.h"
 #include "label_nodes/CCLabelBMFont.h"
+#include "label_nodes/CCLabelAtlas.h"
 #include "actions/CCActionManager.h"
 #include "CCConfiguration.h"
 #include "keypad_dispatcher/CCKeypadDispatcher.h"
@@ -51,34 +54,39 @@ THE SOFTWARE.
 #include "kazmath/GL/matrix.h"
 #include "support/CCProfiling.h"
 #include "CCEGLView.h"
-#include "extensions/CCNotificationCenter/CCNotificationCenter.h"
-#include "extensions/CCTextureWatcher/CCTextureWatcher.h"
-#include "extensions/CCBReader/CCNodeLoaderLibrary.h"
 #include <string>
+
+/**
+ Position of the FPS
+ 
+ Default: 0,0 (bottom-left corner)
+ */
+#ifndef CC_DIRECTOR_STATS_POSITION
+#define CC_DIRECTOR_STATS_POSITION CCDirector::sharedDirector()->getVisibleOrigin()
+#endif
 
 using namespace std;
 
 unsigned int g_uNumberOfDraws = 0;
 
 NS_CC_BEGIN
-// XXX it shoul be a Director ivar. Move it there once support for multiple directors is added
+// XXX it should be a Director ivar. Move it there once support for multiple directors is added
 
 // singleton stuff
-static CCDisplayLinkDirector s_SharedDirector;
+static CCDisplayLinkDirector *s_SharedDirector = NULL;
 
 #define kDefaultFPS        60  // 60 frames per second
 extern const char* cocos2dVersion(void);
 
 CCDirector* CCDirector::sharedDirector(void)
 {
-    static bool s_bFirstUseDirector = true;
-    if (s_bFirstUseDirector)
+    if (!s_SharedDirector)
     {
-        s_bFirstUseDirector = false;
-        s_SharedDirector.init();
+        s_SharedDirector = new CCDisplayLinkDirector();
+        s_SharedDirector->init();
     }
 
-    return &s_SharedDirector;
+    return s_SharedDirector;
 }
 
 CCDirector::CCDirector(void)
@@ -123,15 +131,11 @@ bool CCDirector::init(void)
     // purge ?
     m_bPurgeDirecotorInNextLoop = false;
 
-    m_obWinSizeInPixels = m_obWinSizeInPoints = CCSizeZero;    
+    m_obWinSizeInPoints = CCSizeZero;    
 
     m_pobOpenGLView = NULL;
 
-    m_fContentScaleFactor = 1;    
-    m_bIsContentScaleSupported = false;
-
-    m_pWatcherFun = NULL;
-    m_pWatcherSender = NULL;
+    m_fContentScaleFactor = 1.0f;
 
     // scheduler
     m_pScheduler = new CCScheduler();
@@ -156,7 +160,7 @@ bool CCDirector::init(void)
     
 CCDirector::~CCDirector(void)
 {
-    CCLOG("cocos2d: deallocing %p", this);
+    CCLOG("cocos2d: deallocing CCDirector %p", this);
 
     CC_SAFE_RELEASE(m_pFPSLabel);
     CC_SAFE_RELEASE(m_pSPFLabel);
@@ -179,6 +183,8 @@ CCDirector::~CCDirector(void)
     CC_SAFE_DELETE(m_pLastUpdate);
     // delete fps string
     delete []m_pszFPS;
+
+    s_SharedDirector = NULL;
 }
 
 void CCDirector::setGLDefaultValues(void)
@@ -187,14 +193,16 @@ void CCDirector::setGLDefaultValues(void)
     CCAssert(m_pobOpenGLView, "opengl view should not be null");
 
     setAlphaBlending(true);
-    setDepthTest(false);
+    // XXX: Fix me, should enable/disable depth test according the depth format as cocos2d-iphone did
+    // [self setDepthTest: view_.depthFormat];
+    setDepthTest(true);
     setProjection(m_eProjection);
 
     // set other opengl default values
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-// Draw the SCene
+// Draw the Scene
 void CCDirector::drawScene(void)
 {
     // calculate "global" dt
@@ -232,11 +240,6 @@ void CCDirector::drawScene(void)
     if (m_bDisplayStats)
     {
         showStats();
-    }
-
-    if (m_pWatcherFun && m_pWatcherSender)
-    {
-        (*m_pWatcherFun)(m_pWatcherSender);
     }
 
     kmGLPopMatrix();
@@ -289,22 +292,18 @@ void CCDirector::calculateDeltaTime(void)
     *m_pLastUpdate = now;
 }
 
-
-// m_pobOpenGLView
-
 void CCDirector::setOpenGLView(CCEGLView *pobOpenGLView)
 {
     CCAssert(pobOpenGLView, "opengl view should not be null");
 
     if (m_pobOpenGLView != pobOpenGLView)
     {
-        // because EAGLView is not kind of CCObject
+        // EAGLView is not a CCObject
         delete m_pobOpenGLView; // [openGLView_ release]
         m_pobOpenGLView = pobOpenGLView;
 
         // set size
-        m_obWinSizeInPoints = m_pobOpenGLView->getSize();
-        m_obWinSizeInPixels = CCSizeMake(m_obWinSizeInPoints.width * m_fContentScaleFactor, m_obWinSizeInPoints.height * m_fContentScaleFactor);
+        m_obWinSizeInPoints = m_pobOpenGLView->getDesignResolutionSize();
         
         createStatsLabel();
         
@@ -315,12 +314,7 @@ void CCDirector::setOpenGLView(CCEGLView *pobOpenGLView)
         
         CHECK_GL_ERROR_DEBUG();
 
-        if (m_fContentScaleFactor != 1)
-        {
-            updateContentScaleFactor();
-        }
-
-         m_pobOpenGLView->setTouchDelegate(m_pTouchDispatcher);
+        m_pobOpenGLView->setTouchDelegate(m_pTouchDispatcher);
         m_pTouchDispatcher->setDispatchEvents(true);
     }
 }
@@ -332,12 +326,11 @@ void CCDirector::setNextDeltaTimeZero(bool bNextDeltaTimeZero)
 
 void CCDirector::setProjection(ccDirectorProjection kProjection)
 {
-    CCSize size = m_obWinSizeInPixels;
-    CCSize sizePoint = m_obWinSizeInPoints;
+    CCSize size = m_obWinSizeInPoints;
 
     if (m_pobOpenGLView)
     {
-        m_pobOpenGLView->setViewPortInPoints(0, 0, sizePoint.width, sizePoint.height);
+        m_pobOpenGLView->setViewPortInPoints(0, 0, size.width, size.height);
     }
 
     switch (kProjection)
@@ -347,7 +340,7 @@ void CCDirector::setProjection(ccDirectorProjection kProjection)
             kmGLMatrixMode(KM_GL_PROJECTION);
             kmGLLoadIdentity();
             kmMat4 orthoMatrix;
-            kmMat4OrthographicProjection(&orthoMatrix, 0, size.width / CC_CONTENT_SCALE_FACTOR(), 0, size.height / CC_CONTENT_SCALE_FACTOR(), -1024, 1024 );
+            kmMat4OrthographicProjection(&orthoMatrix, 0, size.width, 0, size.height, -1024, 1024 );
             kmGLMultMatrix(&orthoMatrix);
             kmGLMatrixMode(KM_GL_MODELVIEW);
             kmGLLoadIdentity();
@@ -372,8 +365,8 @@ void CCDirector::setProjection(ccDirectorProjection kProjection)
             kmGLMatrixMode(KM_GL_MODELVIEW);
             kmGLLoadIdentity();
             kmVec3 eye, center, up;
-            kmVec3Fill( &eye, sizePoint.width/2, sizePoint.height/2, zeye );
-            kmVec3Fill( &center, sizePoint.width/2, sizePoint.height/2, 0.0f );
+            kmVec3Fill( &eye, size.width/2, size.height/2, zeye );
+            kmVec3Fill( &center, size.width/2, size.height/2, 0.0f );
             kmVec3Fill( &up, 0.0f, 1.0f, 0.0f);
             kmMat4LookAt(&matrixLookup, &eye, &center, &up);
             kmGLMultMatrix(&matrixLookup);
@@ -399,25 +392,27 @@ void CCDirector::setProjection(ccDirectorProjection kProjection)
 void CCDirector::purgeCachedData(void)
 {
     CCLabelBMFont::purgeCachedData();
-    CCTextureCache::sharedTextureCache()->removeUnusedTextures();
+    if (s_SharedDirector->getOpenGLView())
+    {
+        CCTextureCache::sharedTextureCache()->removeUnusedTextures();
+    }
     CCFileUtils::sharedFileUtils()->purgeCachedEntries();
 }
 
 float CCDirector::getZEye(void)
 {
-    return (m_obWinSizeInPixels.height / 1.1566f / CC_CONTENT_SCALE_FACTOR());    
+    return (m_obWinSizeInPoints.height / 1.1566f);
 }
 
 void CCDirector::setAlphaBlending(bool bOn)
 {
     if (bOn)
     {
-        ccGLEnable(CC_GL_BLEND);
         ccGLBlendFunc(CC_BLEND_SRC, CC_BLEND_DST);
     }
     else
     {
-        glDisable(GL_BLEND);
+        ccGLBlendFunc(GL_ONE, GL_ZERO);
     }
 
     CHECK_GL_ERROR_DEBUG();
@@ -439,20 +434,50 @@ void CCDirector::setDepthTest(bool bOn)
     CHECK_GL_ERROR_DEBUG();
 }
 
+static void
+GLToClipTransform(kmMat4 *transformOut)
+{
+	kmMat4 projection;
+	kmGLGetMatrix(KM_GL_PROJECTION, &projection);
+	
+	kmMat4 modelview;
+	kmGLGetMatrix(KM_GL_MODELVIEW, &modelview);
+	
+	kmMat4Multiply(transformOut, &projection, &modelview);
+}
+
 CCPoint CCDirector::convertToGL(const CCPoint& uiPoint)
 {
-    CCSize s = m_obWinSizeInPoints;
-    float newY = s.height - uiPoint.y;
-    
-    return ccp(uiPoint.x, newY);
+    kmMat4 transform;
+	GLToClipTransform(&transform);
+	
+	kmMat4 transformInv;
+	kmMat4Inverse(&transformInv, &transform);
+	
+	// Calculate z=0 using -> transform*[0, 0, 0, 1]/w
+	kmScalar zClip = transform.mat[14]/transform.mat[15];
+	
+    CCSize glSize = m_pobOpenGLView->getDesignResolutionSize();
+	kmVec3 clipCoord = {2.0f*uiPoint.x/glSize.width - 1.0f, 1.0f - 2.0f*uiPoint.y/glSize.height, zClip};
+	
+	kmVec3 glCoord;
+	kmVec3TransformCoord(&glCoord, &clipCoord, &transformInv);
+	
+	return ccp(glCoord.x, glCoord.y);
 }
 
 CCPoint CCDirector::convertToUI(const CCPoint& glPoint)
 {
-    CCSize winSize = m_obWinSizeInPoints;
-    float oppositeY = winSize.height - glPoint.y;
+    kmMat4 transform;
+	GLToClipTransform(&transform);
     
-    return ccp(glPoint.x, oppositeY);
+	kmVec3 clipCoord;
+	// Need to calculate the zero depth from the transform.
+	kmVec3 glCoord = {glPoint.x, glPoint.y, 0.0};
+	kmVec3TransformCoord(&clipCoord, &glCoord, &transform);
+	
+	CCSize glSize = m_pobOpenGLView->getDesignResolutionSize();
+	return ccp(glSize.width*(clipCoord.x*0.5 + 0.5), glSize.height*(-clipCoord.y*0.5 + 0.5));
 }
 
 CCSize CCDirector::getWinSize(void)
@@ -462,28 +487,38 @@ CCSize CCDirector::getWinSize(void)
 
 CCSize CCDirector::getWinSizeInPixels()
 {
-    return m_obWinSizeInPixels;
+    return CCSizeMake(m_obWinSizeInPoints.width * m_fContentScaleFactor, m_obWinSizeInPoints.height * m_fContentScaleFactor);
 }
 
-void CCDirector::reshapeProjection(const CCSize& newWindowSize)
+CCSize CCDirector::getVisibleSize()
 {
-    CC_UNUSED_PARAM(newWindowSize);
     if (m_pobOpenGLView)
     {
-       m_obWinSizeInPoints = m_pobOpenGLView->getSize();
-       m_obWinSizeInPixels = CCSizeMake(m_obWinSizeInPoints.width * m_fContentScaleFactor,
-                                     m_obWinSizeInPoints.height * m_fContentScaleFactor);
- 
-       setProjection(m_eProjection);       
+        return m_pobOpenGLView->getVisibleSize();
     }
+    else 
+    {
+        return CCSizeZero;
+    }
+}
 
+CCPoint CCDirector::getVisibleOrigin()
+{
+    if (m_pobOpenGLView)
+    {
+        return m_pobOpenGLView->getVisibleOrigin();
+    }
+    else 
+    {
+        return CCPointZero;
+    }
 }
 
 // scene management
 
 void CCDirector::runWithScene(CCScene *pScene)
 {
-    CCAssert(pScene != NULL, "running scene should not be null");
+    CCAssert(pScene != NULL, "This command can only be used to start the CCDirector. There is already a scene present.");
     CCAssert(m_pRunningScene == NULL, "m_pRunningScene should be null");
 
     pushScene(pScene);
@@ -492,6 +527,7 @@ void CCDirector::runWithScene(CCScene *pScene)
 
 void CCDirector::replaceScene(CCScene *pScene)
 {
+    CCAssert(m_pRunningScene, "Use runWithScene: instead to start the director");
     CCAssert(pScene != NULL, "the scene should not be null");
 
     unsigned int index = m_pobScenesStack->count();
@@ -547,6 +583,7 @@ void CCDirector::popToRootScene(void)
             CCScene *current = (CCScene*)m_pobScenesStack->lastObject();
             if( current->isRunning() )
             {
+                current->onExitTransitionDidStart();
                 current->onExit();
             }
             current->cleanup();
@@ -566,12 +603,16 @@ void CCDirector::end()
 
 void CCDirector::purgeDirector()
 {
+    // cleanup scheduler
+    getScheduler()->unscheduleAll();
+    
     // don't release the event handlers
     // They are needed in case the director is run again
     m_pTouchDispatcher->removeAllDelegates();
 
     if (m_pRunningScene)
     {
+        m_pRunningScene->onExitTransitionDidStart();
         m_pRunningScene->onExit();
         m_pRunningScene->cleanup();
         m_pRunningScene->release();
@@ -590,9 +631,6 @@ void CCDirector::purgeDirector()
     CC_SAFE_RELEASE_NULL(m_pSPFLabel);
     CC_SAFE_RELEASE_NULL(m_pDrawsLabel);
 
-    CCObject* pProjectionDelegate = (CCObject*)m_pProjectionDelegate;
-    CC_SAFE_RELEASE_NULL(pProjectionDelegate);
-
     // purge bitmap cache
     CCLabelBMFont::purgeCachedData();
 
@@ -606,9 +644,7 @@ void CCDirector::purgeDirector()
 
     // cocos2d-x specific data structures
     CCUserDefault::purgeSharedUserDefault();
-    extension::CCNotificationCenter::purgeNotificationCenter();
-    extension::CCTextureWatcher::purgeTextureWatcher();
-    extension::CCNodeLoaderLibrary::purgeSharedCCNodeLoaderLibrary();
+    CCNotificationCenter::purgeNotificationCenter();
 
     ccGLInvalidateStateCache();
     
@@ -617,6 +653,9 @@ void CCDirector::purgeDirector()
     // OpenGL view
     m_pobOpenGLView->end();
     m_pobOpenGLView = NULL;
+
+    // delete CCDirector
+    release();
 }
 
 void CCDirector::setNextScene(void)
@@ -629,6 +668,7 @@ void CCDirector::setNextScene(void)
      {
          if (m_pRunningScene)
          {
+             m_pRunningScene->onExitTransitionDidStart();
              m_pRunningScene->onExit();
          }
  
@@ -710,7 +750,7 @@ void CCDirector::showStats(void)
                 sprintf(m_pszFPS, "%.1f", m_fFrameRate);
                 m_pFPSLabel->setString(m_pszFPS);
                 
-                sprintf(m_pszFPS, "%4d", g_uNumberOfDraws);
+                sprintf(m_pszFPS, "%4lu", (unsigned long)g_uNumberOfDraws);
                 m_pDrawsLabel->setString(m_pszFPS);
             }
             
@@ -735,104 +775,49 @@ void CCDirector::createStatsLabel()
 {
     if( m_pFPSLabel && m_pSPFLabel ) 
     {
-        CCTexture2D *texture = m_pFPSLabel->getTexture();
-
         CC_SAFE_RELEASE_NULL(m_pFPSLabel);
         CC_SAFE_RELEASE_NULL(m_pSPFLabel);
         CC_SAFE_RELEASE_NULL(m_pDrawsLabel);
-        CCTextureCache::sharedTextureCache()->removeTexture(texture);
 
         CCFileUtils::sharedFileUtils()->purgeCachedEntries();
     }
 
-    CCTexture2DPixelFormat currentFormat = CCTexture2D::defaultAlphaPixelFormat();
-    CCTexture2D::setDefaultAlphaPixelFormat(kCCTexture2DPixelFormat_RGBA4444);
-    m_pFPSLabel = new CCLabelAtlas();
-    m_pFPSLabel->initWithString("00.0", "fps_images.png", 12, 32, '.');
-    m_pSPFLabel = new CCLabelAtlas();
-    m_pSPFLabel->initWithString("0.000", "fps_images.png", 12, 32, '.');
-    m_pDrawsLabel = new CCLabelAtlas();
-    m_pDrawsLabel->initWithString("000", "fps_images.png", 12, 32, '.');
-
-    CCTexture2D::setDefaultAlphaPixelFormat(currentFormat);
-
-    m_pDrawsLabel->setPosition( ccpAdd( ccp(0,34), CC_DIRECTOR_STATS_POSITION ) );
-    m_pSPFLabel->setPosition( ccpAdd( ccp(0,17), CC_DIRECTOR_STATS_POSITION ) );
-    m_pFPSLabel->setPosition( CC_DIRECTOR_STATS_POSITION );
-}
-
-
-/***************************************************
-* mobile platforms specific functions
-**************************************************/
-
-void CCDirector::updateContentScaleFactor()
-{
-    // [openGLView responseToSelector:@selector(setContentScaleFactor)]
-    if (m_pobOpenGLView->canSetContentScaleFactor())
+    int fontSize = 0;
+    if (m_obWinSizeInPoints.width > m_obWinSizeInPoints.height)
     {
-        m_pobOpenGLView->setContentScaleFactor(m_fContentScaleFactor);
-        m_bIsContentScaleSupported = true;
+        fontSize = (int)(m_obWinSizeInPoints.height / 320.0f * 24);
     }
     else
     {
-        CCLOG("cocos2d: setContentScaleFactor:'is not supported on this device");
+        fontSize = (int)(m_obWinSizeInPoints.width / 320.0f * 24);
     }
+    
+    m_pFPSLabel = CCLabelTTF::create("00.0", "Arial", fontSize);
+    m_pFPSLabel->retain();
+    m_pSPFLabel = CCLabelTTF::create("0.000", "Arial", fontSize);
+    m_pSPFLabel->retain();
+    m_pDrawsLabel = CCLabelTTF::create("000", "Arial", fontSize);
+    m_pDrawsLabel->retain();
+
+    CCSize contentSize = m_pDrawsLabel->getContentSize();
+    m_pDrawsLabel->setPosition(ccpAdd(ccp(contentSize.width/2, contentSize.height*5/2), CC_DIRECTOR_STATS_POSITION));
+    contentSize = m_pSPFLabel->getContentSize();
+    m_pSPFLabel->setPosition(ccpAdd(ccp(contentSize.width/2, contentSize.height*3/2), CC_DIRECTOR_STATS_POSITION));
+    contentSize = m_pFPSLabel->getContentSize();
+    m_pFPSLabel->setPosition(ccpAdd(ccp(contentSize.width/2, contentSize.height/2), CC_DIRECTOR_STATS_POSITION));
 }
 
-bool CCDirector::enableRetinaDisplay(bool enabled)
-{
-    // Already enabled?
-    if (enabled && m_fContentScaleFactor == 2)
-    {
-        return true;
-    }
-
-    // Already diabled?
-    if (!enabled && m_fContentScaleFactor == 1)
-    {
-        return false;
-    }
-
-    // setContentScaleFactor is not supported
-    if (! m_pobOpenGLView->canSetContentScaleFactor())
-    {
-        return false;
-    }
-
-    // SD device
-    if (m_pobOpenGLView->getMainScreenScale() == 1.0)
-    {
-        return false;
-    }
-
-    float newScale = (float)(enabled ? 2 : 1);
-    setContentScaleFactor(newScale);
-
-    createStatsLabel();
-
-    return true;
-}
-
-CCFloat CCDirector::getContentScaleFactor(void)
+float CCDirector::getContentScaleFactor(void)
 {
     return m_fContentScaleFactor;
 }
 
-void CCDirector::setContentScaleFactor(CCFloat scaleFactor)
+void CCDirector::setContentScaleFactor(float scaleFactor)
 {
     if (scaleFactor != m_fContentScaleFactor)
     {
         m_fContentScaleFactor = scaleFactor;
-        m_obWinSizeInPixels = CCSizeMake(m_obWinSizeInPoints.width * scaleFactor, m_obWinSizeInPoints.height * scaleFactor);
-
-        if (m_pobOpenGLView)
-        {
-            updateContentScaleFactor();
-        }
-
-        // update projection
-        setProjection(m_eProjection);
+        createStatsLabel();
     }
 }
 
@@ -846,6 +831,16 @@ void CCDirector::setNotificationNode(CCNode *node)
     CC_SAFE_RELEASE(m_pNotificationNode);
     m_pNotificationNode = node;
     CC_SAFE_RETAIN(m_pNotificationNode);
+}
+
+CCDirectorDelegate* CCDirector::getDelegate() const
+{
+    return m_pProjectionDelegate;
+}
+
+void CCDirector::setDelegate(CCDirectorDelegate* pDelegate)
+{
+    m_pProjectionDelegate = pDelegate;
 }
 
 void CCDirector::setScheduler(CCScheduler* pScheduler)
@@ -923,7 +918,7 @@ CCAccelerometer* CCDirector::getAccelerometer()
 * implementation of DisplayLinkDirector
 **************************************************/
 
-// should we afford 4 types of director ??
+// should we implement 4 types of director ??
 // I think DisplayLinkDirector is enough
 // so we now only support DisplayLinkDirector
 void CCDisplayLinkDirector::startAnimation(void)
@@ -934,7 +929,7 @@ void CCDisplayLinkDirector::startAnimation(void)
     }
 
     m_bInvalid = false;
-    CCApplication::sharedApplication().setAnimationInterval(m_dAnimationInterval);
+    CCApplication::sharedApplication()->setAnimationInterval(m_dAnimationInterval);
 }
 
 void CCDisplayLinkDirector::mainLoop(void)
@@ -967,13 +962,6 @@ void CCDisplayLinkDirector::setAnimationInterval(double dValue)
         startAnimation();
     }    
 }
-
-void CCDirector::setWatcherCallbackFun(void *pSender, WatcherCallbackFun fun)
-{
-    m_pWatcherFun = fun;
-    m_pWatcherSender = pSender;
-}
-
 
 NS_CC_END
 

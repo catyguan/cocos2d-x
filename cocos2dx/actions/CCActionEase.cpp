@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2009 Jason Booth
 
 http://www.cocos2d-x.org
@@ -42,10 +42,6 @@ NS_CC_BEGIN
 //
 // EaseAction
 //
-CCActionEase* CCActionEase::actionWithAction(CCActionInterval *pAction)
-{
-    return CCActionEase::create(pAction);
-}
 
 CCActionEase* CCActionEase::create(CCActionInterval *pAction)
 {
@@ -133,10 +129,6 @@ CCActionInterval* CCActionEase::reverse(void)
 //
 // EaseRateAction
 //
-CCEaseRateAction* CCEaseRateAction::actionWithAction(CCActionInterval *pAction, float fRate)
-{
-    return CCEaseRateAction::create(pAction, fRate);
-}
 
 CCEaseRateAction* CCEaseRateAction::create(CCActionInterval *pAction, float fRate)
 {
@@ -179,7 +171,7 @@ CCObject* CCEaseRateAction::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseRateAction();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval*)(m_pOther->copy()->autorelease()), m_fRate);
@@ -200,10 +192,6 @@ CCActionInterval* CCEaseRateAction::reverse(void)
 //
 // EeseIn
 //
-CCEaseIn* CCEaseIn::actionWithAction(CCActionInterval *pAction, float fRate)
-{
-    return CCEaseIn::create(pAction, fRate);
-}
 
 CCEaseIn* CCEaseIn::create(CCActionInterval *pAction, float fRate)
 {
@@ -235,7 +223,7 @@ CCObject* CCEaseIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval*)(m_pOther->copy()->autorelease()), m_fRate);
@@ -257,11 +245,6 @@ CCActionInterval* CCEaseIn::reverse(void)
 //
 // EaseOut
 //
-CCEaseOut* CCEaseOut::actionWithAction(CCActionInterval *pAction, float fRate)
-{
-    return CCEaseOut::create(pAction, fRate);
-}
-
 CCEaseOut* CCEaseOut::create(CCActionInterval *pAction, float fRate)
 {
     CCEaseOut *pRet = new CCEaseOut();
@@ -292,7 +275,7 @@ CCObject* CCEaseOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval*)(m_pOther->copy()->autorelease()), m_fRate);
@@ -314,11 +297,6 @@ CCActionInterval* CCEaseOut::reverse()
 //
 // EaseInOut
 //
-CCEaseInOut* CCEaseInOut::actionWithAction(CCActionInterval *pAction, float fRate)
-{
-    return CCEaseInOut::create(pAction, fRate);
-}
-
 CCEaseInOut* CCEaseInOut::create(CCActionInterval *pAction, float fRate)
 {
     CCEaseInOut *pRet = new CCEaseInOut();
@@ -349,7 +327,7 @@ CCObject* CCEaseInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval*)(m_pOther->copy()->autorelease()), m_fRate);
@@ -380,11 +358,6 @@ CCActionInterval* CCEaseInOut::reverse(void)
 //
 // EaseExponentialIn
 //
-CCEaseExponentialIn* CCEaseExponentialIn::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseExponentialIn::create(pAction);
-}
-
 CCEaseExponentialIn* CCEaseExponentialIn::create(CCActionInterval* pAction)
 {
     CCEaseExponentialIn *pRet = new CCEaseExponentialIn();
@@ -415,7 +388,7 @@ CCObject* CCEaseExponentialIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseExponentialIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -437,11 +410,6 @@ CCActionInterval* CCEaseExponentialIn::reverse(void)
 //
 // EaseExponentialOut
 //
-CCEaseExponentialOut* CCEaseExponentialOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseExponentialOut::create(pAction);
-}
-
 CCEaseExponentialOut* CCEaseExponentialOut::create(CCActionInterval* pAction)
 {
     CCEaseExponentialOut *pRet = new CCEaseExponentialOut();
@@ -472,7 +440,7 @@ CCObject* CCEaseExponentialOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseExponentialOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -494,10 +462,6 @@ CCActionInterval* CCEaseExponentialOut::reverse(void)
 //
 // EaseExponentialInOut
 //
-CCEaseExponentialInOut* CCEaseExponentialInOut::actionWithAction(CCActionInterval *pAction)
-{
-    return CCEaseExponentialInOut::create(pAction);
-}
 
 CCEaseExponentialInOut* CCEaseExponentialInOut::create(CCActionInterval *pAction)
 {
@@ -529,7 +493,7 @@ CCObject* CCEaseExponentialInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseExponentialInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -561,10 +525,6 @@ CCActionInterval* CCEaseExponentialInOut::reverse()
 //
 // EaseSineIn
 //
-CCEaseSineIn* CCEaseSineIn::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseSineIn::create(pAction);
-}
 
 CCEaseSineIn* CCEaseSineIn::create(CCActionInterval* pAction)
 {
@@ -596,7 +556,7 @@ CCObject* CCEaseSineIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseSineIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -618,10 +578,6 @@ CCActionInterval* CCEaseSineIn::reverse(void)
 //
 // EaseSineOut
 //
-CCEaseSineOut* CCEaseSineOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseSineOut::create(pAction);
-}
 
 CCEaseSineOut* CCEaseSineOut::create(CCActionInterval* pAction)
 {
@@ -653,7 +609,7 @@ CCObject* CCEaseSineOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseSineOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -675,10 +631,6 @@ CCActionInterval* CCEaseSineOut::reverse(void)
 //
 // EaseSineInOut
 //
-CCEaseSineInOut* CCEaseSineInOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseSineInOut::create(pAction);
-}
 
 CCEaseSineInOut* CCEaseSineInOut::create(CCActionInterval* pAction)
 {
@@ -710,7 +662,7 @@ CCObject* CCEaseSineInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseSineInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -733,9 +685,9 @@ CCActionInterval* CCEaseSineInOut::reverse()
 // EaseElastic
 //
 
-CCEaseElastic* CCEaseElastic::actionWithAction(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
+CCEaseElastic* CCEaseElastic::create(CCActionInterval *pAction)
 {
-    return CCEaseElastic::create(pAction, fPeriod);
+    return CCEaseElastic::create(pAction, 0.3f);
 }
 
 CCEaseElastic* CCEaseElastic::create(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
@@ -779,7 +731,7 @@ CCObject* CCEaseElastic::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseElastic();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()), m_fPeriod);
@@ -798,9 +750,10 @@ CCActionInterval* CCEaseElastic::reverse(void)
 //
 // EaseElasticIn
 //
-CCEaseElasticIn* CCEaseElasticIn::actionWithAction(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
+
+CCEaseElasticIn* CCEaseElasticIn::create(CCActionInterval *pAction)
 {
-    return CCEaseElasticIn::create(pAction, fPeriod);
+    return CCEaseElasticIn::create(pAction, 0.3f);
 }
 
 CCEaseElasticIn* CCEaseElasticIn::create(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
@@ -833,7 +786,7 @@ CCObject* CCEaseElasticIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseElasticIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()), m_fPeriod);
@@ -868,9 +821,9 @@ CCActionInterval* CCEaseElasticIn::reverse(void)
 // EaseElasticOut
 //
 
-CCEaseElasticOut* CCEaseElasticOut::actionWithAction(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
+CCEaseElasticOut* CCEaseElasticOut::create(CCActionInterval *pAction)
 {
-    return CCEaseElasticOut::create(pAction, fPeriod);
+    return CCEaseElasticOut::create(pAction, 0.3f);
 }
 
 CCEaseElasticOut* CCEaseElasticOut::create(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
@@ -903,7 +856,7 @@ CCObject *CCEaseElasticOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseElasticOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()), m_fPeriod);
@@ -937,9 +890,9 @@ CCActionInterval* CCEaseElasticOut::reverse(void)
 // EaseElasticInOut
 //
 
-CCEaseElasticInOut* CCEaseElasticInOut::actionWithAction(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
+CCEaseElasticInOut* CCEaseElasticInOut::create(CCActionInterval *pAction)
 {
-    return CCEaseElasticInOut::create(pAction, fPeriod);
+    return CCEaseElasticInOut::create(pAction, 0.3f);
 }
 
 CCEaseElasticInOut* CCEaseElasticInOut::create(CCActionInterval *pAction, float fPeriod/* = 0.3f*/)
@@ -972,7 +925,7 @@ CCObject* CCEaseElasticInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseElasticInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()), m_fPeriod);
@@ -1021,10 +974,6 @@ CCActionInterval* CCEaseElasticInOut::reverse(void)
 //
 // EaseBounce
 //
-CCEaseBounce* CCEaseBounce::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBounce::create(pAction);
-}
 
 CCEaseBounce* CCEaseBounce::create(CCActionInterval* pAction)
 {
@@ -1056,7 +1005,7 @@ CCObject* CCEaseBounce::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBounce();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1094,10 +1043,6 @@ CCActionInterval* CCEaseBounce::reverse()
 //
 // EaseBounceIn
 //
-CCEaseBounceIn* CCEaseBounceIn::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBounceIn::create(pAction);
-}
 
 CCEaseBounceIn* CCEaseBounceIn::create(CCActionInterval* pAction)
 {
@@ -1129,7 +1074,7 @@ CCObject* CCEaseBounceIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBounceIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1152,10 +1097,6 @@ CCActionInterval* CCEaseBounceIn::reverse(void)
 //
 // EaseBounceOut
 //
-CCEaseBounceOut* CCEaseBounceOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBounceOut::create(pAction);
-}
 
 CCEaseBounceOut* CCEaseBounceOut::create(CCActionInterval* pAction)
 {
@@ -1187,7 +1128,7 @@ CCObject* CCEaseBounceOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBounceOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1210,10 +1151,6 @@ CCActionInterval* CCEaseBounceOut::reverse(void)
 //
 // EaseBounceInOut
 //
-CCEaseBounceInOut* CCEaseBounceInOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBounceInOut::create(pAction);
-}
 
 CCEaseBounceInOut* CCEaseBounceInOut::create(CCActionInterval* pAction)
 {
@@ -1245,7 +1182,7 @@ CCObject* CCEaseBounceInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBounceInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1278,10 +1215,6 @@ CCActionInterval* CCEaseBounceInOut::reverse()
 //
 // EaseBackIn
 //
-CCEaseBackIn* CCEaseBackIn::actionWithAction(CCActionInterval *pAction)
-{
-    return CCEaseBackIn::create(pAction);
-}
 
 CCEaseBackIn* CCEaseBackIn::create(CCActionInterval *pAction)
 {
@@ -1313,7 +1246,7 @@ CCObject* CCEaseBackIn::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBackIn();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1336,10 +1269,6 @@ CCActionInterval* CCEaseBackIn::reverse(void)
 //
 // EaseBackOut
 //
-CCEaseBackOut* CCEaseBackOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBackOut::create(pAction);
-}
 
 CCEaseBackOut* CCEaseBackOut::create(CCActionInterval* pAction)
 {
@@ -1371,7 +1300,7 @@ CCObject* CCEaseBackOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBackOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));
@@ -1396,10 +1325,6 @@ CCActionInterval* CCEaseBackOut::reverse(void)
 //
 // EaseBackInOut
 //
-CCEaseBackInOut* CCEaseBackInOut::actionWithAction(CCActionInterval* pAction)
-{
-    return CCEaseBackInOut::create(pAction);
-}
 
 CCEaseBackInOut* CCEaseBackInOut::create(CCActionInterval* pAction)
 {
@@ -1431,7 +1356,7 @@ CCObject* CCEaseBackInOut::copyWithZone(CCZone *pZone)
     else
     {
         pCopy = new CCEaseBackInOut();
-        pZone = pNewZone = new CCZone(pCopy);
+        pNewZone = new CCZone(pCopy);
     }
 
     pCopy->initWithAction((CCActionInterval *)(m_pOther->copy()->autorelease()));

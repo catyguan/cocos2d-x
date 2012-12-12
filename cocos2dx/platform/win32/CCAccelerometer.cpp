@@ -168,14 +168,19 @@ void CCAccelerometer::setDelegate(CCAccelerometerDelegate* pDelegate)
     if (pDelegate)
     {
         // Register our handler
-        CCEGLView::sharedOpenGLView().setAccelerometerKeyHook( &myAccelerometerKeyHook );
+        CCEGLView::sharedOpenGLView()->setAccelerometerKeyHook( &myAccelerometerKeyHook );
     }
     else
     {
         // De-register our handler
-        CCEGLView::sharedOpenGLView().setAccelerometerKeyHook( NULL );
+        CCEGLView::sharedOpenGLView()->setAccelerometerKeyHook( NULL );
         resetAccelerometer();
     }
+}
+
+void CCAccelerometer::setAccelerometerInterval(float interval)
+{
+
 }
 
 void CCAccelerometer::update( double x,double y,double z,double timestamp ) 

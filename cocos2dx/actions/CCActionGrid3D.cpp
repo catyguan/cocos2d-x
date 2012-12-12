@@ -31,11 +31,6 @@ THE SOFTWARE.
 NS_CC_BEGIN
 // implementation of CCWaves3D
 
-CCWaves3D* CCWaves3D::actionWithWaves(int wav, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCWaves3D::create(wav, amp, gridSize, duration);
-}
-
 CCWaves3D* CCWaves3D::create(int wav, float amp, const ccGridSize& gridSize, float duration)
 {
     CCWaves3D *pAction = new CCWaves3D();
@@ -101,19 +96,14 @@ void CCWaves3D::update(float time)
         for (j = 0; j < m_sGridSize.y + 1; ++j)
         {
             ccVertex3F v = originalVertex(ccg(i ,j));
-            v.z += (sinf((CCFloat)M_PI * time * m_nWaves * 2 + (v.y+v.x) * .01f) * m_fAmplitude * m_fAmplitudeRate);
-            CCLog("v.z offset is %f\n", (sinf((CCFloat)M_PI * time * m_nWaves * 2 + (v.y+v.x) * .01f) * m_fAmplitude * m_fAmplitudeRate));
+            v.z += (sinf((float)M_PI * time * m_nWaves * 2 + (v.y+v.x) * .01f) * m_fAmplitude * m_fAmplitudeRate);
+            CCLog("v.z offset is %f\n", (sinf((float)M_PI * time * m_nWaves * 2 + (v.y+v.x) * .01f) * m_fAmplitude * m_fAmplitudeRate));
             setVertex(ccg(i, j), v);
         }
     }
 }
 
 // implementation of CCFlipX3D
-
-CCFlipX3D* CCFlipX3D::actionWithDuration(float duration)
-{
-    return CCFlipX3D::create(duration);
-}
 
 CCFlipX3D* CCFlipX3D::create(float duration)
 {
@@ -177,19 +167,19 @@ CCObject* CCFlipX3D::copyWithZone(CCZone *pZone)
 
 void CCFlipX3D::update(float time)
 {
-    CCFloat angle = (CCFloat)M_PI * time; // 180 degrees
-    CCFloat mz = sinf(angle);
+    float angle = (float)M_PI * time; // 180 degrees
+    float mz = sinf(angle);
     angle = angle / 2.0f; // x calculates degrees from 0 to 90
-    CCFloat mx = cosf(angle);
+    float mx = cosf(angle);
 
     ccVertex3F v0, v1, v, diff;
 
     v0 = originalVertex(ccg(1, 1));
     v1 = originalVertex(ccg(0, 0));
 
-    CCFloat    x0 = v0.x;
-    CCFloat    x1 = v1.x;
-    CCFloat x;
+    float    x0 = v0.x;
+    float    x1 = v1.x;
+    float x;
     ccGridSize    a, b, c, d;
 
     if ( x0 > x1 )
@@ -241,11 +231,6 @@ void CCFlipX3D::update(float time)
 
 // implementation of FlipY3D
 
-CCFlipY3D* CCFlipY3D::actionWithDuration(float duration)
-{
-    return CCFlipY3D::create(duration);
-}
-
 CCFlipY3D* CCFlipY3D::create(float duration)
 {
     CCFlipY3D *pAction = new CCFlipY3D();
@@ -290,19 +275,19 @@ CCObject* CCFlipY3D::copyWithZone(CCZone* pZone)
 
 void CCFlipY3D::update(float time)
 {
-    CCFloat angle = (CCFloat)M_PI * time; // 180 degrees
-    CCFloat mz = sinf( angle );
+    float angle = (float)M_PI * time; // 180 degrees
+    float mz = sinf( angle );
     angle = angle / 2.0f;     // x calculates degrees from 0 to 90
-    CCFloat my = cosf(angle);
+    float my = cosf(angle);
     
     ccVertex3F    v0, v1, v, diff;
     
     v0 = originalVertex(ccg(1, 1));
     v1 = originalVertex(ccg(0, 0));
     
-    CCFloat    y0 = v0.y;
-    CCFloat    y1 = v1.y;
-    CCFloat y;
+    float    y0 = v0.y;
+    float    y1 = v1.y;
+    float y;
     ccGridSize    a, b, c, d;
     
     if (y0 > y1)
@@ -354,11 +339,6 @@ void CCFlipY3D::update(float time)
 
 
 // implementation of Lens3D
-
-CCLens3D* CCLens3D::actionWithPosition(const CCPoint& pos, float r, const ccGridSize& gridSize, float duration)
-{
-    return CCLens3D::create(pos, r, gridSize, duration);
-}
 
 CCLens3D* CCLens3D::create(const CCPoint& pos, float r, const ccGridSize& gridSize, float duration)
 {
@@ -420,7 +400,8 @@ CCObject* CCLens3D::copyWithZone(CCZone *pZone)
 
 void CCLens3D::setPosition(const CCPoint& pos)
 {
-    if( ! CCPoint::CCPointEqualToPoint(pos, m_position) ) {
+    if( !pos.equals(m_position))
+    {
         m_position = pos;
         m_bDirty = true;
     }
@@ -439,12 +420,12 @@ void CCLens3D::update(float time)
             {
                 ccVertex3F v = originalVertex(ccg(i, j));
                 CCPoint vect = ccpSub(m_position, ccp(v.x, v.y));
-                CCFloat r = ccpLength(vect);
+                float r = ccpLength(vect);
                 
                 if (r < m_fRadius)
                 {
                     r = m_fRadius - r;
-                    CCFloat pre_log = r / m_fRadius;
+                    float pre_log = r / m_fRadius;
                     if ( pre_log == 0 ) 
                     {
                         pre_log = 0.001f;
@@ -470,11 +451,6 @@ void CCLens3D::update(float time)
 }
 
 // implementation of Ripple3D
-
-CCRipple3D* CCRipple3D::actionWithPosition(const CCPoint& pos, float r, int wav, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCRipple3D::create(pos, r, wav, amp, gridSize, duration);
-}
 
 CCRipple3D* CCRipple3D::create(const CCPoint& pos, float r, int wav, float amp, const ccGridSize& gridSize, float duration)
 {
@@ -549,13 +525,13 @@ void CCRipple3D::update(float time)
         {
             ccVertex3F v = originalVertex(ccg(i, j));
             CCPoint vect = ccpSub(m_position, ccp(v.x,v.y));
-            CCFloat r = ccpLength(vect);
+            float r = ccpLength(vect);
             
             if (r < m_fRadius)
             {
                 r = m_fRadius - r;
-                CCFloat rate = powf(r / m_fRadius, 2);
-                v.z += (sinf( time*(CCFloat)M_PI * m_nWaves * 2 + r * 0.1f) * m_fAmplitude * m_fAmplitudeRate * rate);
+                float rate = powf(r / m_fRadius, 2);
+                v.z += (sinf( time*(float)M_PI * m_nWaves * 2 + r * 0.1f) * m_fAmplitude * m_fAmplitudeRate * rate);
             }
             
             setVertex(ccg(i, j), v);
@@ -564,11 +540,6 @@ void CCRipple3D::update(float time)
 }
 
 // implementation of Shaky3D
-
-CCShaky3D* CCShaky3D::actionWithRange(int range, bool shakeZ, const ccGridSize& gridSize, float duration)
-{
-    return CCShaky3D::create(range, shakeZ, gridSize, duration);
-}
 
 CCShaky3D* CCShaky3D::create(int range, bool shakeZ, const ccGridSize& gridSize, float duration)
 {
@@ -649,11 +620,6 @@ void CCShaky3D::update(float time)
 
 // implementation of Liquid
 
-CCLiquid* CCLiquid::actionWithWaves(int wav, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCLiquid::create(wav, amp, gridSize, duration);
-}
-
 CCLiquid* CCLiquid::create(int wav, float amp, const ccGridSize& gridSize, float duration)
 {
     CCLiquid *pAction = new CCLiquid();
@@ -719,19 +685,14 @@ void CCLiquid::update(float time)
         for (j = 1; j < m_sGridSize.y; ++j)
         {
             ccVertex3F v = originalVertex(ccg(i, j));
-            v.x = (v.x + (sinf(time * (CCFloat)M_PI * m_nWaves * 2 + v.x * .01f) * m_fAmplitude * m_fAmplitudeRate));
-            v.y = (v.y + (sinf(time * (CCFloat)M_PI * m_nWaves * 2 + v.y * .01f) * m_fAmplitude * m_fAmplitudeRate));
+            v.x = (v.x + (sinf(time * (float)M_PI * m_nWaves * 2 + v.x * .01f) * m_fAmplitude * m_fAmplitudeRate));
+            v.y = (v.y + (sinf(time * (float)M_PI * m_nWaves * 2 + v.y * .01f) * m_fAmplitude * m_fAmplitudeRate));
             setVertex(ccg(i, j), v);
         }
     }
 }
 
 // implementation of Waves
-
-CCWaves* CCWaves::actionWithWaves(int wav, float amp, bool h, bool v, const ccGridSize& gridSize, float duration)
-{
-    return CCWaves::create(wav, amp, h, v, gridSize, duration);
-}
 
 CCWaves* CCWaves::create(int wav, float amp, bool h, bool v, const ccGridSize& gridSize, float duration)
 {
@@ -803,12 +764,12 @@ void CCWaves::update(float time)
 
             if (m_bVertical)
             {
-                v.x = (v.x + (sinf(time * (CCFloat)M_PI * m_nWaves * 2 + v.y * .01f) * m_fAmplitude * m_fAmplitudeRate));
+                v.x = (v.x + (sinf(time * (float)M_PI * m_nWaves * 2 + v.y * .01f) * m_fAmplitude * m_fAmplitudeRate));
             }
 
             if (m_bHorizontal)
             {
-                v.y = (v.y + (sinf(time * (CCFloat)M_PI * m_nWaves * 2 + v.x * .01f) * m_fAmplitude * m_fAmplitudeRate));
+                v.y = (v.y + (sinf(time * (float)M_PI * m_nWaves * 2 + v.x * .01f) * m_fAmplitude * m_fAmplitudeRate));
             }
 
             setVertex(ccg(i, j), v);
@@ -817,11 +778,6 @@ void CCWaves::update(float time)
 }
 
 // implementation of Twirl
-
-CCTwirl* CCTwirl::actionWithPosition(CCPoint pos, int t, float amp, const ccGridSize& gridSize, float duration)
-{
-    return CCTwirl::create(pos, t, amp, gridSize, duration);
-}
 
 CCTwirl* CCTwirl::create(CCPoint pos, int t, float amp, const ccGridSize& gridSize, float duration)
 {
@@ -898,10 +854,10 @@ void CCTwirl::update(float time)
             ccVertex3F v = originalVertex(ccg(i ,j));
             
             CCPoint    avg = ccp(i-(m_sGridSize.x/2.0f), j-(m_sGridSize.y/2.0f));
-            CCFloat r = ccpLength(avg);
+            float r = ccpLength(avg);
             
-            CCFloat amp = 0.1f * m_fAmplitude * m_fAmplitudeRate;
-            CCFloat a = r * cosf( (CCFloat)M_PI/2.0f + time * (CCFloat)M_PI * m_nTwirls * 2 ) * amp;
+            float amp = 0.1f * m_fAmplitude * m_fAmplitudeRate;
+            float a = r * cosf( (float)M_PI/2.0f + time * (float)M_PI * m_nTwirls * 2 ) * amp;
             
             CCPoint d = ccp(
                 sinf(a) * (v.y-c.y) + cosf(a) * (v.x-c.x),

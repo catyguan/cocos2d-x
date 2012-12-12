@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright 2009 lhunath (Maarten Billemont)
 
 http://www.cocos2d-x.org
@@ -26,11 +26,6 @@ THE SOFTWARE.
 #include "CCActionTween.h"
 
 NS_CC_BEGIN
-
-CCActionTween* CCActionTween::actionWithDuration(float aDuration, const char* key, float from, float to)
-{
-    return CCActionTween::create(aDuration, key, from, to);
-}
 
 CCActionTween* CCActionTween::create(float aDuration, const char* key, float from, float to)
 {

@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 Copyright (c) 2011      Zynga Inc.
 
@@ -50,7 +50,7 @@ struct transformValues_;
  * @{
  */
 
-#define CCSpriteIndexNotInitialized 0xffffffff     /// CCSprite invalid index on the CCSpriteBatchode
+#define CCSpriteIndexNotInitialized 0xffffffff     /// CCSprite invalid index on the CCSpriteBatchNode
 
 
 /** CCSprite is a 2d image ( http://en.wikipedia.org/wiki/Sprite_(computer_graphics) )
@@ -125,45 +125,20 @@ public:
     inline void setBlendFunc(ccBlendFunc blendFunc) { m_sBlendFunc = blendFunc; }
 
 public:
+
     /** Creates an sprite with a texture.
      The rect used will be the size of the texture.
      The offset will be (0,0).
-     @deprecated: This interface will be deprecated sooner or later.
      */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithTexture(CCTexture2D *pTexture);
-
-    /** Creates an sprite with a texture and a rect.
-     The offset will be (0,0).
-     @deprecated: This interface will be deprecated sooner or later.
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithTexture(CCTexture2D *pTexture, const CCRect& rect);
-
-        /** Creates an sprite with a texture.
-     The rect used will be the size of the texture.
-     The offset will be (0,0).
-     */
-    static CCSprite* create(CCTexture2D *pTexture);
+    static CCSprite* createWithTexture(CCTexture2D *pTexture);
 
     /** Creates an sprite with a texture and a rect.
      The offset will be (0,0).
      */
-    static CCSprite* create(CCTexture2D *pTexture, const CCRect& rect);
-
-    /** Creates an sprite with an sprite frame. 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithSpriteFrame(CCSpriteFrame *pSpriteFrame);
-
-    /** Creates an sprite with an sprite frame name.
-     An CCSpriteFrame will be fetched from the CCSpriteFrameCache by name.
-     If the CCSpriteFrame doesn't exist it will raise an exception.
-     @deprecated: This interface will be deprecated sooner or later.
-     @since v0.9
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithSpriteFrameName(const char *pszSpriteFrameName);
+    static CCSprite* createWithTexture(CCTexture2D *pTexture, const CCRect& rect);
 
     /** Creates an sprite with an sprite frame. */
-    static CCSprite* create(CCSpriteFrame *pSpriteFrame);
+    static CCSprite* createWithSpriteFrame(CCSpriteFrame *pSpriteFrame);
 
     /** Creates an sprite with an sprite frame name.
      An CCSpriteFrame will be fetched from the CCSpriteFrameCache by name.
@@ -171,19 +146,6 @@ public:
      @since v0.9
      */
     static CCSprite* createWithSpriteFrameName(const char *pszSpriteFrameName);
-
-    /** Creates an sprite with an image filename.
-     The rect used will be the size of the image.
-     The offset will be (0,0).
-     @deprecated: This interface will be deprecated sooner or later.
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithFile(const char *pszFileName);
-
-    /** Creates an sprite with an image filename and a rect.
-     The offset will be (0,0).
-     @deprecated: This interface will be deprecated sooner or later.
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* spriteWithFile(const char *pszFileName, const CCRect& rect);
     
     /** Creates an sprite with an image filename.
      The rect used will be the size of the image.
@@ -196,10 +158,6 @@ public:
      */
     static CCSprite* create(const char *pszFileName, const CCRect& rect);
 
-    /** Creates an sprite.
-    @deprecated: This interface will be deprecated sooner or later.
-     */
-    CC_DEPRECATED_ATTRIBUTE static CCSprite* node();
     /** Creates an sprite.
      */
     static CCSprite* create();
@@ -219,6 +177,8 @@ public:
     virtual void setDirtyRecursively(bool bValue);
     virtual void setPosition(const CCPoint& pos);
     virtual void setRotation(float fRotation);
+    virtual void setRotationX(float fRotationX);
+    virtual void setRotationY(float fRotationY);
     virtual void setSkewX(float sx);
     virtual void setSkewY(float sy);
     virtual void setScaleX(float fScaleX);
@@ -386,6 +346,7 @@ protected:
     bool m_bFlipX;
     bool m_bFlipY;
 };
+
 
 // end of sprite_nodes group
 /// @}

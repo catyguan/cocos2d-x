@@ -1,6 +1,7 @@
 #include "CCApplication.h"
 #include "CCEGLView.h"
 #include "CCDirector.h"
+#include <algorithm>
 
 /**
 @brief    This function change the PVRFrame show/hide setting in register.
@@ -48,9 +49,9 @@ int CCApplication::run()
         return 0;
     }
 
-    CCEGLView& mainWnd = CCEGLView::sharedOpenGLView();
-    mainWnd.centerWindow();
-    ShowWindow(mainWnd.getHWnd(), SW_SHOW);
+    CCEGLView* pMainWnd = CCEGLView::sharedOpenGLView();
+    pMainWnd->centerWindow();
+    ShowWindow(pMainWnd->getHWnd(), SW_SHOW);
 
     while (1)
     {
@@ -99,10 +100,10 @@ void CCApplication::setAnimationInterval(double interval)
 //////////////////////////////////////////////////////////////////////////
 // static member function
 //////////////////////////////////////////////////////////////////////////
-CCApplication& CCApplication::sharedApplication()
+CCApplication* CCApplication::sharedApplication()
 {
     CC_ASSERT(sm_pSharedApplication);
-    return *sm_pSharedApplication;
+    return sm_pSharedApplication;
 }
 
 ccLanguageType CCApplication::getCurrentLanguage()
@@ -116,6 +117,9 @@ ccLanguageType CCApplication::getCurrentLanguage()
     {
         case LANG_CHINESE:
             ret = kLanguageChinese;
+            break;
+        case LANG_ENGLISH:
+            ret = kLanguageEnglish;
             break;
         case LANG_FRENCH:
             ret = kLanguageFrench;
@@ -132,9 +136,39 @@ ccLanguageType CCApplication::getCurrentLanguage()
         case LANG_RUSSIAN:
             ret = kLanguageRussian;
             break;
+        case LANG_KOREAN:
+            ret = kLanguageKorean;
+            break;
+        case LANG_JAPANESE:
+            ret = kLanguageJapanese;
+            break;
+        case LANG_HUNGARIAN:
+            ret = kLanguageHungarian;
+            break;
     }
 
     return ret;
+}
+
+TargetPlatform CCApplication::getTargetPlatform()
+{
+    return kTargetWindows;
+}
+
+void CCApplication::setResourceRootPath(const std::string& rootResDir)
+{
+    m_resourceRootPath = rootResDir;
+    std::replace(m_resourceRootPath.begin(), m_resourceRootPath.end(), '\\', '/');
+    if (m_resourceRootPath[m_resourceRootPath.length() - 1] != '/')
+    {
+        m_resourceRootPath += '/';
+    }
+}
+
+void CCApplication::setStartupScriptFilename(const std::string& startupScriptFile)
+{
+    m_startupScriptFilename = startupScriptFile;
+    std::replace(m_startupScriptFilename.begin(), m_startupScriptFilename.end(), '\\', '/');
 }
 
 NS_CC_END

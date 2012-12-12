@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2010-2011 cocos2d-x.org
+Copyright (c) 2010-2012 cocos2d-x.org
 Copyright (c) 2008-2010 Ricardo Quesada
 
 http://www.cocos2d-x.org
@@ -94,10 +94,6 @@ public:
         , m_fRadDeltaX(0.0)        
     {}
     ~CCOrbitCamera(){}
-    /** creates a CCOrbitCamera action with radius, delta-radius,  z, deltaZ, x, deltaX 
-    @deprecated: This interface will be deprecated sooner or later.
-    */
-    CC_DEPRECATED_ATTRIBUTE static CCOrbitCamera* actionWithDuration(float t, float radius, float deltaRadius, float angleZ, float deltaAngleZ, float angleX, float deltaAngleX);
     
     /** creates a CCOrbitCamera action with radius, delta-radius,  z, deltaZ, x, deltaX */
     static CCOrbitCamera* create(float t, float radius, float deltaRadius, float angleZ, float deltaAngleZ, float angleX, float deltaAngleX);

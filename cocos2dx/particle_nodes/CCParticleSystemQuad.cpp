@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include "shaders/ccGLStateCache.h"
 #include "shaders/CCGLProgram.h"
 #include "support/TransformUtils.h"
-#include "extensions/CCNotificationCenter/CCNotificationCenter.h"
+#include "support/CCNotificationCenter.h"
 #include "CCEventType.h"
 
 // extern
@@ -67,7 +67,7 @@ bool CCParticleSystemQuad::initWithTotalParticles(unsigned int numberOfParticles
         
         
         // Need to listen the event only when not use batchnode, because it will use VBO
-        extension::CCNotificationCenter::sharedNotificationCenter()->addObserver(this,
+        CCNotificationCenter::sharedNotificationCenter()->addObserver(this,
                                                                       callfuncO_selector(CCParticleSystemQuad::listenBackToForeground),
                                                                       EVNET_COME_TO_FOREGROUND,
                                                                       NULL);
@@ -99,14 +99,10 @@ CCParticleSystemQuad::~CCParticleSystemQuad()
 #endif
     }
     
-    extension::CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVNET_COME_TO_FOREGROUND);
+    CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVNET_COME_TO_FOREGROUND);
 }
 
 // implementation CCParticleSystemQuad
-CCParticleSystemQuad * CCParticleSystemQuad::particleWithFile(const char *plistFile)
-{
-    return CCParticleSystemQuad::create(plistFile);
-}
 
 CCParticleSystemQuad * CCParticleSystemQuad::create(const char *plistFile)
 {
@@ -119,6 +115,18 @@ CCParticleSystemQuad * CCParticleSystemQuad::create(const char *plistFile)
     CC_SAFE_DELETE(pRet);
     return pRet;
 }
+
+CCParticleSystemQuad * CCParticleSystemQuad::createWithTotalParticles(unsigned int numberOfParticles) {
+    CCParticleSystemQuad *pRet = new CCParticleSystemQuad();
+    if (pRet && pRet->initWithTotalParticles(numberOfParticles))
+    {
+        pRet->autorelease();
+        return pRet;
+    }
+    CC_SAFE_DELETE(pRet);
+    return pRet;
+}
+
 
 // pointRect should be in Texture coordinates, not pixel coordinates
 void CCParticleSystemQuad::initTexCoordsWithRect(const CCRect& pointRect)
@@ -198,12 +206,13 @@ void CCParticleSystemQuad::setTextureWithRect(CCTexture2D *texture, const CCRect
 }
 void CCParticleSystemQuad::setTexture(CCTexture2D* texture)
 {
-    const CCSize& s = texture->getContentSize();
+    CCSize s = texture->getContentSize();
     this->setTextureWithRect(texture, CCRectMake(0, 0, s.width, s.height));
 }
 void CCParticleSystemQuad::setDisplayFrame(CCSpriteFrame *spriteFrame)
 {
-    CCAssert( CCPoint::CCPointEqualToPoint( spriteFrame->getOffsetInPixels() , CCPointZero ), "QuadParticle only supports SpriteFrames with no offsets");
+    CCAssert(spriteFrame->getOffsetInPixels().equals(CCPointZero), 
+             "QuadParticle only supports SpriteFrames with no offsets");
 
     // update texture before updating texture rect
     if ( !m_pTexture || spriteFrame->getTexture()->getName() != m_pTexture->getName())
@@ -311,11 +320,23 @@ void CCParticleSystemQuad::updateQuadWithParticle(tCCParticle* particle, const C
 }
 void CCParticleSystemQuad::postStep()
 {
-    glBindBuffer(GL_ARRAY_BUFFER, m_pBuffersVBO[0] );
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(m_pQuads[0])*m_uParticleCount, m_pQuads);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    CHECK_GL_ERROR_DEBUG();
+    glBindBuffer(GL_ARRAY_BUFFER, m_pBuffersVBO[0]);
+	
+	// Option 1: Sub Data
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(m_pQuads[0])*m_uTotalParticles, m_pQuads);
+	
+	// Option 2: Data
+    //	glBufferData(GL_ARRAY_BUFFER, sizeof(quads_[0]) * particleCount, quads_, GL_DYNAMIC_DRAW);
+	
+	// Option 3: Orphaning + glMapBuffer
+	// glBufferData(GL_ARRAY_BUFFER, sizeof(m_pQuads[0])*m_uTotalParticles, NULL, GL_STREAM_DRAW);
+	// void *buf = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	// memcpy(buf, m_pQuads, sizeof(m_pQuads[0])*m_uTotalParticles);
+	// glUnmapBuffer(GL_ARRAY_BUFFER);
+    
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+	CHECK_GL_ERROR_DEBUG();
 }
 
 // overriding draw method
@@ -334,7 +355,7 @@ void CCParticleSystemQuad::draw()
     //
     // Using VBO and VAO
     //
-    glBindVertexArray( m_uVAOname );
+    ccGLBindVAO(m_uVAOname);
 
 #if CC_REBIND_INDICES_BUFFER
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pBuffersVBO[1]);
@@ -345,8 +366,6 @@ void CCParticleSystemQuad::draw()
 #if CC_REBIND_INDICES_BUFFER
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 #endif
-
-    glBindVertexArray( 0 );
 
 #else
     //
@@ -380,7 +399,7 @@ void CCParticleSystemQuad::draw()
 
 void CCParticleSystemQuad::setTotalParticles(unsigned int tp)
 {
-    // If we are setting the total numer of particles to a number higher
+    // If we are setting the total number of particles to a number higher
     // than what is allocated, we need to allocate new arrays
     if( tp > m_uAllocatedParticles )
     {
@@ -446,7 +465,7 @@ void CCParticleSystemQuad::setTotalParticles(unsigned int tp)
 void CCParticleSystemQuad::setupVBOandVAO()
 {
     glGenVertexArrays(1, &m_uVAOname);
-    glBindVertexArray(m_uVAOname);
+    ccGLBindVAO(m_uVAOname);
 
 #define kQuadSize sizeof(m_pQuads[0].bl)
 
@@ -470,7 +489,8 @@ void CCParticleSystemQuad::setupVBOandVAO()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pBuffersVBO[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_pIndices[0]) * m_uTotalParticles * 6, m_pIndices, GL_STATIC_DRAW);
 
-    glBindVertexArray(0);
+    // Must unbind the VAO before changing the element buffer.
+    ccGLBindVAO(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -567,11 +587,6 @@ void CCParticleSystemQuad::setBatchNode(CCParticleBatchNode * batchNode)
 #endif
         }
     }
-}
-
-CCParticleSystemQuad * CCParticleSystemQuad::node()
-{
-    return CCParticleSystemQuad::create();
 }
 
 CCParticleSystemQuad * CCParticleSystemQuad::create() {

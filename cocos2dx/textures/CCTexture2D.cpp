@@ -163,7 +163,7 @@ void CCTexture2D::releaseData(void *data)
 void* CCTexture2D::keepData(void *data, unsigned int length)
 {
     CC_UNUSED_PARAM(length);
-    //The texture data mustn't be saved becuase it isn't a mutable texture.
+    //The texture data mustn't be saved because it isn't a mutable texture.
     return data;
 }
 
@@ -235,7 +235,6 @@ bool CCTexture2D::initWithData(const void *data, CCTexture2DPixelFormat pixelFor
     m_bHasPremultipliedAlpha = false;
     m_bHasMipmaps = false;
 
-    m_eResolutionType = kCCResolutionUnknown;
     setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
 
     return true;
@@ -251,11 +250,6 @@ const char* CCTexture2D::description(void)
 
 bool CCTexture2D::initWithImage(CCImage *uiImage)
 {
-    return initWithImage(uiImage, kCCResolutionUnknown);
-}
-
-bool CCTexture2D::initWithImage(CCImage * uiImage, ccResolutionType resolution)
-{
     if (uiImage == NULL)
     {
         CCLOG("cocos2d: CCTexture2D. Can't create Texture. UIImage is nil");
@@ -267,7 +261,7 @@ bool CCTexture2D::initWithImage(CCImage * uiImage, ccResolutionType resolution)
     unsigned int imageHeight = uiImage->getHeight();
     
     CCConfiguration *conf = CCConfiguration::sharedConfiguration();
-
+    
     unsigned maxTextureSize = conf->getMaxTextureSize();
     if (imageWidth > maxTextureSize || imageHeight > maxTextureSize) 
     {
@@ -275,12 +269,11 @@ bool CCTexture2D::initWithImage(CCImage * uiImage, ccResolutionType resolution)
         this->release();
         return NULL;
     }
-
-    m_eResolutionType = resolution;
-
+    
     // always load premultiplied images
     return initPremultipliedATextureWithImage(uiImage, imageWidth, imageHeight);
 }
+
 bool CCTexture2D::initPremultipliedATextureWithImage(CCImage *image, unsigned int width, unsigned int height)
 {
     unsigned char*            tempData = image->getData();
@@ -423,10 +416,10 @@ bool CCTexture2D::initPremultipliedATextureWithImage(CCImage *image, unsigned in
 // implementation CCTexture2D (Text)
 bool CCTexture2D::initWithString(const char *text, const char *fontName, float fontSize)
 {
-    return initWithString(text, CCSizeMake(0,0), kCCTextAlignmentCenter, kCCVerticalTextAlignmentTop, fontName, fontSize);
+    return initWithString(text,  fontName, fontSize, CCSizeMake(0,0), kCCTextAlignmentCenter, kCCVerticalTextAlignmentTop);
 }
 
-bool CCTexture2D::initWithString(const char *text, const CCSize& dimensions, CCTextAlignment hAlignment, CCVerticalTextAlignment vAlignment, const char *fontName, float fontSize)
+bool CCTexture2D::initWithString(const char *text, const char *fontName, float fontSize, const CCSize& dimensions, CCTextAlignment hAlignment, CCVerticalTextAlignment vAlignment)
 {
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     // cache the texture data
@@ -487,7 +480,7 @@ void CCTexture2D::drawAtPoint(const CCPoint& point)
 
     ccGLEnableVertexAttribs( kCCVertexAttribFlag_Position | kCCVertexAttribFlag_TexCoords );
     m_pShaderProgram->use();
-    m_pShaderProgram->setUniformForModelViewProjectionMatrix();
+    m_pShaderProgram->setUniformsForBuiltins();
 
     ccGLBindTexture2D( m_uName );
 
@@ -513,7 +506,7 @@ void CCTexture2D::drawInRect(const CCRect& rect)
 
     ccGLEnableVertexAttribs( kCCVertexAttribFlag_Position | kCCVertexAttribFlag_TexCoords );
     m_pShaderProgram->use();
-    m_pShaderProgram->setUniformForModelViewProjectionMatrix();
+    m_pShaderProgram->setUniformsForBuiltins();
 
     ccGLBindTexture2D( m_uName );
 
@@ -607,7 +600,7 @@ void CCTexture2D::PVRImagesHavePremultipliedAlpha(bool haveAlphaPremultiplied)
 
 void CCTexture2D::generateMipmap()
 {
-    CCAssert( m_uPixelsWide == ccNextPOT(m_uPixelsWide) && m_uPixelsHigh == ccNextPOT(m_uPixelsHigh), "Mimpap texture only works in POT textures");
+    CCAssert( m_uPixelsWide == ccNextPOT(m_uPixelsWide) && m_uPixelsHigh == ccNextPOT(m_uPixelsHigh), "Mipmap texture only works in POT textures");
     ccGLBindTexture2D( m_uName );
     glGenerateMipmap(GL_TEXTURE_2D);
     m_bHasMipmaps = true;
@@ -629,6 +622,10 @@ void CCTexture2D::setTexParameters(ccTexParams *texParams)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texParams->magFilter );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texParams->wrapS );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texParams->wrapT );
+
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+    VolatileTexture::setTexParameters(this, texParams);
+#endif
 }
 
 void CCTexture2D::setAliasTexParameters()
@@ -645,6 +642,10 @@ void CCTexture2D::setAliasTexParameters()
     }
 
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+    ccTexParams texParams = {m_bHasMipmaps?GL_NEAREST_MIPMAP_NEAREST:GL_NEAREST,GL_NEAREST,GL_NONE,GL_NONE};
+    VolatileTexture::setTexParameters(this, &texParams);
+#endif
 }
 
 void CCTexture2D::setAntiAliasTexParameters()
@@ -661,6 +662,10 @@ void CCTexture2D::setAntiAliasTexParameters()
     }
 
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+#if CC_ENABLE_CACHE_TEXTURE_DATA
+    ccTexParams texParams = {m_bHasMipmaps?GL_LINEAR_MIPMAP_NEAREST:GL_LINEAR,GL_LINEAR,GL_NONE,GL_NONE};
+    VolatileTexture::setTexParameters(this, &texParams);
+#endif
 }
 
 const char* CCTexture2D::stringForFormat()
@@ -698,7 +703,7 @@ const char* CCTexture2D::stringForFormat()
 			return  "PVRTC2";
 
 		default:
-			CCAssert(false , "unrecognised pixel format");
+			CCAssert(false , "unrecognized pixel format");
 			CCLOG("stringForFormat: %ld, cannot give useful result", (long)m_ePixelFormat);
 			break;
 	}
@@ -761,7 +766,7 @@ unsigned int CCTexture2D::bitsPerPixelForFormat(CCTexture2DPixelFormat format)
 			break;
 		default:
 			ret = -1;
-			CCAssert(false , "unrecognised pixel format");
+			CCAssert(false , "unrecognized pixel format");
 			CCLOG("bitsPerPixelForFormat: %ld, cannot give useful result", (long)format);
 			break;
 	}

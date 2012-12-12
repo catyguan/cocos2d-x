@@ -47,14 +47,13 @@ void CC_DLL CCLog(const char * pszFormat, ...);
  */
 void CC_DLL CCLuaLog(const char * pszFormat);
 
-
 /**
 @brief Pop out a message box
 */
 void CC_DLL CCMessageBox(const char * pszMsg, const char * pszTitle);
 
 /**
-@brief Enum the language type supportted now
+@brief Enum the language type supported now
 */
 typedef enum LanguageType
 {
@@ -64,7 +63,10 @@ typedef enum LanguageType
     kLanguageItalian,
     kLanguageGerman,
     kLanguageSpanish,
-    kLanguageRussian
+    kLanguageRussian,
+    kLanguageKorean,
+    kLanguageJapanese,
+    kLanguageHungarian
 } ccLanguageType;
 
 // end of platform group

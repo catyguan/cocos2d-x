@@ -1,5 +1,5 @@
 #include "jni/JniHelper.h"
-#include "jni/SystemInfoJni.h"
+#include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 #include "CCApplication.h"
 #include "CCDirector.h"
 #include "CCEGLView.h"
@@ -69,10 +69,10 @@ CCApplication::Orientation CCApplication::setOrientation(Orientation orientation
 //////////////////////////////////////////////////////////////////////////
 // static member function
 //////////////////////////////////////////////////////////////////////////
-CCApplication& CCApplication::sharedApplication()
+CCApplication* CCApplication::sharedApplication()
 {
     CC_ASSERT(sm_pSharedApplication);
-    return *sm_pSharedApplication;
+    return sm_pSharedApplication;
 }
 
 ccLanguageType CCApplication::getCurrentLanguage()
@@ -108,8 +108,25 @@ ccLanguageType CCApplication::getCurrentLanguage()
     {
         ret = kLanguageRussian;
     }
+    else if (0 == strcmp("ko", pLanguageName))
+    {
+        ret = kLanguageKorean;
+    }
+    else if (0 == strcmp("ja", pLanguageName))
+    {
+        ret = kLanguageJapanese;
+    }
+    else if (0 == strcmp("hu", pLanguageName))
+    {
+        ret = kLanguageHungarian;
+    }
     
     return ret;
+}
+
+TargetPlatform CCApplication::getTargetPlatform()
+{
+    return kTargetAndroid;
 }
 
 NS_CC_END

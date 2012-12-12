@@ -27,6 +27,8 @@ obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
+ipch/
+*.opensdf
 
 # Ignore files build by ndk and eclipse
 libs/
@@ -42,8 +44,12 @@ local.properties
 # Ignore files build by linux
 *.o
 
-# Ignore files build by airplay
+# Ignore python compiled files
+*.pyc
+
+# Ignore files build by airplay and marmalade
 build_*_xcode/
+build_*_vc10/
 
 # Ignore files build by xcode
 *.mode*v*
@@ -69,3 +75,10 @@ Device-Release/
 
 # Ignore vim swaps
 *.swp
+
+# Ignore config files in javascript bindings generator
+tools/tojs/user.cfg
+# ... userconf.ini generated if running from tools/tojs
+tools/tojs/userconf.ini
+# ... userconf.ini generated if running from tools/jenkins_scripts/mac/android/
+tools/jenkins_scripts/mac/android/userconf.ini

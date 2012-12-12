@@ -1,3 +1,161 @@
+cocos2d-2.1beta3-x-2.1.0 @Dec.5 2012
+ [all platforms]
+     Bug      #1556: set a default texture for CCParticleFire, CCParticleFireworks, etc
+     Feature  #1555: update to cocos2d-iphone v2.1 beta3
+     Feature  #1564: update tests to cocos2d-iphone v2.1beta3
+     Feature  #1572: add sample game WatermelonWithMe
+     Feature  #1573: add sample game CocosDragonJS
+     Refactor #1545: remove the usage of NODE_FUNC and CREATE_FUNC
+     Refactor #1565: remove VS2008 support
+     Refactor #1576: update CCBReader to latest version of CocosBuilder
+     Refactor #1589: add CCBReader::setCCBRootPath()
+ [iOS]
+     Bug      #1548: update libcurl header files to 7.26.0 on iOS 
+ [android]
+     Bug      #1551: add error handler when reading image data using libjpeg
+     Refactor #1558: improve the speed of accessing to files from apk
+ [marmalade]
+     Bug      #1559: fix a bug that if a file in resource directory doesn't exist, it will not search from root directory
+     Bug      #1571: add box2d rope to marmalade project
+     Bug      #1590: JPEG and File fixes for marmalade
+     Feature  #1557: Marmalade support
+     Refactor #1574: update marmalade languages
+     Refactor #1575: update samples/TestCpp to compatible with marmalade
+     Refactor #1578: create cocos2dx-ext marmalade project
+     Refactor #1591: add TestLua marmalade project 
+ [javascript binding]
+     Bug      #1577: fix a bug that touch events lost on Win32 when using JSBinding
+     Bug      #1586: fix a crash in WatermelonWithMe
+     Bug      #1588: rescheduleCallback support for JSBinding
+     Refactor #1570: improve the debugger for JSBinding
+ [lua binding]
+     Bug      #1587: remove lua script handler in CCCallFunc's destructor
+
+cocos2d-2.0-x-2.0.4 @Nov.2 2012
+ [all platforms]
+    Bug       #1473: fix a bug that CCScale9Sprite does not support rotated spriteframe in atlas 
+    Bug       #1494: fix a bug that missing removing auto-release object from AutoReleasePool if it invokes 'autorelease' method more than one time
+    Bug       #1495: fix a bug that CCScrollView display area and touch area are wrong if its parent's postion isn't at CCPointZero in world
+    Bug       #1508: fix a bug that potential observer array modification while it's traversed in CCNotificationCenter
+    Bug       #1510: fix a bug that application will freeze when 'numberOfCellsInTableView' returns zero
+    Bug       #1516: fix a bug that the font size of labels for displaying FPS,SPF,DrawCount is incorrect in different design resolutions
+    Bug       #1536: CCControl* should not respond to touches if the control is not visible
+    Bug       #1538: fix a logic error in CCControlHuePicker::checkSliderPosition()
+    Bug       #1543: fix a bug that CCLayerGradient background of CocosBuilderTest can't be shown
+    Feature   #1515: add a zoom function for debugging large resolution (e.g.new ipad) app on desktop
+    Refactor  #1312: upgrade libcurl to 7.26.0  
+    Refactor  #1486: apply multi-resolution mechanic on iOS, especially for iphone5
+    Refactor  #1520: add comments to describe the usage of multiresolution in HelloCpp
+    Refactor  #1521: use relative coordinates in TestCpp
+    Document  #1532: write a document describes how to debug games for ipad3 on low-resolution PC 
+    Document  #1493: add doxygen comments in CCNotificationCenter.h
+ [android]
+    Bug       #1466: reload shader for test case "ShaderTest" after it comes from background
+    Bug       #1500: fix a bug that CCRenderTexture cannot render properly on some Qualcomm Adreno GPUs
+    Bug       #1507: fix a bug that can not play effect for the first time without pre-load effect
+ [iOS]
+    Bug       #1527: fix a bug that MoonWarriors can not run on iOS simulator sometimes
+    Refactor  #1491: remove dependency of FontLabel lib
+ [javascript binding]
+    Bug       #1526: fix a bug that javascript binding related samples will crash on iOS devices
+    Feature   #1469: add MoonWarriors as a sample game
+    Refactor  #1487: use shared javascript test cases with cocos2d-html5 and cocos2d-iphone
+    Refactor  #1517: upgrade SpiderMonkey to FF 17.0 beta3
+ [lua binding]
+    Bug       #1506: fix a compilation error of TestLua if the path of cocos2d-x contains spaces  
+ [win32]
+    Bug       #1496: fix an error of comparing font's face name in CCImage of win32 port
+    Bug       #1511: fix openGL framebuffer access violation
+    Bug       #1540: fix win32 CCLuaLog memory leaks and invalid console UTF8 output
+    Feature   #1513: add Multi-Touch support for win7/8 tablet or ultrabook
+    Refactor  #1512: change writable directory to "C:\Documents and Settings\username\Local Settings\Application Data\your app name" if the app be built in release mode
+
+cocos2d-2.0-x-2.0.3 @Sep.26 2012
+ [all platforms]
+    Bug       #1452: change CCRGBAProtocol to public in order for actions like CCTintTo to have an affect on the CCScale9Sprite
+    Bug       #1454: make javascript binding work together with lua binding and c++ codes
+    Bug       #1464: fix a crash caused by CCLabelBMFont
+    Bug       #1478: fix a bug that TMX parser causes tileset images not to be loaded
+    Bug       #1479: fix a bug that CCNotificationCenter does not check whether the object is valid before post notification
+    Bug       #1485: fix potential memory leak in CCNotificationObserver
+    Feature   #1458: add CCTableView
+    Feature   #1460: min/max allowed value for CCControlSlider
+    Feature   #1470: update CCBReader to cocosbuilder v2.1 beta
+    Feature   #1483: synchronize CCControlExtension to newest version
+    Refactor  #1477: abstracts Lua and JS binding protocol, some bugs fixes in lua-binding, adding custom menu on win32 and mac for switching resolutions
+ [iOS]
+    Bug       #1482: fix a bug that orientation is wrong on iOS 6 SDK
+    Bug       #1453: fix a bug that CCGL.h includes wrong path of a header file
+    Bug       #1484: fix a minor memory-logic error in EditBoxImplIOS.mm
+    Feature   #1455: add Xcode template for cocos2dx-js
+ [android]
+    Refactor  #1481: refactor android Java+JNI
+ [mac os]
+    Bug       #1456: remove code signing from MAC TestCpp project
+ [linux]
+ [win32]
+    Feature   #1457: Add vs2012 sln
+    Feature   #1474: popup a warning dialog instead of crash directly when OpenGL version is too old to run 2dx
+ [js-binding]
+    Feature   #1451: merge new js-binding codes
+    Refactor  #1476: update location of spidermonkey-android makefile
+ [lua]
+    Refactor  #1480: Update lua-binding for overloaded functions
+ [tools]
+    Feature   #1404: add scripts for jenkins-ci
+
+cocos2d-2.0-x-2.0.2 @Aug.30 2012
+ [all platforms]
+    Bug       #1298: fix a logical error of CCSequence
+    Bug       #1371: fix a particle crashes if setAutoRemoveOnFinish(true)
+    Bug       #1379: fix a typo error of comment in CCNode.cpp
+    Bug       #1381: fix a bug that CCLayerColor::setContentSize() declared differently with CCNode::setContentSize()
+    Bug       #1382: fix a crash of CCBReader caused by null pointer
+    Bug       #1384: fix an error when loading CCControlButton from ccbi
+    Bug       #1385: fix a logic error in BitmapFontMultiLineAlignment
+    Bug       #1386: fix a crash of PauseResumeActionsTest
+    Bug       #1395: fix a bug that CCTextureCache::addImage ignores error in CCTexture2D::initWithImage()
+    Bug       #1400: re-assign texture rect of CCControlSlider to consider SpriteFrame orientation
+    Bug       #1403: fix a bug that do not support png8 format
+    Bug       #1408: fix a bug that CCMenuItemImage is not loaded when the target and selector are empty in CCBReader
+    Bug       #1409: fix a bug that loading CCControlButton from ccbi failed
+    Bug       #1427: fix a bug that CCArray::randomObject() may use index that out of range
+    Bug       #1430: fix a bug that can not compute correct label's width or height when its value is 0
+    Bug       #1440: fix a bug that CCSprite::displayFrame() uses wrong offset to create a sprite frame
+    Feature   #1416: add object-oriented API of CCGeometry
+    Feature   #1405: implement multi-resolution adaption solution
+    Feature   #1424: add a simple wrapper of http access
+    Feature   #1429: add CCEditBox which wraps system edit control
+    Feature   #1439: synchronize to cocos2d-iphone 2.0 stable version
+    Refactor  #1399: adjust directory structure
+    Refactor  #1402: improve static creator function names to avoid confusion
+    Refactor  #1413: improve CCTouch::getLocation(), getDelta() which returns OpenGL coordinates directly
+    Refactor  #1437: change the return type of CCApplication::sharedApplication() and CCEGLView::sharedOpenGLView() to a pointer
+    Refactor  #1441: put hd and iPad resources of TestCpp into separate directories
+    Refactor  #1442: use CREATE_FUNC to replace LAYER_CREATE_FUNC and SCENE_CREATE_FUNC
+ [iOS]
+    Bug       #1389: fix a Xcode 4.5-specific compiling errors that can not convert -1 to unsigned int
+    Bug       #1432: fix a bug that "MutiTouchTest" crashes on IOS if putting more than 5 fingers on the screen
+    Refactor  #1383: change the file path that CCUserDefault saves xml file in
+    Refactor  #1433: remove fpsxxx.png in template
+    Refactor  #1443: Fix some warnings
+ [android]
+    Bug       #1284: use OpenSL ES to play effects when the device is i9100
+    Bug       #1372: fix a typo error in platform/android/CCEGLView.h
+    Bug       #1377: fix TMX Tile cracks in the Test App
+    Refactor  #1407: cleaner build script
+    Refactor  #1438: make android template use its own source files
+ [mac os]
+    Bug       #1417: fix a compiling error when building TestCpp for mac port using command line
+    Feature   #1401: add mac port
+ [win32]
+    Bug       #1390: fix a win32 error says "The application failed to initialize properly"
+ [linux]
+    Bug       #1445: fix compiling errors on linux
+    Feature   #1419: add linux port
+ [blackberry]
+    Feature   #1420: add blackberry port
+
 cocos2d-2.0-rc2-x-2.0.1 @Jun.28 2012
  [all platforms]
     Bug       #1257: synchronize CCGrabber.cpp 
