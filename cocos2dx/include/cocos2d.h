@@ -190,9 +190,6 @@ THE SOFTWARE.
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
 
 
-// script_support
-#include "script_support/CCScriptSupport.h"
-
 // shaders
 #include "shaders/CCGLProgram.h"
 #include "shaders/ccGLStateCache.h"

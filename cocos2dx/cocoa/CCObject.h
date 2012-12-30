@@ -26,6 +26,7 @@ THE SOFTWARE.
 #define __CCOBJECT_H__
 
 #include "platform/CCPlatformMacros.h"
+#include "CCValue.h"
 
 NS_CC_BEGIN
 
@@ -47,11 +48,6 @@ public:
 
 class CC_DLL CCObject : public CCCopying
 {
-public:
-    // object id, CCScriptSupport need public m_uID
-    unsigned int        m_uID;
-    // Lua reference id
-    int                 m_nLuaID;
 protected:
     // count of references
     unsigned int        m_uReference;
@@ -70,8 +66,17 @@ public:
     virtual bool isEqual(const CCObject* pObject);
 
     virtual void update(float dt) {CC_UNUSED_PARAM(dt);};
-    
+
     friend class CCAutoreleasePool;
+
+public:	
+	virtual CCValue call(const char* id, const char* method, CCValueArray& params);	
+	virtual bool acall(const char* id, const char* method, CCValue callback, CCValueArray& params);
+
+protected:
+	virtual CCObject* findChildById(const char* id);
+	virtual CCValue invoke(const char* method, CCValueArray& params);
+	virtual bool ainvoke(const char* method, CCValue callback, CCValueArray& params);
 };
 
 

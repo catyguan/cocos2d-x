@@ -35,7 +35,6 @@
 #include "shaders/ccGLStateCache.h"
 #include "shaders/CCGLProgram.h"
 #include "kazmath/kazmath.h"
-#include "script_support/CCScriptSupport.h"
 
 NS_CC_BEGIN
 
@@ -166,6 +165,7 @@ protected:
     CCNode *m_pParent;
     
     // a tag. any number you want to assign to the node
+	std::string m_nId;
     int m_nTag;
     
     // user data field
@@ -202,15 +202,6 @@ protected:
 
     bool m_bReorderChildDirty;
     
-    // Properties for script
-    
-    // script handler
-    int m_nScriptHandler;
-    int m_nUpdateScriptHandler;
-
-    // script type, lua or javascript
-    ccScriptType m_eScriptType;
-
 public:
     // getter & setter
     
@@ -270,6 +261,9 @@ public:
     /** A tag used to identify the node easily */
     virtual int getTag();
     virtual void setTag(int nTag);
+
+	virtual std::string getId();
+    virtual void setId(const char* id);
     
     /** A custom user data pointer */
     virtual void* getUserData();
@@ -369,9 +363,6 @@ public:
     unsigned int getChildrenCount(void);
     
     void _setZOrder(int z);
-
-    /** Get script handler for onEnter/onExit event. */
-    inline int getScriptHandler() { return m_nScriptHandler; };
     
     /** get/set Position for Lua (pass number faster than CCPoint object)
      
@@ -429,13 +420,6 @@ public:
      */
     virtual void onExitTransitionDidStart();
 
-    /** Register onEnter/onExit handler script function
-     
-     Script handler auto unregister after onEnter().
-     */
-    virtual void registerScriptHandler(int nHandler);
-    virtual void unregisterScriptHandler(void);
-
     // composition: ADD
 
     /** Adds a child to the container with z-order as 0.
@@ -485,10 +469,14 @@ public:
      */
     virtual void removeChildByTag(int tag);
 
+	void removeChildById(const char* id);
+
     /** Removes a child from the container by tag value. It will also cleanup all running actions depending on the cleanup parameter
      @since v0.7.1
      */
     virtual void removeChildByTag(int tag, bool cleanup);
+
+	void removeChildById(const char* id,bool cleanup);
 
     /** Removes all children from the container forcing a cleanup.
      @since v2.1
@@ -506,6 +494,8 @@ public:
      @since v0.7.1
      */
     CCNode * getChildByTag(int tag);
+	CCNode * getChildById(const char* id);
+	virtual CCObject* findChildById(const char* id);
 
     /** Reorders a child according to a new z value.
      * The child MUST be already added.
@@ -583,11 +573,15 @@ public:
      */
     void stopActionByTag(int tag);
 
+	void stopActionById(const char* id);
+
     /** Gets an action from the running action list given its tag
      @since v0.7.1
      @return the Action the with the given tag
      */
     CCAction* getActionByTag(int tag);
+
+	CCAction* getActionById(const char* id);
 
     /** Returns the numbers of actions that are running plus the ones that are schedule to run (actions in actionsToAdd and actions arrays).
      * Composable actions are counted as 1 action. Example:
@@ -723,9 +717,6 @@ public:
      */
     CCPoint convertTouchToNodeSpaceAR(CCTouch * touch);
         
-    /** Schedules for script. */
-    void scheduleUpdateWithPriorityLua(int nHandler, int priority);
-
 private:
     //! lazy allocs
     void childrenAlloc(void);

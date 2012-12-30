@@ -96,6 +96,10 @@ public:
     inline int getTag(void) { return m_nTag; }
     inline void setTag(int nTag) { m_nTag = nTag; }
 
+	inline std::string getId(void) { return m_nId; }
+    inline void setId(const char* id) { m_nId = id; }
+	inline bool isId(const char* id) { return m_nId.compare(id)==0; }
+
 public:
     /** Create an action */
     static CCAction* create();
@@ -109,6 +113,7 @@ protected:
     CCNode    *m_pTarget;
     /** The action tag. An identifier of the action */
     int     m_nTag;
+	std::string m_nId;
 };
 
 /** 

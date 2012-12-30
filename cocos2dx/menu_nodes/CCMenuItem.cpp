@@ -30,7 +30,6 @@ THE SOFTWARE.
 #include "sprite_nodes/CCSprite.h"
 #include "label_nodes/CCLabelAtlas.h"
 #include "label_nodes/CCLabelTTF.h"
-#include "script_support/CCScriptSupport.h"
 #include <stdarg.h>
 #include <cstring>
 
@@ -75,7 +74,7 @@ bool CCMenuItem::initWithTarget(CCObject *rec, SEL_MenuHandler selector)
 
 CCMenuItem::~CCMenuItem()
 {
-    unregisterScriptTapHandler();
+    
 }
 
 void CCMenuItem::selected()
@@ -88,23 +87,6 @@ void CCMenuItem::unselected()
     m_bIsSelected = false;
 }
 
-void CCMenuItem::registerScriptTapHandler(int nHandler)
-{
-    unregisterScriptTapHandler();
-    m_nScriptTapHandler = nHandler;
-    LUALOG("[LUA] Add CCMenuItem script handler: %d", m_nScriptTapHandler);
-}
-
-void CCMenuItem::unregisterScriptTapHandler(void)
-{
-    if (m_nScriptTapHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(m_nScriptTapHandler);
-        LUALOG("[LUA] Remove CCMenuItem script handler: %d", m_nScriptTapHandler);
-        m_nScriptTapHandler = 0;
-    }
-}
-
 void CCMenuItem::activate()
 {
     if (m_bIsEnabled)
@@ -112,11 +94,6 @@ void CCMenuItem::activate()
         if (m_pListener && m_pfnSelector)
         {
             (m_pListener->*m_pfnSelector)(this);
-        }
-        
-        if (kScriptTypeNone != m_eScriptType)
-        {
-            CCScriptEngineManager::sharedManager()->getScriptEngine()->executeMenuItemEvent(this);
         }
     }
 }

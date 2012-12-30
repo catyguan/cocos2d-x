@@ -289,6 +289,30 @@ void CCActionManager::removeActionByTag(unsigned int tag, CCObject *pTarget)
     }
 }
 
+void CCActionManager::removeActionById(const char* id, CCObject *pTarget)
+{
+    CCAssert(id != NULL, "");
+    CCAssert(pTarget != NULL, "");
+
+    tHashElement *pElement = NULL;
+    HASH_FIND_INT(m_pTargets, &pTarget, pElement);
+
+    if (pElement)
+    {
+        unsigned int limit = pElement->actions->num;
+        for (unsigned int i = 0; i < limit; ++i)
+        {
+            CCAction *pAction = (CCAction*)pElement->actions->arr[i];
+
+			if (pAction->isId(id) && pAction->getOriginalTarget() == pTarget)
+            {
+                removeActionAtIndex(i, pElement);
+                break;
+            }
+        }
+    }
+}
+
 // get
 
 CCAction* CCActionManager::getActionByTag(unsigned int tag, CCObject *pTarget)
@@ -308,6 +332,38 @@ CCAction* CCActionManager::getActionByTag(unsigned int tag, CCObject *pTarget)
                 CCAction *pAction = (CCAction*)pElement->actions->arr[i];
 
                 if (pAction->getTag() == (int)tag)
+                {
+                    return pAction;
+                }
+            }
+        }
+        CCLOG("cocos2d : getActionByTag: Action not found");
+    }
+    else
+    {
+        // CCLOG("cocos2d : getActionByTag: Target not found");
+    }
+
+    return NULL;
+}
+
+CCAction* CCActionManager::getActionById(const char* id, CCObject *pTarget)
+{
+    CCAssert(id != NULL, "");
+
+    tHashElement *pElement = NULL;
+    HASH_FIND_INT(m_pTargets, &pTarget, pElement);
+
+    if (pElement)
+    {
+        if (pElement->actions != NULL)
+        {
+            unsigned int limit = pElement->actions->num;
+            for (unsigned int i = 0; i < limit; ++i)
+            {
+                CCAction *pAction = (CCAction*)pElement->actions->arr[i];
+
+                if (pAction->isId(id))
                 {
                     return pAction;
                 }

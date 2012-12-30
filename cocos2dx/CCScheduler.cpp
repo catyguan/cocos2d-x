@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include "support/data_support/utlist.h"
 #include "support/data_support/ccCArray.h"
 #include "cocoa/CCArray.h"
-#include "script_support/CCScriptSupport.h"
+#include "cocoa/CCSet.h"
 
 using namespace std;
 
@@ -80,7 +80,6 @@ CCTimer::CCTimer()
 , m_uTimesExecuted(0)
 , m_uRepeat(0)
 , m_fDelay(0.0f)
-, m_nScriptHandler(0)
 {
 }
 
@@ -102,25 +101,6 @@ CCTimer* CCTimer::timerWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector, f
     pTimer->autorelease();
 
     return pTimer;
-}
-
-CCTimer* CCTimer::timerWithScriptHandler(int nHandler, float fSeconds)
-{
-    CCTimer *pTimer = new CCTimer();
-
-    pTimer->initWithScriptHandler(nHandler, fSeconds);
-    pTimer->autorelease();
-
-    return pTimer;
-}
-
-bool CCTimer::initWithScriptHandler(int nHandler, float fSeconds)
-{
-    m_nScriptHandler = nHandler;
-    m_fElapsed = -1;
-    m_fInterval = fSeconds;
-
-    return true;
 }
 
 bool CCTimer::initWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector)
@@ -160,10 +140,6 @@ void CCTimer::update(float dt)
                     (m_pTarget->*m_pfnSelector)(m_fElapsed);
                 }
 
-                if (m_nScriptHandler)
-                {
-                    CCScriptEngineManager::sharedManager()->getScriptEngine()->executeSchedule(m_nScriptHandler, m_fElapsed);
-                }
                 m_fElapsed = 0;
             }
         }    
@@ -179,11 +155,6 @@ void CCTimer::update(float dt)
                         (m_pTarget->*m_pfnSelector)(m_fElapsed);
                     }
 
-                    if (m_nScriptHandler)
-                    {
-                        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeSchedule(m_nScriptHandler, m_fElapsed);
-                    }
-
                     m_fElapsed = m_fElapsed - m_fDelay;
                     m_uTimesExecuted += 1;
                     m_bUseDelay = false;
@@ -197,12 +168,7 @@ void CCTimer::update(float dt)
                     {
                         (m_pTarget->*m_pfnSelector)(m_fElapsed);
                     }
-
-                    if (m_nScriptHandler)
-                    {
-                        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeSchedule(m_nScriptHandler, m_fElapsed);
-                    }
-
+                    
                     m_fElapsed = 0;
                     m_uTimesExecuted += 1;
 
@@ -243,7 +209,6 @@ CCScheduler::CCScheduler(void)
 , m_pHashForTimers(NULL)
 , m_pCurrentTarget(NULL)
 , m_bCurrentTargetSalvaged(false)
-, m_pScriptHandlerEntries(NULL)
 , m_bUpdateHashLocked(false)
 {
 
@@ -252,7 +217,6 @@ CCScheduler::CCScheduler(void)
 CCScheduler::~CCScheduler(void)
 {
     unscheduleAll();
-    CC_SAFE_RELEASE(m_pScriptHandlerEntries);
 }
 
 void CCScheduler::removeHashElement(_hashSelectorEntry *pElement)
@@ -575,11 +539,6 @@ void CCScheduler::unscheduleAllWithMinPriority(int nMinPriority)
             unscheduleUpdateForTarget(pEntry->target);
         }
     }
-
-    if (m_pScriptHandlerEntries)
-    {
-        m_pScriptHandlerEntries->removeAllObjects();
-    }
 }
 
 void CCScheduler::unscheduleAllForTarget(CCObject *pTarget)
@@ -616,31 +575,6 @@ void CCScheduler::unscheduleAllForTarget(CCObject *pTarget)
 
     // update selector
     unscheduleUpdateForTarget(pTarget);
-}
-
-unsigned int CCScheduler::scheduleScriptFunc(unsigned int nHandler, float fInterval, bool bPaused)
-{
-    CCSchedulerScriptHandlerEntry* pEntry = CCSchedulerScriptHandlerEntry::create(nHandler, fInterval, bPaused);
-    if (!m_pScriptHandlerEntries)
-    {
-        m_pScriptHandlerEntries = CCArray::createWithCapacity(20);
-        m_pScriptHandlerEntries->retain();
-    }
-    m_pScriptHandlerEntries->addObject(pEntry);
-    return pEntry->getEntryId();
-}
-
-void CCScheduler::unscheduleScriptEntry(unsigned int uScheduleScriptEntryID)
-{
-    for (int i = m_pScriptHandlerEntries->count() - 1; i >= 0; i--)
-    {
-        CCSchedulerScriptHandlerEntry* pEntry = static_cast<CCSchedulerScriptHandlerEntry*>(m_pScriptHandlerEntries->objectAtIndex(i));
-        if (pEntry->getEntryId() == uScheduleScriptEntryID)
-        {
-            pEntry->markedForDeletion();
-            break;
-        }
-    }
 }
 
 void CCScheduler::resumeTarget(CCObject *pTarget)
@@ -785,18 +719,11 @@ void CCScheduler::update(float dt)
     // Iterate over all the Updates' selectors
     tListEntry *pEntry, *pTmp;
 
-    CCScriptEngineProtocol* pEngine = CCScriptEngineManager::sharedManager()->getScriptEngine();
-
     // updates with priority < 0
     DL_FOREACH_SAFE(m_pUpdatesNegList, pEntry, pTmp)
     {
         if ((! pEntry->paused) && (! pEntry->markedForDeletion))
         {
-            if (pEngine != NULL && kScriptTypeJavascript == pEngine->getScriptType())
-            {
-                pEngine->executeSchedule(NULL, dt, (CCNode *)pEntry->target);
-            }
-
             pEntry->target->update(dt);
         }
     }
@@ -806,11 +733,6 @@ void CCScheduler::update(float dt)
     {
         if ((! pEntry->paused) && (! pEntry->markedForDeletion))
         {
-            if (pEngine != NULL && kScriptTypeJavascript == pEngine->getScriptType())
-            {
-                pEngine->executeSchedule(NULL, dt, (CCNode *)pEntry->target);
-            }
-            
             pEntry->target->update(dt);
         }
     }
@@ -820,11 +742,6 @@ void CCScheduler::update(float dt)
     {
         if ((! pEntry->paused) && (! pEntry->markedForDeletion))
         {
-            if (pEngine != NULL && kScriptTypeJavascript == pEngine->getScriptType())
-            {
-                pEngine->executeSchedule(NULL, dt, (CCNode *)pEntry->target);
-            }
-
             pEntry->target->update(dt);
         }
     }
@@ -865,23 +782,6 @@ void CCScheduler::update(float dt)
         if (m_bCurrentTargetSalvaged && m_pCurrentTarget->timers->num == 0)
         {
             removeHashElement(m_pCurrentTarget);
-        }
-    }
-
-    // Iterate over all the script callbacks
-    if (m_pScriptHandlerEntries)
-    {
-        for (int i = m_pScriptHandlerEntries->count() - 1; i >= 0; i--)
-        {
-            CCSchedulerScriptHandlerEntry* pEntry = static_cast<CCSchedulerScriptHandlerEntry*>(m_pScriptHandlerEntries->objectAtIndex(i));
-            if (pEntry->isMarkedForDeletion())
-            {
-                m_pScriptHandlerEntries->removeObjectAtIndex(i);
-            }
-            else if (!pEntry->isPaused())
-            {
-                pEntry->getTimer()->update(dt);
-            }
         }
     }
 

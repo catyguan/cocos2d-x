@@ -62,15 +62,6 @@ public:
      */
     void removeObserver(CCObject *target,const char *name);
     
-    /** @brief Registers one hander for script binding.
-     *  @note Only supports Lua Binding now.
-     *  @param handler The lua handler.
-     */
-    void registerScriptObserver(int handler);
-
-    /** Unregisters script observer */
-    void unregisterScriptObserver(void);
-    
     /** @brief Posts one notification event by name.
      *  @param name The name of this notification.
      */
@@ -80,13 +71,8 @@ public:
      *  @param name The name of this notification.
      *  @param object The extra parameter.
      */
-    void postNotification(const char *name, CCObject *object);
+    void postNotification(const char *name, CCObject *object);    
     
-    /** @brief Gets script handler.
-     *  @note Only supports Lua Binding now.
-     *  @return The script handle.
-     */
-    inline int getScriptHandler() { return m_scriptHandler; };
 private:
     // internal functions
 
@@ -96,7 +82,6 @@ private:
     // variables
     //
     CCArray *m_observers;
-    int     m_scriptHandler;
 };
 
 class CC_DLL CCNotificationObserver : public CCObject

@@ -84,11 +84,13 @@ public:
 
     /** Removes an action given its tag and the target */
     void removeActionByTag(unsigned int tag, CCObject *pTarget);
+	void removeActionById(const char* id, CCObject *pTarget);
 
     /** Gets an action given its tag an a target
      @return the Action the with the given tag
      */
     CCAction* getActionByTag(unsigned int tag, CCObject *pTarget);
+	CCAction* getActionById(const char* id, CCObject *pTarget);
 
     /** Returns the numbers of actions that are running in a certain target. 
      * Composable actions are counted as 1 action. Example:

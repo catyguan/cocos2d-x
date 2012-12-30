@@ -34,7 +34,6 @@ THE SOFTWARE.
 #include "CCScheduler.h"
 #include "touch_dispatcher/CCTouch.h"
 #include "actions/CCActionManager.h"
-#include "script_support/CCScriptSupport.h"
 #include "shaders/CCGLProgram.h"
 // externals
 #include "kazmath/GL/matrix.h"
@@ -80,8 +79,6 @@ CCNode::CCNode(void)
 , m_pUserObject(NULL)
 , m_bTransformDirty(true)
 , m_bInverseDirty(true)
-, m_nScriptHandler(0)
-, m_nUpdateScriptHandler(0)
 , m_pShaderProgram(NULL)
 , m_uOrderOfArrival(0)
 , m_eGLServerState(ccGLServerState(0))
@@ -93,21 +90,12 @@ CCNode::CCNode(void)
     m_pActionManager->retain();
     m_pScheduler = director->getScheduler();
     m_pScheduler->retain();
-
-    CCScriptEngineProtocol* pEngine = CCScriptEngineManager::sharedManager()->getScriptEngine();
-    m_eScriptType = pEngine != NULL ? pEngine->getScriptType() : kScriptTypeNone;
 }
 
 CCNode::~CCNode(void)
 {
     CCLOGINFO( "cocos2d: deallocing" );
     
-    unregisterScriptHandler();
-    if (m_nUpdateScriptHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(m_nUpdateScriptHandler);
-    }
-
     CC_SAFE_RELEASE(m_pActionManager);
     CC_SAFE_RELEASE(m_pScheduler);
     // attributes
@@ -450,6 +438,19 @@ void CCNode::setTag(int var)
     m_nTag = var;
 }
 
+/// id setter
+std::string CCNode::getId()
+{
+    return m_nId;
+}
+
+/// tag setter
+void CCNode::setId(const char* id)
+{
+    m_nId = id;
+}
+
+
 /// userData getter
 void * CCNode::getUserData()
 {
@@ -523,12 +524,7 @@ void CCNode::cleanup()
 {
     // actions
     this->stopAllActions();
-    this->unscheduleAllSelectors();
-    
-    if ( m_eScriptType != kScriptTypeNone)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeEvent(this, kCCNodeOnCleanup);
-    }
+    this->unscheduleAllSelectors();    
     
     // timers
     arrayMakeObjectsPerformSelector(m_pChildren, cleanup, CCNode*);
@@ -562,6 +558,28 @@ CCNode* CCNode::getChildByTag(int aTag)
         }
     }
     return NULL;
+}
+
+CCNode* CCNode::getChildById(const char* id)
+{
+    CCAssert( id != NULL, "Invalid id");
+
+    if(m_pChildren && m_pChildren->count() > 0)
+    {
+        CCObject* child;
+        CCARRAY_FOREACH(m_pChildren, child)
+        {
+            CCNode* pNode = (CCNode*) child;
+			if(pNode && pNode->m_nId.compare(id) == 0)
+                return pNode;
+        }
+    }
+    return NULL;
+}
+
+CCObject* CCNode::findChildById(const char* id)
+{
+	return NULL;
 }
 
 /* "add" logic MUST only be on this method
@@ -650,6 +668,27 @@ void CCNode::removeChildByTag(int tag, bool cleanup)
     CCAssert( tag != kCCNodeTagInvalid, "Invalid tag");
 
     CCNode *child = this->getChildByTag(tag);
+
+    if (child == NULL)
+    {
+        CCLOG("cocos2d: removeChildByTag: child not found!");
+    }
+    else
+    {
+        this->removeChild(child, cleanup);
+    }
+}
+
+void CCNode::removeChildById(const char* id)
+{
+    this->removeChildById(id, true);
+}
+
+void CCNode::removeChildById(const char* id, bool cleanup)
+{
+    CCAssert( id != NULL, "Invalid id");
+
+    CCNode *child = this->getChildById(id);
 
     if (child == NULL)
     {
@@ -891,31 +930,16 @@ void CCNode::onEnter()
     this->resumeSchedulerAndActions();
 
     m_bRunning = true;
-
-    if (m_eScriptType != kScriptTypeNone)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeEvent(this, kCCNodeOnEnter);
-    }
 }
 
 void CCNode::onEnterTransitionDidFinish()
 {
     arrayMakeObjectsPerformSelector(m_pChildren, onEnterTransitionDidFinish, CCNode*);
-
-    if (m_eScriptType == kScriptTypeJavascript)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeEvent(this, kCCNodeOnEnterTransitionDidFinish);
-    }
 }
 
 void CCNode::onExitTransitionDidStart()
 {
     arrayMakeObjectsPerformSelector(m_pChildren, onExitTransitionDidStart, CCNode*);
-
-    if (m_eScriptType == kScriptTypeJavascript)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeEvent(this, kCCNodeOnExitTransitionDidStart);
-    }
 }
 
 void CCNode::onExit()
@@ -924,41 +948,8 @@ void CCNode::onExit()
 
     m_bRunning = false;
 
-    if ( m_eScriptType != kScriptTypeNone)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeNodeEvent(this, kCCNodeOnExit);
-    }
-
     arrayMakeObjectsPerformSelector(m_pChildren, onExit, CCNode*);
-
     
-}
-
-void CCNode::registerScriptHandler(int nHandler)
-{
-    unregisterScriptHandler();
-    m_nScriptHandler = nHandler;
-    LUALOG("[LUA] Add CCNode event handler: %d", m_nScriptHandler);
-}
-
-void CCNode::unregisterScriptHandler(void)
-{
-    if (m_nScriptHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(m_nScriptHandler);
-        LUALOG("[LUA] Remove CCNode event handler: %d", m_nScriptHandler);
-        m_nScriptHandler = 0;
-    }
-}
-
-void CCNode::scheduleUpdateWithPriorityLua(int nHandler, int priority)
-{
-    if (m_nUpdateScriptHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(m_nUpdateScriptHandler);
-    }
-    m_nUpdateScriptHandler = nHandler;
-    m_pScheduler->scheduleUpdateForTarget(this, priority, !m_bRunning);
 }
 
 void CCNode::setActionManager(CCActionManager* actionManager)
@@ -999,11 +990,24 @@ void CCNode::stopActionByTag(int tag)
     m_pActionManager->removeActionByTag(tag, this);
 }
 
+void CCNode::stopActionById(const char* id)
+{
+    CCAssert( id != NULL, "Invalid id");
+    m_pActionManager->removeActionById(id, this);
+}
+
 CCAction * CCNode::getActionByTag(int tag)
 {
     CCAssert( tag != kCCActionTagInvalid, "Invalid tag");
     return m_pActionManager->getActionByTag(tag, this);
 }
+
+CCAction * CCNode::getActionById(const char* id)
+{
+    CCAssert( id != NULL, "Invalid id");
+    return m_pActionManager->getActionById(id, this);
+}
+
 
 unsigned int CCNode::numberOfRunningActions()
 {
@@ -1039,12 +1043,7 @@ void CCNode::scheduleUpdateWithPriority(int priority)
 
 void CCNode::unscheduleUpdate()
 {
-    m_pScheduler->unscheduleUpdateForTarget(this);
-    if (m_nUpdateScriptHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptHandler(m_nUpdateScriptHandler);
-        m_nUpdateScriptHandler = 0;
-    }
+    m_pScheduler->unscheduleUpdateForTarget(this);    
 }
 
 void CCNode::schedule(SEL_SCHEDULE selector)
@@ -1099,10 +1098,7 @@ void CCNode::pauseSchedulerAndActions()
 // override me
 void CCNode::update(float fDelta)
 {
-    if (m_nUpdateScriptHandler)
-    {
-        CCScriptEngineManager::sharedManager()->getScriptEngine()->executeSchedule(m_nUpdateScriptHandler, fDelta);
-    }
+    
 }
 
 CCAffineTransform CCNode::nodeToParentTransform(void)

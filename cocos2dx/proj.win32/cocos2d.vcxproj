@@ -140,6 +140,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClCompile Include="..\cocoa\CCObject.cpp" />
     <ClCompile Include="..\cocoa\CCSet.cpp" />
     <ClCompile Include="..\cocoa\CCString.cpp" />
+    <ClCompile Include="..\cocoa\CCValue.cpp" />
     <ClCompile Include="..\cocoa\CCZone.cpp" />
     <ClCompile Include="..\draw_nodes\CCDrawingPrimitives.cpp" />
     <ClCompile Include="..\draw_nodes\CCDrawNode.cpp" />
@@ -227,7 +228,6 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClCompile Include="..\keypad_dispatcher\CCKeypadDispatcher.cpp" />
     <ClCompile Include="..\text_input_node\CCIMEDispatcher.cpp" />
     <ClCompile Include="..\text_input_node\CCTextFieldTTF.cpp" />
-    <ClCompile Include="..\script_support\CCScriptSupport.cpp" />
     <ClCompile Include="..\kazmath\src\aabb.c" />
     <ClCompile Include="..\kazmath\src\mat3.c" />
     <ClCompile Include="..\kazmath\src\mat4.c" />
@@ -260,6 +260,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClInclude Include="..\cocoa\CCObject.h" />
     <ClInclude Include="..\cocoa\CCSet.h" />
     <ClInclude Include="..\cocoa\CCString.h" />
+    <ClInclude Include="..\cocoa\CCValue.h" />
     <ClInclude Include="..\cocoa\CCZone.h" />
     <ClInclude Include="..\draw_nodes\CCDrawingPrimitives.h" />
     <ClInclude Include="..\draw_nodes\CCDrawNode.h" />
@@ -381,7 +382,6 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClInclude Include="..\text_input_node\CCIMEDelegate.h" />
     <ClInclude Include="..\text_input_node\CCIMEDispatcher.h" />
     <ClInclude Include="..\text_input_node\CCTextFieldTTF.h" />
-    <ClInclude Include="..\script_support\CCScriptSupport.h" />
     <ClInclude Include="..\kazmath\include\kazmath\aabb.h" />
     <ClInclude Include="..\kazmath\include\kazmath\kazmath.h" />
     <ClInclude Include="..\kazmath\include\kazmath\mat3.h" />

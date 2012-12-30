@@ -46,8 +46,6 @@ typedef enum {
  * @{
  */
 
-class CCTouchScriptHandlerEntry;
-
 //
 // CCLayer
 //
@@ -84,9 +82,7 @@ public:
     virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
     
     virtual void didAccelerate(CCAcceleration* pAccelerationValue);
-    void registerScriptAccelerateHandler(int nHandler);
-    void unregisterScriptAccelerateHandler(void);
-
+    
     /** If isTouchEnabled, this method is called onEnter. Override it to change the
     way CCLayer receives touch events.
     ( Default: CCTouchDispatcher::sharedDispatcher()->addStandardDelegate(this,0); )
@@ -99,11 +95,6 @@ public:
     */
     virtual void registerWithTouchDispatcher(void);
     
-    /** Register script touch events handler */
-    virtual void registerScriptTouchHandler(int nHandler, bool bIsMultiTouches = false, int nPriority = INT_MIN, bool bSwallowsTouches = false);
-    /** Unregister script touch events handler */
-    virtual void unregisterScriptTouchHandler(void);
-
     /** whether or not it will receive Touch events.
     You can enable / disable touch events with this property.
     Only the touches of this node will be affected. This "method" is not propagated to it's children.
@@ -134,33 +125,17 @@ public:
     virtual bool isKeypadEnabled();
     virtual void setKeypadEnabled(bool value);
 
-    /** Register keypad events handler */
-    void registerScriptKeypadHandler(int nHandler);
-    /** Unregister keypad events handler */
-    void unregisterScriptKeypadHandler(void);
-
     virtual void keyBackClicked(void);
-    virtual void keyMenuClicked(void);
+    virtual void keyMenuClicked(void);    
     
-    inline CCTouchScriptHandlerEntry* getScriptTouchHandlerEntry() { return m_pScriptTouchHandlerEntry; };
-    inline CCScriptHandlerEntry* getScriptKeypadHandlerEntry() { return m_pScriptKeypadHandlerEntry; };
-    inline CCScriptHandlerEntry* getScriptAccelerateHandlerEntry() { return m_pScriptAccelerateHandlerEntry; };
 protected:   
     bool m_bTouchEnabled;
     bool m_bAccelerometerEnabled;
     bool m_bKeypadEnabled;
     
 private:
-    // Script touch events handler
-    CCTouchScriptHandlerEntry* m_pScriptTouchHandlerEntry;
-    CCScriptHandlerEntry* m_pScriptKeypadHandlerEntry;
-    CCScriptHandlerEntry* m_pScriptAccelerateHandlerEntry;
-    
     int m_nTouchPriority;
-    ccTouchesMode m_eTouchMode;
-    
-    int  excuteScriptTouchHandler(int nEventType, CCTouch *pTouch);
-    int  excuteScriptTouchHandler(int nEventType, CCSet *pTouches);
+    ccTouchesMode m_eTouchMode;    
 };
 
 //

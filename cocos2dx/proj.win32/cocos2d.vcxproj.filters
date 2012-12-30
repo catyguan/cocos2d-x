@@ -67,9 +67,6 @@
     <Filter Include="text_input_node">
       <UniqueIdentifier>{535c04b0-fe2b-44c9-9a8c-9029e2b6de5c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="script_support">
-      <UniqueIdentifier>{5b082c5c-d396-43ca-b3b1-997d0f6247d0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="kazmath">
       <UniqueIdentifier>{7751500e-ac9e-4604-a96d-670b30b7d8bd}</UniqueIdentifier>
     </Filter>
@@ -369,9 +366,6 @@
     <ClCompile Include="..\text_input_node\CCTextFieldTTF.cpp">
       <Filter>text_input_node</Filter>
     </ClCompile>
-    <ClCompile Include="..\script_support\CCScriptSupport.cpp">
-      <Filter>script_support</Filter>
-    </ClCompile>
     <ClCompile Include="..\kazmath\src\aabb.c">
       <Filter>kazmath\src</Filter>
     </ClCompile>
@@ -436,6 +430,9 @@
     </ClCompile>
     <ClCompile Include="..\shaders\CCGLProgram.cpp">
       <Filter>shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cocoa\CCValue.cpp">
+      <Filter>cocoa</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -769,9 +766,6 @@
     <ClInclude Include="..\text_input_node\CCTextFieldTTF.h">
       <Filter>text_input_node</Filter>
     </ClInclude>
-    <ClInclude Include="..\script_support\CCScriptSupport.h">
-      <Filter>script_support</Filter>
-    </ClInclude>
     <ClInclude Include="..\kazmath\include\kazmath\aabb.h">
       <Filter>kazmath\include\kazmath</Filter>
     </ClInclude>
@@ -886,6 +880,9 @@
     </ClInclude>
     <ClInclude Include="..\shaders\CCGLProgram.h">
       <Filter>shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cocoa\CCValue.h">
+      <Filter>cocoa</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

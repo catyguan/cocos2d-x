@@ -187,7 +187,6 @@ class CC_DLL CCCallFunc : public CCActionInstant //<NSCopying>
 public:
     CCCallFunc()
         : m_pSelectorTarget(NULL)
-		, m_nScriptHandler(0)
         , m_pCallFunc(NULL)
     {
     }
@@ -198,9 +197,6 @@ public:
     typedef void (CCObject::*SEL_CallFunc)();
     */
     static CCCallFunc * create(CCObject* pSelectorTarget, SEL_CallFunc selector);
-
-	/** creates the action with the handler script function */
-	static CCCallFunc * create(int nHandler);
 
 	/** initializes the action with the callback 
     
@@ -228,12 +224,9 @@ public:
         }
     }
     
-    inline int getScriptHandler() { return m_nScriptHandler; };
 protected:
     /** Target that will be called */
     CCObject*   m_pSelectorTarget;
-
-	int m_nScriptHandler;
 
     union
     {
@@ -263,9 +256,6 @@ public:
     typedef void (CCObject::*SEL_CallFuncN)(CCNode*);
     */
     static CCCallFuncN * create(CCObject* pSelectorTarget, SEL_CallFuncN selector);
-
-	/** creates the action with the handler script function */
-	static CCCallFuncN * create(int nHandler);
 
     /** initializes the action with the callback 
 

@@ -26,7 +26,6 @@ THE SOFTWARE.
 #include "CCObject.h"
 #include "CCAutoreleasePool.h"
 #include "ccMacros.h"
-#include "script_support/CCScriptSupport.h"
 
 NS_CC_BEGIN
 
@@ -40,11 +39,7 @@ CCObject* CCCopying::copyWithZone(CCZone *pZone)
 CCObject::CCObject(void)
 :m_uAutoReleaseCount(0)
 ,m_uReference(1) // when the object is created, the reference count of it is 1
-,m_nLuaID(0)
 {
-    static unsigned int uObjectCount = 0;
-
-    m_uID = ++uObjectCount;
 }
 
 CCObject::~CCObject(void)
@@ -115,6 +110,44 @@ unsigned int CCObject::retainCount(void)
 bool CCObject::isEqual(const CCObject *pObject)
 {
     return this == pObject;
+}
+
+CCObject* CCObject::findChildById(const char* id)
+{
+	return NULL;
+}
+
+CCValue CCObject::call(const char* id, const char* method, CCValueArray& params)
+{
+	if(id!=NULL) {
+		CCObject* o = findChildById(id);
+		if(o==NULL)throw (std::string("object[")+id+"] not found");
+		return o->invoke(method, params);
+	} else {
+		return invoke(method, params);
+	}
+}
+
+bool CCObject::acall(const char* id, const char* method, CCValue callback, CCValueArray& params)
+{
+	if(id!=NULL) {
+		CCObject* o = findChildById(id);
+		if(o==NULL)throw (std::string("object[")+id+"] not found");
+		return o->ainvoke(method, callback, params);
+	} else {
+		return ainvoke(method, callback, params);
+	}
+}
+
+CCValue CCObject::invoke(const char* method, CCValueArray& params)
+{
+	throw (std::string("invalid method '")+method+"'");
+}
+
+bool CCObject::ainvoke(const char* method, CCValue callback, CCValueArray& params)
+{
+	callback.error(std::string("invalid method '")+method+"'");
+	return true;
 }
 
 NS_CC_END
