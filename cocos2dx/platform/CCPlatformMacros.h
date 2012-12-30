@@ -244,4 +244,8 @@ public: virtual void set##funName(varType var)   \
     #define CC_DEPRECATED_ATTRIBUTE
 #endif 
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) && _DEBUG
+#include "vld.h"
+#endif
+
 #endif // __CC_PLATFORM_MACROS_H__

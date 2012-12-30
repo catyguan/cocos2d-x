@@ -14,6 +14,8 @@ enum TargetPlatform
     kTargetBlackBerry,
 };
 
+typedef void (CALLBACK *CCApplicationRunnable)(void* data, long mstick);
+
 /**
  * @addtogroup platform
  * @{
@@ -60,6 +62,10 @@ public:
      @brief Get target platform
      */
     virtual TargetPlatform getTargetPlatform() = 0;
+
+	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data) = 0;
+
+	virtual void removeRunnable(int pos) =0;
 };
 
 // end of platform group

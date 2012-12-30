@@ -22,6 +22,11 @@ CCApplication::CCApplication()
     m_nAnimationInterval.QuadPart = 0;
     CC_ASSERT(! sm_pSharedApplication);
     sm_pSharedApplication = this;
+
+	for(int i=0;i<MAX_APP_RUNNABLE;i++) {
+		appRun[i] = NULL;
+		appRunData[i] = NULL;
+	}
 }
 
 CCApplication::~CCApplication()
@@ -53,6 +58,7 @@ int CCApplication::run()
     pMainWnd->centerWindow();
     ShowWindow(pMainWnd->getHWnd(), SW_SHOW);
 
+	QueryPerformanceCounter(&m_nStart);
     while (1)
     {
         if (! PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -68,6 +74,12 @@ int CCApplication::run()
             }
             else
             {
+				long time = ((nNow.QuadPart - m_nStart.QuadPart) * 1000)/m_nFreq.QuadPart;
+				for(int i=0;i<MAX_APP_RUNNABLE;i++) {
+					if(appRun[i]!=NULL) {
+						appRun[i](appRunData[i], time);
+					}
+				}
                 Sleep(0);
             }
             continue;
@@ -92,9 +104,8 @@ int CCApplication::run()
 
 void CCApplication::setAnimationInterval(double interval)
 {
-    LARGE_INTEGER nFreq;
-    QueryPerformanceFrequency(&nFreq);
-    m_nAnimationInterval.QuadPart = (LONGLONG)(interval * nFreq.QuadPart);
+    QueryPerformanceFrequency(&m_nFreq);
+    m_nAnimationInterval.QuadPart = (LONGLONG)(interval * m_nFreq.QuadPart);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -153,6 +164,20 @@ ccLanguageType CCApplication::getCurrentLanguage()
 TargetPlatform CCApplication::getTargetPlatform()
 {
     return kTargetWindows;
+}
+
+void CCApplication::addRunnable(int pos, CCApplicationRunnable runnable, void* data)
+{
+	CC_ASSERT(pos<MAX_APP_RUNNABLE);
+	CC_ASSERT(appRun[pos] == NULL);
+	appRun[pos] = runnable;
+	appRunData[pos] = data;
+}
+
+void CCApplication::removeRunnable(int pos)
+{
+	CC_ASSERT(pos<MAX_APP_RUNNABLE);
+	appRun[pos] = NULL;
 }
 
 void CCApplication::setResourceRootPath(const std::string& rootResDir)

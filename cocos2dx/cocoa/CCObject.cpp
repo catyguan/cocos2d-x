@@ -57,6 +57,7 @@ CCObject::~CCObject(void)
     }
 
     // if the object is referenced by Lua engine, remove it
+#ifdef USE_SCRIPT_ENGINE
     if (m_nLuaID)
     {
         CCScriptEngineManager::sharedManager()->getScriptEngine()->removeScriptObjectByCCObject(this);
@@ -69,6 +70,7 @@ CCObject::~CCObject(void)
             pEngine->removeScriptObjectByCCObject(this);
         }
     }
+#endif
 }
 
 CCObject* CCObject::copy()

@@ -6,6 +6,8 @@
 #include "platform/CCApplicationProtocol.h"
 #include <string>
 
+#define MAX_APP_RUNNABLE	5
+
 NS_CC_BEGIN
 
 class CCRect;
@@ -36,6 +38,10 @@ public:
      */
     virtual TargetPlatform getTargetPlatform();
 
+	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data);
+
+	virtual void removeRunnable(int pos);
+
     /* set the Resource root path */
     void setResourceRootPath(const std::string& rootResDir);
 
@@ -55,9 +61,14 @@ public:
 protected:
     HINSTANCE           m_hInstance;
     HACCEL              m_hAccelTable;
+	LARGE_INTEGER		m_nFreq;
+	LARGE_INTEGER		m_nStart;
     LARGE_INTEGER       m_nAnimationInterval;
     std::string         m_resourceRootPath;
     std::string         m_startupScriptFilename;
+
+	CCApplicationRunnable appRun[MAX_APP_RUNNABLE];
+	void* appRunData[MAX_APP_RUNNABLE];
 
     static CCApplication * sm_pSharedApplication;
 };

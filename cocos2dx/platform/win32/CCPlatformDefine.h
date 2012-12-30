@@ -26,6 +26,8 @@
 #endif
 #endif
 
-
+#ifndef CALLBACK
+#define CALLBACK __stdcall
+#endif
 
 #endif /* __CCPLATFORMDEFINE_H__*/

@@ -59,8 +59,8 @@
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\platform\win32;$(ProjectDir)..\platform\third_party\win32\iconv;$(ProjectDir)..\platform\third_party\win32\zlib;$(ProjectDir)..\platform\third_party\win32\libpng;$(ProjectDir)..\platform\third_party\win32\libjpeg;$(ProjectDir)..\platform\third_party\win32\libtiff;$(ProjectDir)..\platform\third_party\win32\libxml2;$(ProjectDir)..\platform\third_party\win32\pthread;$(ProjectDir)..\platform\third_party\win32\OGLES;..\include;$(ProjectDir)..\kazmath\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;COCOS2DXWIN32_EXPORTS;GL_GLEXT_PROTOTYPES;COCOS2D_DEBUG=1;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..;$(ProjectDir)..\platform\win32;$(ProjectDir)..\platform\third_party\win32\iconv;$(ProjectDir)..\platform\third_party\win32\zlib;$(ProjectDir)..\platform\third_party\win32\libpng;$(ProjectDir)..\platform\third_party\win32\libjpeg;$(ProjectDir)..\platform\third_party\win32\libtiff;$(ProjectDir)..\platform\third_party\win32\libxml2;$(ProjectDir)..\platform\third_party\win32\pthread;$(ProjectDir)..\platform\third_party\win32\OGLES;..\include;$(ProjectDir)..\kazmath\include;D:\Program Files\Visual Leak Detector\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;GL_GLEXT_PROTOTYPES;COCOS2D_DEBUG=1;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -78,7 +78,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <Link>
       <AdditionalDependencies>opengl32.lib;glew32.lib;libxml2.lib;libzlib.lib;libpng.lib;libjpeg.lib;libtiff.lib;libiconv.lib;pthreadVCE2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);D:\Program Files\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries> ;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
