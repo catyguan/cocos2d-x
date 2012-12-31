@@ -38,6 +38,7 @@ THE SOFTWARE.
 // externals
 #include "kazmath/GL/matrix.h"
 
+#include "cocoa/CCValueSupport.h"
 
 #if CC_NODE_RENDER_SUBPIXEL
 #define RENDER_IN_SUBPIXEL
@@ -1241,8 +1242,19 @@ CCPoint CCNode::convertTouchToNodeSpaceAR(CCTouch *touch)
 // MARMALADE ADDED
 void CCNode::updateTransform()
 {
-    // Recursively iterate over children
+   // Recursively iterate over children
     arrayMakeObjectsPerformSelector(m_pChildren, updateTransform, CCNode*);
+}
+
+CC_BEGIN_CALLS(CCNode, CCObject)
+	CC_DEFINE_CALL(CCNode, visible)
+CC_END_CALLS(CCNode, CCObject)
+
+CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
+	if(params.size()>0) {
+		setVisible(params[0].booleanValue());
+	}
+	return CCValue::booleanValue(isVisible());
 }
 
 NS_CC_END

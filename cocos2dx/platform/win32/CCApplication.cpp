@@ -71,15 +71,16 @@ int CCApplication::run()
             {
                 nLast.QuadPart = nNow.QuadPart;
                 CCDirector::sharedDirector()->mainLoop();
-            }
-            else
-            {
+
 				long time = ((nNow.QuadPart - m_nStart.QuadPart) * 1000)/m_nFreq.QuadPart;
 				for(int i=0;i<MAX_APP_RUNNABLE;i++) {
 					if(appRun[i]!=NULL) {
 						appRun[i](appRunData[i], time);
 					}
 				}
+            }
+            else
+            {				
                 Sleep(0);
             }
             continue;

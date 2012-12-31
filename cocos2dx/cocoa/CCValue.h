@@ -26,25 +26,17 @@ typedef enum {
 	CCValueTypeObject,
 	CCValueTypeFunction,
 	CCValueTypeObjectCall,
-	CCValueTypeObjectACall,
 } CCValueType;
 
-typedef CCValue (*CC_FUNCTION_CALL)(CCValueArray& params);
-typedef CCValue (CCObject::*CC_OBJECT_CALL)(CCValueArray& params);
-typedef bool (CCObject::*CC_OBJECT_ACALL)(CCValue callback, CCValueArray& params);
+typedef CCValue (*CC_FUNCTION_CALL)(CCValueArray&);
+typedef CCValue (CCObject::*CC_OBJECT_CALL)(CCValueArray&);
 
 #define ocall_selector(_SELECTOR) (CC_OBJECT_CALL)(&_SELECTOR)
-#define oacall_selector(_SELECTOR) (CC_OBJECT_ACALL)(&_SELECTOR)
 
 typedef struct _CCOCall {
 	CCObject* pObject;
 	CC_OBJECT_CALL call;
 } CCOCall;
-
-typedef struct _CCOACall {
-	CCObject* pObject;
-	CC_OBJECT_ACALL call;
-} CCOACall;
 
 typedef union {
     int					intValue;
@@ -55,7 +47,6 @@ typedef union {
 	CCObject*			objectValue;
 	CC_FUNCTION_CALL	fcallValue;
 	CCOCall				ocallValue;
-	CCOACall			oacallValue;
 } CCValueField;
 
 class CC_DLL CCValue
@@ -73,13 +64,9 @@ public:
     static const CCValue stringValue(const std::string& stringValue);
     static const CCValue mapValue(const CCValueMap& dictValue);
     static const CCValue arrayValue(const CCValueArray& arrayValue);    
-	static const CCValue objectValue(CCObject* obj){return objectValue(obj, true);};
-	static const CCValue objectValue(CCObject* obj,bool ref);
+	static const CCValue objectValue(CCObject* obj);
 	static const CCValue fcallValue(CC_FUNCTION_CALL call);
-	static const CCValue ocallValue(CCObject* obj, CC_OBJECT_CALL call){return ocallValue(obj, call, true, false);};
-	static const CCValue ocallValue(CCObject* obj, CC_OBJECT_CALL call,bool ref,bool once);
-	static const CCValue oacallValue(CCObject* obj, CC_OBJECT_ACALL call){return oacallValue(obj, call, true, false);};
-	static const CCValue oacallValue(CCObject* obj, CC_OBJECT_ACALL call,bool ref,bool once);
+	static const CCValue ocallValue(CCObject* obj, CC_OBJECT_CALL call);
 
     CCValue(void)
         : m_type(CCValueTypeNull)
@@ -156,7 +143,7 @@ public:
 	bool isMap() const {
 		return m_type==CCValueTypeMap;
 	}
-    const CCValueMap& MapValue(void) const {
+    const CCValueMap& mapValue(void) const {
 		CC_ASSERT(isMap());
         return *m_field.mapValue;
     }
@@ -172,7 +159,7 @@ public:
 	bool isObject() const {
 		return m_type==CCValueTypeObject;
 	}
-    const CCObject* objectValue(void) const {
+    CCObject* objectValue(void) const {
 		if(isObject()) {
 			return m_field.objectValue;
 		}
@@ -180,12 +167,12 @@ public:
 	}
 
 	bool canCall() const {
-		return m_type==CCValueTypeFunction || m_type==CCValueTypeObjectCall || m_type==CCValueTypeObjectACall;
+		return m_type==CCValueTypeFunction || m_type==CCValueTypeObjectCall;
 	}
 	bool isFunction() const {
 		return m_type==CCValueTypeFunction;
 	}
-    const CC_FUNCTION_CALL functionValue(void) const {
+    const CC_FUNCTION_CALL fcallValue(void) const {
 		if(isFunction()) {
 			return m_field.fcallValue;
 		}
@@ -202,29 +189,17 @@ public:
 		return NULL;
     }
 
-	bool isObjectACall() const {
-		return m_type==CCValueTypeObjectACall;
-	}
-    const CCOACall* oacallValue(void) const {
-		if(isObjectACall()) {
-			return &m_field.oacallValue;
-		}
-		return NULL;
-    }
+	void retain();
+	void cleanup();
 
-	CCValue ref();
-
-	bool isCallOnce();
 	CCValue call(CCValueArray& params,bool throwErr);
-	bool acall(CCValue callback, CCValueArray& params);
 	bool callback(std::string err, CCValue result);
 	bool result(CCValue result){return callback(EMPTY, result);};
 	bool error(std::string err){return callback(err, nullValue());};
-	
-	void cleanup();
 
 private:
     CCValueField m_field;
+	bool m_retain;
 	std::string	 m_fieldString;
     CCValueType  m_type;
 

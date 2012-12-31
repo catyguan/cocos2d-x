@@ -8,13 +8,6 @@ NS_CC_BEGIN
 std::string CCValue::EMPTY;
 CCValueArray CCValue::EMPTY_PARAM;
 
-std::string REF_ONCE("11");
-std::string NOREF_NOONCE("00");
-std::string NOREF_ONCE("01");
-std::string REF_NOONCE("10");
-
-#define ROSTRING(r,o) r?(o?REF_ONCE:REF_NOONCE):(o?NOREF_ONCE:NOREF_NOONCE)
-
 const CCValue CCValue::nullValue()
 {
 	CCValue value;
@@ -28,6 +21,7 @@ const CCValue CCValue::intValue(const int intValue)
     CCValue value;
     value.m_type = CCValueTypeInt;
     value.m_field.intValue = intValue;
+	value.m_retain = false;
     return value;
 }
 
@@ -36,6 +30,7 @@ const CCValue CCValue::numberValue(const double numberValue)
     CCValue value;
     value.m_type = CCValueTypeNumber;
     value.m_field.numberValue = numberValue;
+	value.m_retain = false;
     return value;
 }
 
@@ -44,6 +39,7 @@ const CCValue CCValue::booleanValue(const bool booleanValue)
     CCValue value;
     value.m_type = CCValueTypeBoolean;
     value.m_field.booleanValue = booleanValue;
+	value.m_retain = false;
     return value;
 }
 
@@ -52,6 +48,7 @@ const CCValue CCValue::stringValue(const char* stringValue)
     CCValue value;
     value.m_type = CCValueTypeString;
     value.m_fieldString = stringValue;
+	value.m_retain = false;
     return value;
 }
 
@@ -60,6 +57,7 @@ const CCValue CCValue::stringValue(const std::string& stringValue)
     CCValue value;
     value.m_type = CCValueTypeString;
     value.m_fieldString = stringValue;
+	value.m_retain = false;
     return value;
 }
 
@@ -68,6 +66,7 @@ const CCValue CCValue::mapValue(const CCValueMap& dictValue)
     CCValue value;
     value.m_type = CCValueTypeMap;
     value.m_field.mapValue = new CCValueMap(dictValue);
+	value.m_retain = false;
     return value;
 }
 
@@ -76,21 +75,18 @@ const CCValue CCValue::arrayValue(const CCValueArray& arrayValue)
     CCValue value;
     value.m_type = CCValueTypeArray;
     value.m_field.arrayValue = new CCValueArray(arrayValue);
+	value.m_retain = false;
     return value;
 }
 
-const CCValue CCValue::objectValue(CCObject* obj,bool ref)
+const CCValue CCValue::objectValue(CCObject* obj)
 {
 	if(obj==NULL)return nullValue();
 
 	CCValue value;
 	value.m_type = CCValueTypeObject;
 	value.m_field.objectValue = obj;
-	if(ref) {
-		obj->retain();
-	} else {
-		value.m_fieldString = ROSTRING(ref,false);
-	}
+	value.m_retain = false;
 	return value;
 }
 
@@ -101,10 +97,11 @@ const CCValue CCValue::fcallValue(CC_FUNCTION_CALL call)
 	CCValue value;
 	value.m_type = CCValueTypeFunction;
 	value.m_field.fcallValue = call;
+	value.m_retain = false;
 	return value;
 }
 
-const CCValue CCValue::ocallValue(CCObject* obj, CC_OBJECT_CALL call,bool ref,bool once)
+const CCValue CCValue::ocallValue(CCObject* obj, CC_OBJECT_CALL call)
 {	
 	if(obj==NULL || call==NULL)return nullValue();	
 
@@ -112,27 +109,7 @@ const CCValue CCValue::ocallValue(CCObject* obj, CC_OBJECT_CALL call,bool ref,bo
 	value.m_type = CCValueTypeObjectCall;
 	value.m_field.ocallValue.pObject = obj;
 	value.m_field.ocallValue.call = call;
-	if(ref) {
-		obj->retain();
-	} else {
-		value.m_fieldString = ROSTRING(ref,once);
-	}
-	return value;
-}
-
-const CCValue CCValue::oacallValue(CCObject* obj, CC_OBJECT_ACALL call,bool ref,bool once)
-{
-	if(obj==NULL || call==NULL)return nullValue();	
-
-	CCValue value;
-	value.m_type = CCValueTypeObjectCall;
-	value.m_field.oacallValue.pObject = obj;
-	value.m_field.oacallValue.call = call;
-	if(ref) {
-		obj->retain();
-	} else {
-		value.m_fieldString = ROSTRING(ref,once);
-	}
+	value.m_retain = false;
 	return value;
 }
 
@@ -163,10 +140,17 @@ void CCValue::cleanup()
 		}
 		m_field.arrayValue = NULL;
     }
-	else if(m_type == CCValueTypeObject || m_type==CCValueTypeObjectCall || m_type==CCValueTypeObjectACall)
+	else if(m_type == CCValueTypeObject || m_type==CCValueTypeObjectCall)
 	{
-		if(m_fieldString[0]=='1') {
-			CC_SAFE_RELEASE_NULL(m_field.objectValue);
+		if(m_retain) {
+			if(m_type==CCValueTypeObject) {
+				// CCLOG("--- release 1");
+				CC_SAFE_RELEASE_NULL(m_field.objectValue);
+			}
+			else if(m_type==CCValueTypeObjectCall) {
+				// CCLOG("--- oc release 1");
+				CC_SAFE_RELEASE_NULL(m_field.ocallValue.pObject);
+			}
 		}
 	}
 	m_type = CCValueTypeNull;
@@ -181,6 +165,7 @@ void CCValue::copy(const CCValue& rhs)
 {
     memcpy(&m_field, &rhs.m_field, sizeof(m_field));
     m_type = rhs.m_type;
+	m_retain = false;
     if (m_type == CCValueTypeString)
     {
         m_fieldString = rhs.m_fieldString;
@@ -192,63 +177,34 @@ void CCValue::copy(const CCValue& rhs)
     else if (m_type == CCValueTypeArray)
     {
         m_field.arrayValue = new CCValueArray(*rhs.m_field.arrayValue);
-    }
-	else if(m_type == CCValueTypeObject || m_type==CCValueTypeObjectCall || m_type==CCValueTypeObjectACall)
+    }	
+}
+
+void CCValue::retain()
+{
+	if(m_type == CCValueTypeObject || m_type==CCValueTypeObjectCall)
 	{
-		m_fieldString = rhs.m_fieldString;
-		if(m_fieldString[0]=='1') {
+		if(!m_retain) {
+			m_retain = true;
 			if(m_type==CCValueTypeObject) {
-				m_field.objectValue->retain();
+				// CCLOG("retain 1");
+				CC_SAFE_RETAIN(m_field.objectValue);
 			}
 			else if(m_type==CCValueTypeObjectCall) {
-				m_field.ocallValue.pObject->retain();
-			}
-			else if(m_type==CCValueTypeObjectACall) {
-				m_field.oacallValue.pObject->retain();
+				// CCLOG("retain 1");
+				CC_SAFE_RETAIN(m_field.ocallValue.pObject);
 			}
 		}
 	}
-}
-
-CCValue CCValue::ref()
-{
-	if(m_type == CCValueTypeObject || m_type==CCValueTypeObjectCall || m_type==CCValueTypeObjectACall)
-	{
-		if(m_fieldString[0]=='0') {
-			if(m_type==CCValueTypeObject) {
-				return CCValue::objectValue(m_field.objectValue, true);
-			}
-			else if(m_type==CCValueTypeObjectCall) {
-				return CCValue::ocallValue(m_field.ocallValue.pObject,m_field.ocallValue.call,true,isCallOnce());
-			}
-			else if(m_type==CCValueTypeObjectACall) {
-				return CCValue::oacallValue(m_field.oacallValue.pObject,m_field.oacallValue.call,true,isCallOnce());
-			}
-		}
-	}
-	return CCValue(*this);
-}
-
-bool CCValue::isCallOnce()
-{
-	return m_fieldString.size()>1 && m_fieldString[1]=='1';
 }
 
 CCValue CCValue::call(CCValueArray& params,bool throwErr)
 {
 	try {
 		if(m_type==CCValueTypeFunction) {
-			CCValue r = m_field.fcallValue(params);
-			if(isCallOnce())cleanup();
-			return r;
+			return m_field.fcallValue(params);
 		} else if(m_type==CCValueTypeObjectCall){
-			CCValue r = (m_field.ocallValue.pObject->*m_field.ocallValue.call)(params);
-			if(isCallOnce())cleanup();
-			return r;
-		} else if(m_type==CCValueTypeObjectCall) {
-			bool r = (m_field.oacallValue.pObject->*m_field.oacallValue.call)(CCValue::nullValue(), params);
-			if(isCallOnce())cleanup();
-			return CCValue::booleanValue(r);
+			return (m_field.ocallValue.pObject->*m_field.ocallValue.call)(params);
 		} else {
 			throw std::string("invalid value type[%d] for call",m_type);
 		}
@@ -259,30 +215,6 @@ CCValue CCValue::call(CCValueArray& params,bool throwErr)
 			CCLOG("skip call err - %s", err.c_str());
 			return nullValue();
 		}
-	}
-}
-
-bool CCValue::acall(CCValue callback, CCValueArray& params)
-{
-	try {
-		if(m_type==CCValueTypeFunction) {
-			CCValue r = m_field.fcallValue(params);
-			if(isCallOnce())cleanup();
-			return callback.callback(EMPTY, r);
-		} else if(m_type==CCValueTypeObjectCall){
-			CCValue r = (m_field.ocallValue.pObject->*m_field.ocallValue.call)(params);
-			if(isCallOnce())cleanup();
-			return callback.callback(EMPTY, r);
-		} else if(m_type==CCValueTypeObjectCall) {
-			bool r = (m_field.oacallValue.pObject->*m_field.oacallValue.call)(CCValue::nullValue(), params);
-			if(isCallOnce())cleanup();
-			return r;
-		} else {
-			throw std::string("invalid value type[%d] for acall",m_type);
-		}
-	} catch(std::string err) {		
-		callback.callback(err, CCValue::nullValue());
-		return true;
 	}
 }
 

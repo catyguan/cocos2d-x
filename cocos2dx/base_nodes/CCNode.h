@@ -716,7 +716,7 @@ public:
      @since v0.7.1
      */
     CCPoint convertTouchToNodeSpaceAR(CCTouch * touch);
-        
+
 private:
     //! lazy allocs
     void childrenAlloc(void);
@@ -727,6 +727,11 @@ private:
     void detachChild(CCNode *child, bool doCleanup);
     
     CCPoint convertToWindowSpace(const CCPoint& nodePoint);
+
+	// cc_call
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(visible)
+	CC_DECLARE_CALLS_END
 };
 
 // end of base_node group

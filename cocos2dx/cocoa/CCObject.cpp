@@ -117,37 +117,37 @@ CCObject* CCObject::findChildById(const char* id)
 	return NULL;
 }
 
-CCValue CCObject::call(const char* id, const char* method, CCValueArray& params)
+bool CCObject::canCall(const char* method)
 {
-	if(id!=NULL) {
-		CCObject* o = findChildById(id);
-		if(o==NULL)throw (std::string("object[")+id+"] not found");
-		return o->invoke(method, params);
-	} else {
-		return invoke(method, params);
-	}
+	return false;
 }
 
-bool CCObject::acall(const char* id, const char* method, CCValue callback, CCValueArray& params)
-{
-	if(id!=NULL) {
-		CCObject* o = findChildById(id);
-		if(o==NULL)throw (std::string("object[")+id+"] not found");
-		return o->ainvoke(method, callback, params);
-	} else {
-		return ainvoke(method, callback, params);
-	}
-}
-
-CCValue CCObject::invoke(const char* method, CCValueArray& params)
+CCValue CCObject::call(const char* method, CCValueArray& params)
 {
 	throw (std::string("invalid method '")+method+"'");
 }
 
-bool CCObject::ainvoke(const char* method, CCValue callback, CCValueArray& params)
+bool CCObject::canCallImpl(CCObject* thisp, CALL_INFO* thism, const char* method)
 {
-	callback.error(std::string("invalid method '")+method+"'");
-	return true;
+	if(thism==NULL)return false;
+	for(;thism->name!=NULL;thism++) {
+		if(strcmp(thism->name, method)==0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CCObject::callImpl(CCObject* thisp, CALL_INFO* thism, CCValue& r, const char* method, CCValueArray& params)
+{
+	if(thism==NULL)return false;
+	for(;thism->name!=NULL;thism++) {
+		if(strcmp(thism->name, method)==0 && thism->call!=NULL) {
+			r = (thisp->*thism->call)(params);
+			return true;
+		}
+	}
+	return false;
 }
 
 NS_CC_END

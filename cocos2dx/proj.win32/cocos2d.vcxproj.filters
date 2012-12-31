@@ -434,6 +434,9 @@
     <ClCompile Include="..\cocoa\CCValue.cpp">
       <Filter>cocoa</Filter>
     </ClCompile>
+    <ClCompile Include="..\cocoa\CCValueSupport.cpp">
+      <Filter>cocoa</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base_nodes\CCAtlasNode.h">
@@ -882,6 +885,9 @@
       <Filter>shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\cocoa\CCValue.h">
+      <Filter>cocoa</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cocoa\CCValueSupport.h">
       <Filter>cocoa</Filter>
     </ClInclude>
   </ItemGroup>

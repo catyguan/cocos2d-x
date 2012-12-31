@@ -46,6 +46,11 @@ public:
     virtual CCObject* copyWithZone(CCZone* pZone);
 };
 
+typedef struct _CALL_INFO {
+	char* name;
+	CC_OBJECT_CALL call;
+} CALL_INFO;
+
 class CC_DLL CCObject : public CCCopying
 {
 protected:
@@ -70,13 +75,13 @@ public:
     friend class CCAutoreleasePool;
 
 public:	
-	virtual CCValue call(const char* id, const char* method, CCValueArray& params);	
-	virtual bool acall(const char* id, const char* method, CCValue callback, CCValueArray& params);
+	virtual CCObject* findChildById(const char* id);
+	virtual bool canCall(const char* method);
+	virtual CCValue call(const char* method, CCValueArray& params);	
 
 protected:
-	virtual CCObject* findChildById(const char* id);
-	virtual CCValue invoke(const char* method, CCValueArray& params);
-	virtual bool ainvoke(const char* method, CCValue callback, CCValueArray& params);
+	static bool canCallImpl(CCObject* thisp, CALL_INFO* thism, const char* method);
+	static bool callImpl(CCObject* thisp, CALL_INFO* thism, CCValue& r, const char* method, CCValueArray& params);
 };
 
 
@@ -97,6 +102,13 @@ typedef int (CCObject::*SEL_Compare)(CCObject*);
 #define menu_selector(_SELECTOR) (SEL_MenuHandler)(&_SELECTOR)
 #define event_selector(_SELECTOR) (SEL_EventHandler)(&_SELECTOR)
 #define compare_selector(_SELECTOR) (SEL_Compare)(&_SELECTOR)
+
+#define CC_DECLARE_CALL(name) CCValue call_##name(CCValueArray&);
+#define CC_DECLARE_ACALL(name) bool call_##name(CCValue, CCValueArray&);
+#define CC_DECLARE_CALLS_BEGIN	public: \
+							virtual bool canCall(const char* method); \
+							virtual CCValue call(const char* method, CCValueArray& params);
+#define CC_DECLARE_CALLS_END
 
 // end of base_nodes group
 /// @}
