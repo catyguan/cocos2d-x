@@ -124,7 +124,15 @@ bool CCObject::canCall(const char* method)
 
 CCValue CCObject::call(const char* method, CCValueArray& params)
 {
-	throw (std::string("invalid method '")+method+"'");
+	if(method==NULL)return invoke(params);
+	char buf[256];
+	sprintf(buf,"invalid method '%s'",method);
+	throw new std::string(buf);
+}
+
+CCValue CCObject::invoke(CCValueArray& params)
+{	
+	throw new std::string("invalid invoke");
 }
 
 bool CCObject::canCallImpl(CCObject* thisp, CALL_INFO* thism, const char* method)

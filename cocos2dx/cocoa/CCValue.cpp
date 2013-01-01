@@ -198,6 +198,10 @@ void CCValue::retain()
 	}
 }
 
+bool CCValue::canCall() const {
+	return m_type==CCValueTypeFunction || m_type==CCValueTypeObjectCall || m_type==CCValueTypeObject;
+}
+
 CCValue CCValue::call(CCValueArray& params,bool throwErr)
 {
 	try {
@@ -205,14 +209,19 @@ CCValue CCValue::call(CCValueArray& params,bool throwErr)
 			return m_field.fcallValue(params);
 		} else if(m_type==CCValueTypeObjectCall){
 			return (m_field.ocallValue.pObject->*m_field.ocallValue.call)(params);
+		} else if(m_type==CCValueTypeObject){
+			return m_field.objectValue->invoke(params);
 		} else {
-			throw std::string("invalid value type[%d] for call",m_type);
+			char buf[128];
+			sprintf(buf,"invalid value type[%d] for call",m_type);
+			throw new std::string(buf);
 		}
-	} catch(std::string err) {		
+	} catch(std::string* err) {		
 		if(throwErr) {
 			throw err;
 		} else {
-			CCLOG("skip call err - %s", err.c_str());
+			CCLOG("skip call err - %s", err->c_str());
+			delete err;
 			return nullValue();
 		}
 	}

@@ -580,7 +580,7 @@ CCNode* CCNode::getChildById(const char* id)
 
 CCObject* CCNode::findChildById(const char* id)
 {
-	return NULL;
+	return getChildById(id);
 }
 
 /* "add" logic MUST only be on this method

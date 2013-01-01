@@ -78,6 +78,7 @@ public:
 	virtual CCObject* findChildById(const char* id);
 	virtual bool canCall(const char* method);
 	virtual CCValue call(const char* method, CCValueArray& params);	
+	virtual CCValue invoke(CCValueArray& params);
 
 protected:
 	static bool canCallImpl(CCObject* thisp, CALL_INFO* thism, const char* method);

@@ -166,9 +166,7 @@ public:
 		return NULL;
 	}
 
-	bool canCall() const {
-		return m_type==CCValueTypeFunction || m_type==CCValueTypeObjectCall;
-	}
+	bool canCall() const;
 	bool isFunction() const {
 		return m_type==CCValueTypeFunction;
 	}

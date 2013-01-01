@@ -15,6 +15,7 @@ NS_CC_BEGIN
 		return SCALL::canCall(method); \
 	} \
 	CCValue CLASS::call(const char* method, CCValueArray& params){ \
+		if(method==NULL)return invoke(params); \
 		CCValue r; \
 		if(CCObject::callImpl(this, s_CALLS_##CLASS, r, method, params)) { return r; } \
 		return SCALL::call(method, params); \
