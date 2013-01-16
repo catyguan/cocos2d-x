@@ -163,6 +163,7 @@ CCValue::~CCValue(void)
 
 void CCValue::copy(const CCValue& rhs)
 {
+	cleanup();
     memcpy(&m_field, &rhs.m_field, sizeof(m_field));
     m_type = rhs.m_type;
 	m_retain = false;

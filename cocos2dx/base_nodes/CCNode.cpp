@@ -526,6 +526,9 @@ void CCNode::cleanup()
     // actions
     this->stopAllActions();
     this->unscheduleAllSelectors();    
+
+	m_callEnter.cleanup();
+	m_callExit.cleanup();
     
     // timers
     arrayMakeObjectsPerformSelector(m_pChildren, cleanup, CCNode*);
@@ -931,6 +934,12 @@ void CCNode::onEnter()
     this->resumeSchedulerAndActions();
 
     m_bRunning = true;
+
+	if(m_callEnter.canCall()) {
+		CCValueArray ps;
+		ps.push_back(CCValue::objectValue(this));
+		m_callEnter.call(ps,false);
+	}		
 }
 
 void CCNode::onEnterTransitionDidFinish()
@@ -951,6 +960,11 @@ void CCNode::onExit()
 
     arrayMakeObjectsPerformSelector(m_pChildren, onExit, CCNode*);
     
+	if(m_callExit.canCall()) {
+		CCValueArray ps;
+		ps.push_back(CCValue::objectValue(this));
+		m_callExit.call(ps,false);
+	}		
 }
 
 void CCNode::setActionManager(CCActionManager* actionManager)
@@ -1248,6 +1262,8 @@ void CCNode::updateTransform()
 
 CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, visible)
+	CC_DEFINE_CALL(CCNode, onEnter)
+	CC_DEFINE_CALL(CCNode, onExit)
 CC_END_CALLS(CCNode, CCObject)
 
 CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
@@ -1255,6 +1271,24 @@ CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
 		setVisible(params[0].booleanValue());
 	}
 	return CCValue::booleanValue(isVisible());
+}
+
+CCValue CCNode::CALLNAME(onEnter)(CCValueArray& params) {
+	bool r = false;
+	if(params.size()>0) {
+		m_callEnter = params[0];
+		r = true;
+	}
+	return CCValue::booleanValue(r);
+}
+
+CCValue CCNode::CALLNAME(onExit)(CCValueArray& params) {
+	bool r = false;
+	if(params.size()>0) {
+		m_callExit = params[0];
+		r = true;
+	}
+	return CCValue::booleanValue(r);
 }
 
 NS_CC_END

@@ -143,17 +143,21 @@ public:
 	bool isMap() const {
 		return m_type==CCValueTypeMap;
 	}
-    const CCValueMap& mapValue(void) const {
-		CC_ASSERT(isMap());
-        return *m_field.mapValue;
+    CCValueMap* mapValue(void) const {
+		if(isMap()) {
+			return m_field.mapValue;
+		}
+		return NULL;
     }
 
 	bool isArray() const {
 		return m_type==CCValueTypeArray;
 	}
-    const CCValueArray& arrayValue(void) const {
-		CC_ASSERT(isArray());
-        return *m_field.arrayValue;
+    CCValueArray* arrayValue(void) const {
+		if(isArray()) {
+			return m_field.arrayValue;
+		}
+		return NULL;
     }
 
 	bool isObject() const {

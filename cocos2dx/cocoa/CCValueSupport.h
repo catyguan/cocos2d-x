@@ -1,9 +1,53 @@
 #ifndef __CCVALUE_COMMON_H__
 #define __CCVALUE_COMMON_H__
 
+#include "ccTypes.h"
 #include "CCValue.h"
+#include "CCGeometry.h"
 
 NS_CC_BEGIN
+
+class CC_DLL CCCommandObject : public CCObject
+{
+public:
+    //super methods
+	virtual CCValue invoke(CCValueArray& params);
+	virtual void cleanup();
+
+public:
+    /** Allocates and initializes the action */
+	static CCCommandObject* create(CCObject* obj, const char* method, CCValueArray& params);
+	static CCCommandObject* create(CCObject* obj, const char* method);
+
+protected:
+	void initObjectCommand(CCObject* obj,const char* method,CCValueArray& ps);
+
+	CCCommandObject();
+	virtual ~CCCommandObject();
+
+protected:
+	CCObject* m_pObject;
+	std::string m_csName;
+	CCValueArray m_Params;
+};
+
+class CC_DLL CCValueUtil
+{
+public:
+	static void append(CCValueArray& r,CCValueArray& a1);
+
+	static CCSize size(CCValue& v);
+	static CCPoint point(CCValue& v);
+	static ccColor4B color4b(CCValue& v);
+};
+
+#define ccvpObject(params,idx,otype)	((otype*)(params.size()>idx?(params[idx].isObject()?dynamic_cast<otype*>(params[idx].objectValue()):NULL):NULL))
+#define ccvpMap(params,idx)	(params.size()>idx?params[idx].mapValue():NULL)
+#define ccvpInt(params,idx)	(params.size()>idx?params[idx].intValue():0)
+#define ccvpString(params,idx)	(params.size()>idx?params[idx].stringValue():CCValue::EMPTY)
+#define ccvpSize(params, idx) (params.size()>idx?CCValueUtil::size(params[idx]):CCSizeMake(0,0))
+#define ccvpPoint(params, idx) (params.size()>idx?CCValueUtil::point(params[idx]):CCPointZero)
+#define ccvpColor(params, idx) (params.size()>idx?CCValueUtil::color4b(params[idx]):ccc4(0,0,0,255))
 
 #define CALLNAME(name) call_##name
 

@@ -201,6 +201,10 @@ protected:
     bool m_bIgnoreAnchorPointForPosition;
 
     bool m_bReorderChildDirty;
+
+	// event call
+	CCValue m_callEnter;
+	CCValue m_callExit;
     
 public:
     // getter & setter
@@ -731,6 +735,8 @@ private:
 	// cc_call
 	CC_DECLARE_CALLS_BEGIN
 	CC_DECLARE_CALL(visible)
+	CC_DECLARE_CALL(onEnter)
+	CC_DECLARE_CALL(onExit)
 	CC_DECLARE_CALLS_END
 };
 
