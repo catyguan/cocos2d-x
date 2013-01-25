@@ -251,6 +251,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
   <ItemGroup>
     <ClInclude Include="..\base_nodes\CCAtlasNode.h" />
     <ClInclude Include="..\base_nodes\CCNode.h" />
+    <ClInclude Include="..\base_nodes\CCNode_Events.h" />
     <ClInclude Include="..\cocoa\CCAffineTransform.h" />
     <ClInclude Include="..\cocoa\CCArray.h" />
     <ClInclude Include="..\cocoa\CCAutoreleasePool.h" />

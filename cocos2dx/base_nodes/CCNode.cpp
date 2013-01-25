@@ -38,7 +38,9 @@ THE SOFTWARE.
 // externals
 #include "kazmath/GL/matrix.h"
 
+// catyguan
 #include "cocoa/CCValueSupport.h"
+#include "CCNode_Events.h"
 
 #if CC_NODE_RENDER_SUBPIXEL
 #define RENDER_IN_SUBPIXEL
@@ -84,6 +86,8 @@ CCNode::CCNode(void)
 , m_uOrderOfArrival(0)
 , m_eGLServerState(ccGLServerState(0))
 , m_bReorderChildDirty(false)
+, m_pAttributes(NULL)
+, m_pEventHandlers(NULL)
 {
     // set default scheduler and actionManager
     CCDirector *director = CCDirector::sharedDirector();
@@ -121,6 +125,10 @@ CCNode::~CCNode(void)
 
     // children
     CC_SAFE_RELEASE(m_pChildren);
+
+	clearEventHandlers();
+	CC_SAFE_DELETE(m_pEventHandlers);
+	CC_SAFE_DELETE(m_pAttributes);
 }
 
 float CCNode::getSkewX()
@@ -267,8 +275,13 @@ CCPoint CCNode::getPosition()
 /// position setter
 void CCNode::setPosition(const CCPoint& newPosition)
 {
+	CCPoint old = m_obPosition;
     m_obPosition = newPosition;
     m_bTransformDirty = m_bInverseDirty = true;
+	if(!old.equals(newPosition) && hasEventHandler(NODE_EVENT_MOVE)) {
+		CCMoveEvent e(m_obPosition, old);
+		raiseEvent(NODE_EVENT_MOVE, &e);
+	}
 }
 
 const CCPoint& CCNode::getPositionLua(void)
@@ -527,11 +540,15 @@ void CCNode::cleanup()
     this->stopAllActions();
     this->unscheduleAllSelectors();    
 
-	m_callEnter.cleanup();
-	m_callExit.cleanup();
-    
     // timers
     arrayMakeObjectsPerformSelector(m_pChildren, cleanup, CCNode*);
+
+	clearEventHandlers();
+	CC_SAFE_DELETE(m_pEventHandlers);
+	m_pEventHandlers = NULL;
+
+	CC_SAFE_DELETE(m_pAttributes);
+	m_pAttributes = NULL;
 }
 
 
@@ -935,11 +952,7 @@ void CCNode::onEnter()
 
     m_bRunning = true;
 
-	if(m_callEnter.canCall()) {
-		CCValueArray ps;
-		ps.push_back(CCValue::objectValue(this));
-		m_callEnter.call(ps,false);
-	}		
+	raiseEvent("enter",NULL);	
 }
 
 void CCNode::onEnterTransitionDidFinish()
@@ -958,13 +971,9 @@ void CCNode::onExit()
 
     m_bRunning = false;
 
-    arrayMakeObjectsPerformSelector(m_pChildren, onExit, CCNode*);
-    
-	if(m_callExit.canCall()) {
-		CCValueArray ps;
-		ps.push_back(CCValue::objectValue(this));
-		m_callExit.call(ps,false);
-	}		
+    arrayMakeObjectsPerformSelector(m_pChildren, onExit, CCNode*);    
+	
+	raiseEvent("exit",NULL);	
 }
 
 void CCNode::setActionManager(CCActionManager* actionManager)
@@ -1253,6 +1262,13 @@ CCPoint CCNode::convertTouchToNodeSpaceAR(CCTouch *touch)
     return this->convertToNodeSpaceAR(point);
 }
 
+bool CCNode::containsPoint(CCPoint& point)
+{
+	CCRect r = boundingBox();
+	r.origin = CCPointZero;
+	return r.containsPoint(point);
+}
+
 // MARMALADE ADDED
 void CCNode::updateTransform()
 {
@@ -1262,8 +1278,6 @@ void CCNode::updateTransform()
 
 CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, visible)
-	CC_DEFINE_CALL(CCNode, onEnter)
-	CC_DEFINE_CALL(CCNode, onExit)
 CC_END_CALLS(CCNode, CCObject)
 
 CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
@@ -1273,22 +1287,132 @@ CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
 	return CCValue::booleanValue(isVisible());
 }
 
-CCValue CCNode::CALLNAME(onEnter)(CCValueArray& params) {
-	bool r = false;
-	if(params.size()>0) {
-		m_callEnter = params[0];
-		r = true;
+bool CCNode::hasAttribute(const char* name)
+{
+	if(m_pAttributes!=NULL) {
+		return m_pAttributes->find(name)!=m_pAttributes->end();
 	}
-	return CCValue::booleanValue(r);
+	return false;
+}
+CCValue CCNode::attribute(const char* name)
+{
+	if(m_pAttributes!=NULL) {
+		CCValueMapIterator it = m_pAttributes->find(name);
+		if(it!=m_pAttributes->end()) {
+			return it->second;
+		}
+	}
+	return CCValue::nullValue();
+}
+void CCNode::attribute(const char* name, CCValue v)
+{	
+	if(v.isNull()) {
+		removeAttribute(name);
+	} else {
+		if(m_pAttributes==NULL)m_pAttributes = new CCValueMap();
+		(*m_pAttributes)[name] = v;
+	}
+}
+bool CCNode::removeAttribute(const char* name)
+{
+	if(m_pAttributes!=NULL) {
+		CCValueMapIterator it = m_pAttributes->find(name);
+		if(it!=m_pAttributes->end()) {
+			m_pAttributes->erase(it);
+			return true;
+		}
+	}
+	return false;
+}
+void CCNode::clearAttributes()
+{
+	if(m_pAttributes!=NULL) {
+		m_pAttributes->clear();
+	}
+}
+typedef std::list<CCNodeEventHandlerItem*>::const_iterator ehitor;
+
+bool CCNode::hasEventHandler(const char* name)
+{
+	if(m_pEventHandlers!=NULL) {		
+		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
+			CCNodeEventHandlerItem* h = (*it);
+			if(h->type.compare(name)==0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
+{
+	bool r = false;
+	if(m_pEventHandlers!=NULL) {
+		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
+			CCNodeEventHandlerItem* h = (*it);
+			if(h->type.compare(name)==0) {
+				(h->handleObject->*h->handler)(this, name, e);
+				r = true;
+			}
+		}
+	}
+	return r;
+}
+void CCNode::onEvent(const char* name,CCObject* obj,SEL_NodeEventHandler handler)
+{
+	if(m_pEventHandlers==NULL)m_pEventHandlers = new std::list<CCNodeEventHandlerItem*>();
+	CCNodeEventHandlerItem* h = new CCNodeEventHandlerItem();
+	h->type = name;
+	h->handleObject = obj;
+	if(h->handleObject!=this) {
+		CC_SAFE_RETAIN(obj);
+	}
+	h->handler = handler;
+	m_pEventHandlers->push_back(h);
 }
 
-CCValue CCNode::CALLNAME(onExit)(CCValueArray& params) {
+bool CCNode::removeEventHandler(const char* name,CCObject* obj)
+{
 	bool r = false;
-	if(params.size()>0) {
-		m_callExit = params[0];
-		r = true;
+	if(m_pEventHandlers!=NULL) {
+		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();) {		
+			ehitor cur = it;
+			it++;
+			CCNodeEventHandlerItem* h = (*cur);
+			bool nm = false;
+			bool om = false;
+			if(name!=NULL) {
+				nm = h->type.compare(name)==0;
+			} else {
+				nm = true;
+			}
+			if(obj!=NULL) {
+				om = h->handleObject==obj;
+			} else {
+				om = true;
+			}
+			if(om && nm) {
+				m_pEventHandlers->erase(cur);
+				if(h->handleObject!=this) {
+					CC_SAFE_RELEASE(h->handleObject);
+				}
+				delete h;
+				r = true;
+			}		
+		}
 	}
-	return CCValue::booleanValue(r);
+	return r;
+}
+void CCNode::clearEventHandlers()
+{
+	if(m_pEventHandlers!=NULL) {
+		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
+			CCNodeEventHandlerItem* h = (*it);
+			CC_SAFE_RELEASE(h->handleObject);
+			delete h;
+		}
+		m_pEventHandlers->clear();
+	}	
 }
 
 NS_CC_END

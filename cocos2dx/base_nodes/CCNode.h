@@ -35,6 +35,7 @@
 #include "shaders/ccGLStateCache.h"
 #include "shaders/CCGLProgram.h"
 #include "kazmath/kazmath.h"
+#include <list>
 
 NS_CC_BEGIN
 
@@ -120,6 +121,22 @@ enum {
  - Each node has a camera. By default it points to the center of the CCNode.
  */
 
+class CC_DLL CCNodeEvent
+{
+public:
+	CCNodeEvent(){};
+	virtual ~CCNodeEvent(){};
+};
+
+typedef void (CCObject::*SEL_NodeEventHandler)(class CCNode* node, const char* type,CCNodeEvent*);
+#define nodeevent_selector(_SELECTOR) (SEL_NodeEventHandler)(&_SELECTOR)
+
+typedef struct {
+	std::string type;	
+	CCObject* handleObject;
+	SEL_NodeEventHandler handler;
+} CCNodeEventHandlerItem;
+
 class CC_DLL CCNode : public CCObject
 {
 protected:
@@ -202,9 +219,11 @@ protected:
 
     bool m_bReorderChildDirty;
 
-	// event call
-	CCValue m_callEnter;
-	CCValue m_callExit;
+	// catyguan
+	// attributes
+	CCValueMap* m_pAttributes;
+	// events
+	std::list<CCNodeEventHandlerItem*>* m_pEventHandlers;
     
 public:
     // getter & setter
@@ -387,6 +406,19 @@ public:
     void setPositionY(float y);
     void setPosition(float x, float y);
 
+	// catyguan
+	bool hasAttribute(const char* name);
+	CCValue attribute(const char* name);
+	virtual void attribute(const char* name, CCValue v);
+	virtual bool removeAttribute(const char* name);
+	virtual void clearAttributes();
+
+	bool hasEventHandler(const char* name);
+	virtual bool raiseEvent(const char* name, CCNodeEvent* e);
+	virtual void onEvent(const char* name,CCObject* obj,SEL_NodeEventHandler handler);
+	virtual bool removeEventHandler(const char* name,CCObject* obj);
+	virtual void clearEventHandlers();
+
 public:
     CCNode(void);
 
@@ -498,6 +530,7 @@ public:
      @since v0.7.1
      */
     CCNode * getChildByTag(int tag);
+	// catyguan
 	CCNode * getChildById(const char* id);
 	virtual CCObject* findChildById(const char* id);
 
@@ -576,7 +609,7 @@ public:
      @since v0.7.1
      */
     void stopActionByTag(int tag);
-
+	// catyguan
 	void stopActionById(const char* id);
 
     /** Gets an action from the running action list given its tag
@@ -584,7 +617,7 @@ public:
      @return the Action the with the given tag
      */
     CCAction* getActionByTag(int tag);
-
+	// catyguan
 	CCAction* getActionById(const char* id);
 
     /** Returns the numbers of actions that are running plus the ones that are schedule to run (actions in actionsToAdd and actions arrays).
@@ -721,6 +754,9 @@ public:
      */
     CCPoint convertTouchToNodeSpaceAR(CCTouch * touch);
 
+	// catyguan
+	virtual bool containsPoint(CCPoint& point);
+
 private:
     //! lazy allocs
     void childrenAlloc(void);
@@ -732,11 +768,10 @@ private:
     
     CCPoint convertToWindowSpace(const CCPoint& nodePoint);
 
+	// catyguan
 	// cc_call
 	CC_DECLARE_CALLS_BEGIN
 	CC_DECLARE_CALL(visible)
-	CC_DECLARE_CALL(onEnter)
-	CC_DECLARE_CALL(onExit)
 	CC_DECLARE_CALLS_END
 };
 

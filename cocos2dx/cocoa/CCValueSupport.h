@@ -43,6 +43,7 @@ public:
 
 #define ccvpObject(params,idx,otype)	((otype*)(params.size()>idx?(params[idx].isObject()?dynamic_cast<otype*>(params[idx].objectValue()):NULL):NULL))
 #define ccvpMap(params,idx)	(params.size()>idx?params[idx].mapValue():NULL)
+#define ccvpBoolean(params,idx)	(params.size()>idx?params[idx].booleanValue():false)
 #define ccvpInt(params,idx)	(params.size()>idx?params[idx].intValue():0)
 #define ccvpString(params,idx)	(params.size()>idx?params[idx].stringValue():CCValue::EMPTY)
 #define ccvpSize(params, idx) (params.size()>idx?CCValueUtil::size(params[idx]):CCSizeMake(0,0))

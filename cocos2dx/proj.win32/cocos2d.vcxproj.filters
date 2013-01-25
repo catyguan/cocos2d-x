@@ -890,5 +890,8 @@
     <ClInclude Include="..\cocoa\CCValueSupport.h">
       <Filter>cocoa</Filter>
     </ClInclude>
+    <ClInclude Include="..\base_nodes\CCNode_Events.h">
+      <Filter>base_nodes</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
