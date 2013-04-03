@@ -41,6 +41,7 @@ public:
 	static ccColor4B color4b(CCValue& v);
 };
 
+#define ccvp(params,idx) (params.size()>idx?params[idx]:CCValue::nullValue())
 #define ccvpObject(params,idx,otype)	((otype*)(params.size()>idx?(params[idx].isObject()?dynamic_cast<otype*>(params[idx].objectValue()):NULL):NULL))
 #define ccvpMap(params,idx)	(params.size()>idx?params[idx].mapValue():NULL)
 #define ccvpBoolean(params,idx)	(params.size()>idx?params[idx].booleanValue():false)
