@@ -110,5 +110,10 @@ Config of cocos2d-x project, per target platform.
 #pragma warning (disable:4127)  
 #endif  // CC_PLATFORM_WIN32
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) && _DEBUG
+#include <wchar.h>
+#include "vld.h"
+#endif
+
 #endif  // __CC_PLATFORM_CONFIG_H__
 

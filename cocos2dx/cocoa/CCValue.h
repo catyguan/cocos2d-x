@@ -206,6 +206,60 @@ private:
     CCValueType  m_type;
 
     void copy(const CCValue& rhs);
+
+	friend class CCValueBuilder;
+};
+
+typedef struct _CCVBItem {
+	CCValueField field;
+	std::string	 strval;
+	std::map<std::string, void*> mapval;
+	std::vector<void*> arrayval;
+    CCValueType  type;
+	void* parent;
+} CCVBItem;
+
+class CC_DLL CCValueBuilder
+{
+public:
+	CCValueBuilder();
+	~CCValueBuilder();
+
+	CCValueBuilder* beNull();
+    CCValueBuilder* beInt(const int intValue);
+    CCValueBuilder* beNumber(const double numberValue);
+    CCValueBuilder* beBoolean(const bool booleanValue);
+    CCValueBuilder* beString(const char* stringValue);
+    CCValueBuilder* beString(const std::string& stringValue);    
+    CCValueBuilder* beObject(CCObject* obj);
+	CCValueBuilder* beFCall(CC_FUNCTION_CALL call);
+	CCValueBuilder* beOCall(CCObject* obj, CC_OBJECT_CALL call);
+
+	CCValueBuilder* mapBegin();
+	CCValueBuilder* addMap(const char* key);
+	CCValueBuilder* mapEnd();
+	CCValueBuilder* arrayBegin();
+	CCValueBuilder* addArray();
+	CCValueBuilder* arrayEnd();
+
+	void build(CCValue* root);
+	void build(CCValueArray* root);
+
+protected:
+	CCVBItem* current();
+	void push();
+	void pop();
+	void deleteItem(CCVBItem* item);
+
+	void build(CCVBItem* item, CCValue* pval);
+	void build(CCVBItem* item, CCValueArray* pval);
+
+	CCValue* arrayAddV(CCValueArray* arr);
+	CCValue* mapAddV(CCValueMap* map, const char* key);
+
+protected:
+	CCVBItem* m_parent;
+	CCVBItem* m_current;
 };
 
 NS_CC_END

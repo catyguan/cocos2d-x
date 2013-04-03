@@ -238,4 +238,272 @@ bool CCValue::callback(std::string err, CCValue result)
 	return r.booleanValue();
 }
 
+// CCValueBuilder
+CCValueBuilder::CCValueBuilder()
+{
+	m_current = NULL;
+	m_parent = NULL;
+}
+
+CCValueBuilder::~CCValueBuilder()
+{
+	if(m_current!=NULL) {
+		deleteItem(m_current);
+	}
+}
+
+CCValueBuilder* CCValueBuilder::beNull()
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeNull;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beInt(const int intValue)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeInt;
+	c->field.intValue = intValue;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beNumber(const double numberValue)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeNumber;
+	c->field.numberValue = numberValue;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beBoolean(const bool booleanValue)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeBoolean;
+	c->field.booleanValue = booleanValue;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beString(const char* stringValue)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeString;
+	c->strval = stringValue;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beString(const std::string& stringValue)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeString;
+	c->strval = stringValue;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beObject(CCObject* obj)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeObject;
+	c->field.objectValue = obj;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beFCall(CC_FUNCTION_CALL call)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeFunction;
+	c->field.fcallValue = call;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::beOCall(CCObject* obj, CC_OBJECT_CALL call)
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeObjectCall;
+	c->field.ocallValue.pObject = obj;
+	c->field.ocallValue.call = call;
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::mapBegin()
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeMap;
+	push();
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::addMap(const char* key)
+{
+	CC_ASSERT(m_current!=NULL);
+	CC_ASSERT(m_parent!=NULL);
+
+	std::map<std::string, void*>::const_iterator old = m_parent->mapval.find(key);
+	if(old!=m_parent->mapval.end()) {
+		deleteItem((CCVBItem*) old->second);
+	}
+	m_parent->mapval[key] = m_current;
+	m_current = NULL;
+
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::mapEnd()
+{
+	pop();
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::arrayBegin()
+{
+	CCVBItem* c = current();
+	c->type = CCValueTypeArray;
+	push();
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::addArray()
+{
+	CC_ASSERT(m_current!=NULL);
+	CC_ASSERT(m_parent!=NULL);
+
+	m_parent->arrayval.push_back(m_current);	
+	m_current = NULL;
+
+	return this;
+}
+
+CCValueBuilder* CCValueBuilder::arrayEnd()
+{
+	pop();
+	return this;
+}
+
+void CCValueBuilder::build(CCValue* root)
+{
+	build(m_current, root);
+}
+
+void CCValueBuilder::build(CCVBItem* item, CCValue* pval)
+{
+	pval->m_retain = false;
+	if(item==NULL) {
+		pval->m_type = CCValueTypeNull;
+		return;
+	}
+	switch(item->type) {
+	case CCValueTypeArray: 
+		{
+			pval->m_type = CCValueTypeArray;
+			CCValueArray* arr = new CCValueArray();
+			build(arr);
+			pval->m_field.arrayValue = arr;			
+		} break;
+	case CCValueTypeMap:
+		{
+			pval->m_type = CCValueTypeMap;
+			CCValueMap* map = new CCValueMap();			
+			pval->m_field.mapValue = map;
+
+			std::map<std::string, void*>::const_iterator it = item->mapval.begin();
+			while(it!=item->mapval.end()) {
+				CCValue* pv = mapAddV(map, it->first.c_str());
+				build((CCVBItem*) it->second, pv);
+				it++;
+			}
+		} break;
+	default:
+		{
+			pval->m_type = item->type;
+			pval->m_field = item->field;
+			pval->m_fieldString = item->strval;
+		} break;
+	}
+}
+
+
+
+void CCValueBuilder::build(CCValueArray* root)
+{
+	build(m_current, root);
+}
+
+void CCValueBuilder::build(CCVBItem* item, CCValueArray* pval)
+{
+	if(item==NULL)return;
+	if(item->type!=CCValueTypeArray) {
+		CCValue* pv = arrayAddV(pval);
+		build(pv);
+		return;
+	}
+
+	std::vector<void*>::const_iterator it = item->arrayval.begin();
+	while(it!=item->arrayval.end()) {
+		CCValue* pv = arrayAddV(pval);
+		build((CCVBItem*) *it, pv);
+		it++;
+	}
+}
+
+CCVBItem* CCValueBuilder::current()
+{
+	if(m_current==NULL) {
+		m_current = new CCVBItem();
+		memset(&m_current->field,0,sizeof(CCValueField));
+		m_current->parent = m_parent;
+	}
+	return m_current;
+}
+
+void CCValueBuilder::push()
+{
+	CC_ASSERT(m_current!=NULL);
+	m_parent = m_current;
+	m_current = NULL;
+}
+
+void CCValueBuilder::pop()
+{
+	CC_ASSERT(m_parent!=NULL);
+	m_current = m_parent;
+	m_parent = (CCVBItem*) m_current->parent;
+}
+
+void CCValueBuilder::deleteItem(CCVBItem* item)
+{
+	if(item==NULL) {
+		return;
+	}
+	if(item->arrayval.size()>0) {
+		std::vector<void*>::const_iterator it = item->arrayval.begin();
+		while(it!=item->arrayval.end()) {
+			deleteItem((CCVBItem*) it.operator->());
+			it++;
+		}
+		item->arrayval.clear();
+	}
+	if(item->mapval.size()>0) {
+		std::map<std::string, void*>::const_iterator it = item->mapval.begin();
+		while(it!=item->mapval.end()) {
+			deleteItem((CCVBItem*) it->second);
+			it++;
+		}
+		item->mapval.clear();
+	}
+	delete item;
+}
+
+CCValue* CCValueBuilder::arrayAddV(CCValueArray* arr)
+{
+	CCValue v;
+	arr->push_back(v);
+	return (CCValue*) arr->crbegin().operator->();
+}
+
+CCValue* CCValueBuilder::mapAddV(CCValueMap* map, const char* key)
+{
+	CCValue v;
+	map->insert(std::pair<std::string, CCValue>(key,v));
+	return &(map->find(key)->second);
+}
+
 NS_CC_END
