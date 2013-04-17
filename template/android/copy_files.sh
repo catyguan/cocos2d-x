@@ -5,7 +5,7 @@
 APP_NAME=$2
 COCOS2DX_ROOT=$1
 APP_DIR=$COCOS2DX_ROOT/$APP_NAME
-HELLOWORLD_ROOT=$COCOS2DX_ROOT/samples/HelloCpp
+HELLOWORLD_ROOT=$COCOS2DX_ROOT/samples/Cpp/HelloCpp
 COCOSJAVALIB_ROOT=$COCOS2DX_ROOT/cocos2dx/platform/android/java
 NDK_ROOT=$3
 PACKAGE_PATH=$4
@@ -99,7 +99,7 @@ copy_resouces
 copy_src_and_jni
 copy_build_native
 copy_ndkgdb
-modify_project_classpath
+#modify_project_classpath
 modify_androidmanifest
 modify_applicationdemo
 modify_layout

@@ -84,11 +84,8 @@ bool CCTransitionScene::initWithDuration(float t, CCScene *scene)
         m_pOutScene->retain();
 
         CCAssert( m_pInScene != m_pOutScene, "Incoming scene must be different from the outgoing scene" );
-
-        // disable events while transitions
-        CCDirector* pDirector = CCDirector::sharedDirector();
-        pDirector->getTouchDispatcher()->setDispatchEvents(false);
-        this->sceneOrder();
+        
+        sceneOrder();
 
         return true;
     }
@@ -139,16 +136,15 @@ void CCTransitionScene::finish()
 void CCTransitionScene::setNewScene(float dt)
 {    
     CC_UNUSED_PARAM(dt);
-    // [self unschedule:_cmd]; 
-    // "_cmd" is a local variable automatically defined in a method 
-    // that contains the selector for the method
+
     this->unschedule(schedule_selector(CCTransitionScene::setNewScene));
-    CCDirector *director = CCDirector::sharedDirector();
+    
     // Before replacing, save the "send cleanup to scene"
+    CCDirector *director = CCDirector::sharedDirector();
     m_bIsSendCleanupToScene = director->isSendCleanupToScene();
+    
     director->replaceScene(m_pInScene);
-    // enable events while transitions
-    director->getTouchDispatcher()->setDispatchEvents(true);
+    
     // issue #267
     m_pOutScene->setVisible(true);
 }
@@ -164,17 +160,28 @@ void CCTransitionScene::hideOutShowIn()
 void CCTransitionScene::onEnter()
 {
     CCScene::onEnter();
-    m_pInScene->onEnter();
+    
+    // disable events while transitions
+    CCDirector::sharedDirector()->getTouchDispatcher()->setDispatchEvents(false);
+    
     // outScene should not receive the onEnter callback
+    // only the onExitTransitionDidStart
+    m_pOutScene->onExitTransitionDidStart();
+    
+    m_pInScene->onEnter();
 }
 
 // custom onExit
 void CCTransitionScene::onExit()
 {
     CCScene::onExit();
+    
+    // enable events while transitions
+    CCDirector::sharedDirector()->getTouchDispatcher()->setDispatchEvents(true);
+    
     m_pOutScene->onExit();
 
-    // inScene should not receive the onExit callback
+    // m_pInScene should not receive the onEnter callback
     // only the onEnterTransitionDidFinish
     m_pInScene->onEnterTransitionDidFinish();
 }
@@ -383,7 +390,7 @@ CCActionInterval* CCTransitionMoveInL::easeActionWithAction(CCActionInterval* ac
 void CCTransitionMoveInL::initScenes()
 {
     CCSize s = CCDirector::sharedDirector()->getWinSize();
-    m_pInScene->setPosition( ccp(-s.width,0) );
+    m_pInScene->setPosition(ccp(-s.width,0));
 }
 
 //
@@ -1374,7 +1381,7 @@ void CCTransitionTurnOffTiles::onEnter()
     int x = (int)(12 * aspect);
     int y = 12;
 
-    CCTurnOffTiles* toff = CCTurnOffTiles::create( ccg(x,y), m_fDuration);
+    CCTurnOffTiles* toff = CCTurnOffTiles::create(m_fDuration, CCSizeMake(x,y));
     CCActionInterval* action = easeActionWithAction(toff);
     m_pOutScene->runAction
     (
@@ -1444,7 +1451,7 @@ void CCTransitionSplitCols::onEnter()
 
 CCActionInterval* CCTransitionSplitCols:: action()
 {
-    return CCSplitCols::create(3, m_fDuration/2.0f);
+    return CCSplitCols::create(m_fDuration/2.0f, 3);
 }
 
 
@@ -1467,7 +1474,7 @@ CCTransitionSplitRows::~CCTransitionSplitRows()
 
 CCActionInterval* CCTransitionSplitRows::action()
 {
-    return CCSplitRows::create(3, m_fDuration/2.0f);
+    return CCSplitRows::create(m_fDuration/2.0f, 3);
 }
 
 CCTransitionSplitRows* CCTransitionSplitRows::create(float t, CCScene* scene)
@@ -1518,7 +1525,7 @@ void CCTransitionFadeTR::onEnter()
     int x = (int)(12 * aspect);
     int y = 12;
 
-    CCActionInterval* action  = actionWithSize(ccg(x,y));
+    CCActionInterval* action  = actionWithSize(CCSizeMake(x,y));
 
     m_pOutScene->runAction
     (
@@ -1533,9 +1540,9 @@ void CCTransitionFadeTR::onEnter()
 }
 
 
-CCActionInterval*  CCTransitionFadeTR::actionWithSize(const ccGridSize& size)
+CCActionInterval*  CCTransitionFadeTR::actionWithSize(const CCSize& size)
 {
-    return CCFadeOutTRTiles::create(size, m_fDuration);
+    return CCFadeOutTRTiles::create(m_fDuration, size);
 }
 
 CCActionInterval* CCTransitionFadeTR:: easeActionWithAction(CCActionInterval* action)
@@ -1567,9 +1574,9 @@ CCTransitionFadeBL* CCTransitionFadeBL::create(float t, CCScene* scene)
     return NULL;
 }
 
-CCActionInterval*  CCTransitionFadeBL::actionWithSize(const ccGridSize& size)
+CCActionInterval*  CCTransitionFadeBL::actionWithSize(const CCSize& size)
 {
-    return CCFadeOutBLTiles::create(size, m_fDuration);
+    return CCFadeOutBLTiles::create(m_fDuration, size);
 }
 
 //
@@ -1595,9 +1602,9 @@ CCTransitionFadeUp* CCTransitionFadeUp::create(float t, CCScene* scene)
     return NULL;
 }
 
-CCActionInterval* CCTransitionFadeUp::actionWithSize(const ccGridSize& size)
+CCActionInterval* CCTransitionFadeUp::actionWithSize(const CCSize& size)
 {
-    return CCFadeOutUpTiles::create(size, m_fDuration);
+    return CCFadeOutUpTiles::create(m_fDuration, size);
 }
 
 //
@@ -1622,9 +1629,9 @@ CCTransitionFadeDown* CCTransitionFadeDown::create(float t, CCScene* scene)
     return NULL;
 }
 
-CCActionInterval* CCTransitionFadeDown::actionWithSize(const ccGridSize& size)
+CCActionInterval* CCTransitionFadeDown::actionWithSize(const CCSize& size)
 {
-    return CCFadeOutDownTiles::create(size, m_fDuration);
+    return CCFadeOutDownTiles::create(m_fDuration, size);
 }
 
 NS_CC_END

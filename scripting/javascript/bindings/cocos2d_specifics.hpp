@@ -16,7 +16,7 @@ typedef struct jsScheduleFunc_proxy {
 } schedFunc_proxy_t;
 
 typedef struct jsScheduleTarget_proxy {
-    CCNode*   nativeObj;
+    JSObject* jsTargetObj;
     CCArray*  targets;
     UT_hash_handle hh;
 } schedTarget_proxy_t;
@@ -29,7 +29,7 @@ typedef struct jsCallFuncTarget_proxy {
 } callfuncTarget_proxy_t;
 
 extern schedFunc_proxy_t *_schedFunc_target_ht;
-extern schedTarget_proxy_t *_schedTarget_native_ht;
+extern schedTarget_proxy_t *_schedObj_target_ht;
 
 extern callfuncTarget_proxy_t *_callfuncTarget_native_ht;
 
@@ -64,7 +64,13 @@ inline js_proxy_t *js_get_or_create_proxy(JSContext *cx, T *native_obj) {
     HASH_FIND_PTR(_native_js_global_ht, &native_obj, proxy);
     if (!proxy) {
         js_type_class_t *typeProxy = js_get_type_from_native<T>(native_obj);
-        assert(typeProxy);
+        // Return NULL if can't find its type rather than making an assert.
+//        assert(typeProxy);
+        if (!typeProxy) {
+            CCLOGINFO("Could not find the type of native object.");
+            return NULL;
+        }
+        
         JSObject* js_obj = JS_NewObject(cx, typeProxy->jsclass, typeProxy->proto, typeProxy->parentProto);
         JS_NEW_PROXY(proxy, native_obj, js_obj);
 #ifdef DEBUG
@@ -85,8 +91,8 @@ void register_cocos2dx_js_extensions(JSContext* cx, JSObject* obj);
 
 class JSCallbackWrapper: public CCObject {
 public:
-    JSCallbackWrapper() : jsCallback(JSVAL_VOID), jsThisObj(JSVAL_VOID), extraData(JSVAL_VOID) {}
-    virtual ~JSCallbackWrapper(void) {}
+    JSCallbackWrapper();
+    virtual ~JSCallbackWrapper();
     void setJSCallbackFunc(jsval obj);
     void setJSCallbackThis(jsval thisObj);
     void setJSExtraData(jsval data);
@@ -136,96 +142,83 @@ public:
 class JSScheduleWrapper: public JSCallbackWrapper {
     
 public:
-    JSScheduleWrapper() : m_pTarget(NULL) {}
-    virtual ~JSScheduleWrapper() {
-        return;
-    }
+    JSScheduleWrapper() : _pTarget(NULL), _pPureJSTarget(NULL), _priority(0), _isUpdateSchedule(false) {}
+    virtual ~JSScheduleWrapper();
 
     static void setTargetForSchedule(jsval sched, JSScheduleWrapper *target);
     static CCArray * getTargetForSchedule(jsval sched);
-    static void setTargetForNativeNode(CCNode *pNode, JSScheduleWrapper *target);
-    static CCArray * getTargetForNativeNode(CCNode *pNode);
-    static void removeAllTargetsForNatiaveNode(CCNode* pNode);
+    static void setTargetForJSObject(JSObject* jsTargetObj, JSScheduleWrapper *target);
+    static CCArray * getTargetForJSObject(JSObject* jsTargetObj);
+    
+    // Remove all targets.
+    static void removeAllTargets();
+    // Remove all targets for priority.
+    static void removeAllTargetsForMinPriority(int minPriority);
+	// Remove all targets by js object from hash table(_schedFunc_target_ht and _schedObj_target_ht).	
+    static void removeAllTargetsForJSObject(JSObject* jsTargetObj);
+	// Remove the target by js object and the wrapper for native schedule.
+    static void removeTargetForJSObject(JSObject* jsTargetObj, JSScheduleWrapper* target);
     static void dump();
 
     void pause();
     
     void scheduleFunc(float dt) const;
+    virtual void update(float dt);
+    
     CCObject* getTarget();
     void setTarget(CCObject* pTarget);
+    
+    void setPureJSTarget(JSObject* jstarget);
+    JSObject* getPureJSTarget();
+    
+    void setPriority(int priority);
+    int  getPriority();
+    
+    void setUpdateSchedule(bool isUpdateSchedule);
+    bool isUpdateSchedule();
+    
 protected:
-    CCObject* m_pTarget;
+    CCObject* _pTarget;
+    JSObject* _pPureJSTarget;
+    int _priority;
+    bool _isUpdateSchedule;
 };
 
 
-class JSTouchDelegate: public CCTouchDelegate, public CCNode {
-    public:
-        void setJSObject(JSObject *obj);
-        void registerStandardDelegate();
-        void registerTargettedDelegate(int priority, bool swallowsTouches);
-    
-    bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouch); 
-        CC_UNUSED_PARAM(pEvent); 
-        jsval retval; 
-        ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHBEGAN, 
-                                                        pTouch, _mObj, retval);
-        if(JSVAL_IS_BOOLEAN(retval)) {
-            return JSVAL_TO_BOOLEAN(retval);
-        } return false;
-    };
-    // optional
-    
-    void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouch); 
-        CC_UNUSED_PARAM(pEvent);
-        //jsval retval;
-        ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHMOVED, 
-                                                              pTouch, _mObj);
-    }
-    
-    void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouch); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHENDED, 
-                                                              pTouch, _mObj);
-    }
-    
-    void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouch); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHCANCELLED, 
-                                                              pTouch, _mObj);
-    }
+class JSTouchDelegate: public CCObject, public CCTouchDelegate
+{
+public:
+	// Set the touch delegate to map by using the key (pJSObj).
+    static void setDelegateForJSObject(JSObject* pJSObj, JSTouchDelegate* pDelegate);
+    // Get the touch delegate by the key (pJSObj).
+	static JSTouchDelegate* getDelegateForJSObject(JSObject* pJSObj);
+	// Remove the delegate by the key (pJSObj).
+    static void removeDelegateForJSObject(JSObject* pJSObj);
+
+    void setJSObject(JSObject *obj);
+    void registerStandardDelegate();
+    void registerTargettedDelegate(int priority, bool swallowsTouches);
+	// unregister touch delegate.
+	// Normally, developer should invoke cc.unregisterTouchDelegate() in when the scene exits.
+	// So this function need to be binded.
+    void unregisterTouchDelegate();
+
+    bool ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent);
+    void ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent);
+    void ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent);
+    void ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent);
     
     // optional
-    void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouches); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHBEGAN, 
-                                                              pTouches, _mObj);
-    }
-    
-    void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouches); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHMOVED, 
-                                                                pTouches, _mObj);        
-    }
-    void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouches); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHENDED, 
-                                                                pTouches, _mObj);
-    }
-    void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent) {
-        CC_UNUSED_PARAM(pTouches); 
-        CC_UNUSED_PARAM(pEvent);
-        ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHCANCELLED, 
-                                                                pTouches, _mObj);
-    }
-    private:
-        JSObject *_mObj;    
+    void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
+    void ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent);
+    void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
+    void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
+
+private:
+    JSObject *_mObj;
+    typedef std::map<JSObject*, JSTouchDelegate*> TouchDelegateMap;
+    typedef std::pair<JSObject*, JSTouchDelegate*> TouchDelegatePair;
+    static TouchDelegateMap sTouchDelegateMap;
 };
 
 

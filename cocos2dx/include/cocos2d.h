@@ -34,7 +34,6 @@ THE SOFTWARE.
 //
 // all cocos2d include files
 //
-
 #include "ccConfig.h"
 
 // actions
@@ -65,6 +64,9 @@ THE SOFTWARE.
 #include "cocoa/CCSet.h"
 #include "cocoa/CCAutoreleasePool.h"
 #include "cocoa/CCInteger.h"
+#include "cocoa/CCFloat.h"
+#include "cocoa/CCDouble.h"
+#include "cocoa/CCBool.h"
 #include "cocoa/CCString.h"
 #include "cocoa/CCNS.h"
 #include "cocoa/CCZone.h"
@@ -121,7 +123,7 @@ THE SOFTWARE.
 #include "particle_nodes/CCParticleSystemQuad.h"
 
 // platform
-
+#include "platform/CCDevice.h"
 #include "platform/CCCommon.h"
 #include "platform/CCFileUtils.h"
 #include "platform/CCImage.h"
@@ -189,6 +191,13 @@ THE SOFTWARE.
 	#include "platform/Marmalade/CCStdC.h"
 #endif // CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
 
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_NACL)
+    #include "platform/nacl/CCAccelerometer.h"
+    #include "platform/nacl/CCApplication.h"
+    #include "platform/nacl/CCEGLView.h"
+    #include "platform/nacl/CCGL.h"
+    #include "platform/nacl/CCStdC.h"
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 
 // shaders
 #include "shaders/CCGLProgram.h"
@@ -205,11 +214,13 @@ THE SOFTWARE.
 #include "sprite_nodes/CCSpriteFrameCache.h"
 
 // support
+#include "support/ccUTF8.h"
 #include "support/CCNotificationCenter.h"
 #include "support/CCPointExtension.h"
 #include "support/CCProfiling.h"
-#include "support/CCUserDefault.h"
+#include "support/user_default/CCUserDefault.h"
 #include "support/CCVertex.h"
+#include "support/tinyxml2/tinyxml2.h"
 
 // text_input_node
 #include "text_input_node/CCIMEDelegate.h"

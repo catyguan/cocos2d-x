@@ -99,7 +99,7 @@ static void* networkThread(void *data)
         // Wait for http request tasks from main thread
         int semWaitRet = sem_wait(s_pSem);
         if (semWaitRet < 0) {
-            CCLog("HttpRequest async thread semaphore error: %s\n", strerror(errno));
+            CCLog("HttpRequest async thread semaphore error: %s", strerror(errno));
             break;
         }
         
@@ -398,14 +398,14 @@ CCHttpClient* CCHttpClient::getInstance()
 
 void CCHttpClient::destroyInstance()
 {
-    CC_ASSERT(s_pHttpClient);
+    CCAssert(s_pHttpClient, "");
     CCDirector::sharedDirector()->getScheduler()->unscheduleSelector(schedule_selector(CCHttpClient::dispatchResponseCallbacks), s_pHttpClient);
     s_pHttpClient->release();
 }
 
 CCHttpClient::CCHttpClient()
-:_timeoutForRead(60)
-,_timeoutForConnect(30)
+: _timeoutForConnect(30)
+, _timeoutForRead(60)
 {
     CCDirector::sharedDirector()->getScheduler()->scheduleSelector(
                     schedule_selector(CCHttpClient::dispatchResponseCallbacks), this, 0, false);

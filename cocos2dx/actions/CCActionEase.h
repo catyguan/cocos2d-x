@@ -55,6 +55,7 @@ public:
     virtual void stop(void);
     virtual void update(float time);
     virtual CCActionInterval* reverse(void);
+    virtual CCActionInterval* getInnerAction();
 
 public:
 
@@ -62,7 +63,8 @@ public:
     static CCActionEase* create(CCActionInterval *pAction);
 
 protected:
-    CCActionInterval *m_pOther;
+    /** The inner action */
+    CCActionInterval *m_pInner;
 };
 
 /** 

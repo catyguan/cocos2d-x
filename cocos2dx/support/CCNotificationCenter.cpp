@@ -111,6 +111,27 @@ void CCNotificationCenter::removeObserver(CCObject *target,const char *name)
     }
 }
 
+int CCNotificationCenter::removeAllObservers(CCObject *target)
+{
+    CCObject *obj = NULL;
+    CCArray *toRemove = CCArray::create();
+
+    CCARRAY_FOREACH(m_observers, obj)
+    {
+        CCNotificationObserver *observer = (CCNotificationObserver *)obj;
+        if (!observer)
+            continue;
+
+        if (observer->getTarget() == target)
+        {
+            toRemove->addObject(observer);
+        }
+    }
+
+    m_observers->removeObjectsInArray(toRemove);
+    return toRemove->count();
+}
+
 void CCNotificationCenter::postNotification(const char *name, CCObject *object)
 {
     CCArray* ObserversCopy = CCArray::createWithCapacity(m_observers->count());

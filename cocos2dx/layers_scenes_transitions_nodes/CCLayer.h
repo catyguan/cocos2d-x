@@ -138,6 +138,50 @@ private:
     ccTouchesMode m_eTouchMode;    
 };
 
+#ifdef __apple__
+#pragma mark -
+#pragma mark CCLayerRGBA
+#endif
+
+/** CCLayerRGBA is a subclass of CCLayer that implements the CCRGBAProtocol protocol using a solid color as the background.
+ 
+ All features from CCLayer are valid, plus the following new features that propagate into children that conform to the CCRGBAProtocol:
+ - opacity
+ - RGB colors
+ @since 2.1
+ */
+class CC_DLL CCLayerRGBA : public CCLayer, public CCRGBAProtocol
+{
+public:
+    CREATE_FUNC(CCLayerRGBA);
+    
+    CCLayerRGBA();
+    virtual ~CCLayerRGBA();
+    
+    virtual bool init();
+    
+    virtual GLubyte getOpacity();
+    virtual GLubyte getDisplayedOpacity();
+    virtual void setOpacity(GLubyte opacity);
+    virtual void updateDisplayedOpacity(GLubyte parentOpacity);
+    virtual bool isCascadeOpacityEnabled();
+    virtual void setCascadeOpacityEnabled(bool cascadeOpacityEnabled);
+    
+    virtual const ccColor3B& getColor();
+    virtual const ccColor3B& getDisplayedColor();
+    virtual void setColor(const ccColor3B& color);
+    virtual void updateDisplayedColor(const ccColor3B& parentColor);
+    virtual bool isCascadeColorEnabled();
+    virtual void setCascadeColorEnabled(bool cascadeColorEnabled);
+    
+    virtual void setOpacityModifyRGB(bool bValue) {}
+    virtual bool isOpacityModifyRGB() { return false; }
+protected:
+	GLubyte		_displayedOpacity, _realOpacity;
+	ccColor3B	_displayedColor, _realColor;
+	bool		_cascadeOpacityEnabled, _cascadeColorEnabled;
+};
+
 //
 // CCLayerColor
 //
@@ -147,7 +191,7 @@ All features from CCLayer are valid, plus the following new features:
 - opacity
 - RGB colors
 */
-class CC_DLL CCLayerColor : public CCLayer , public CCRGBAProtocol, public CCBlendProtocol
+class CC_DLL CCLayerColor : public CCLayerRGBA, public CCBlendProtocol
 {
 protected:
     ccVertex2F m_pSquareVertices[4];
@@ -159,9 +203,6 @@ public:
 
     virtual void draw();
     virtual void setContentSize(const CCSize & var);
-
-    //@deprecated: This interface will be deprecated sooner or later.
-    static CCLayerColor* node();
     
     static CCLayerColor* create();
     
@@ -185,15 +226,13 @@ public:
     */
     void changeWidthAndHeight(GLfloat w ,GLfloat h);
 
-    /** Opacity: conforms to CCRGBAProtocol protocol */
-    CC_PROPERTY(GLubyte, m_cOpacity, Opacity)
-    /** Color: conforms to CCRGBAProtocol protocol */
-    CC_PROPERTY_PASS_BY_REF(ccColor3B, m_tColor, Color)
     /** BlendFunction. Conforms to CCBlendProtocol protocol */
     CC_PROPERTY(ccBlendFunc, m_tBlendFunc, BlendFunc)
 
     virtual void setOpacityModifyRGB(bool bValue) {CC_UNUSED_PARAM(bValue);}
     virtual bool isOpacityModifyRGB(void) { return false;}
+    virtual void setColor(const ccColor3B &color);
+    virtual void setOpacity(GLubyte opacity);
 
 protected:
     virtual void updateColor();
@@ -252,9 +291,6 @@ protected:
 public:
     virtual void setCompressedInterpolation(bool bCompressedInterpolation);
     virtual bool isCompressedInterpolation();
-
-    //@deprecated: This interface will be deprecated sooner or later.
-    static CCLayerGradient* node();
     
     static CCLayerGradient* create();
 
@@ -276,6 +312,13 @@ protected:
 public:
     CCLayerMultiplex();
     virtual ~CCLayerMultiplex();
+    
+    static CCLayerMultiplex* create();
+    
+    /** creates a CCMultiplexLayer with an array of layers.
+     @since v2.1
+     */
+    static CCLayerMultiplex* createWithArray(CCArray* arrayOfLayers);
 
     /** creates a CCLayerMultiplex with one or more layers using a variable argument list. */
     static CCLayerMultiplex * create(CCLayer* layer, ... );
@@ -304,15 +347,6 @@ public:
     The current (old) layer will be removed from it's parent with 'cleanup:YES'.
     */
     void switchToAndReleaseMe(unsigned int n);
-    
-    //@deprecated: This interface will be deprecated sooner or later.
-    static CCLayerMultiplex* node();
-    
-    static CCLayerMultiplex* create();
-    /** creates a CCMultiplexLayer with an array of layers.
-    @since v2.1
-    */
-    static CCLayerMultiplex* createWithArray(CCArray* arrayOfLayers);
 };
 
 

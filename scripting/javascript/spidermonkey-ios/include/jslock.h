@@ -21,6 +21,11 @@
 # define JS_ATOMIC_ADD(p,v)          PR_ATOMIC_ADD((int32_t *)(p), (int32_t)(v))
 # define JS_ATOMIC_SET(p,v)          PR_ATOMIC_SET((int32_t *)(p), (int32_t)(v))
 
+namespace js {
+    // Defined in jsgc.cpp.
+    unsigned GetCPUCount();
+}
+
 #else  /* JS_THREADSAFE */
 
 typedef struct PRThread PRThread;
@@ -33,26 +38,5 @@ typedef struct PRLock PRLock;
 # define JS_ATOMIC_SET(p,v)          (*(p) = (v))
 
 #endif /* JS_THREADSAFE */
-
-namespace js {
-
-class AutoAtomicIncrement
-{
-    int32_t *p;
-    JS_DECL_USE_GUARD_OBJECT_NOTIFIER
-
-  public:
-    AutoAtomicIncrement(int32_t *p JS_GUARD_OBJECT_NOTIFIER_PARAM)
-      : p(p) {
-        JS_GUARD_OBJECT_NOTIFIER_INIT;
-        JS_ATOMIC_INCREMENT(p);
-    }
-
-    ~AutoAtomicIncrement() {
-        JS_ATOMIC_DECREMENT(p);
-    }
-};
-
-}  /* namespace js */
 
 #endif /* jslock_h___ */

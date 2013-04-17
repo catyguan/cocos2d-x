@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __JS_BINDINGS_CORE_H__
+#define __JS_BINDINGS_CORE_H__
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -74,13 +76,10 @@ extern "C" {
 	
 	// needed for callbacks. It does nothing.
 	JSBool JSB_do_nothing(JSContext *cx, uint32_t argc, jsval *vp);
-	
-
-	// logs a format string to the console
-	JSBool JSBCore_log(JSContext *cx, uint32_t argc, jsval *vp);
 
 	extern const char* JSB_version;
 #ifdef __cplusplus
 }
 #endif
 
+#endif /* __JS_BINDINGS_CORE_H__ */

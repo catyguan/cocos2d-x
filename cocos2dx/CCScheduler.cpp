@@ -71,15 +71,15 @@ typedef struct _hashSelectorEntry
 // implementation CCTimer
 
 CCTimer::CCTimer()
-: m_pfnSelector(NULL)
-, m_fInterval(0.0f)
-, m_pTarget(NULL)
+: m_pTarget(NULL)
 , m_fElapsed(-1)
 , m_bRunForever(false)
 , m_bUseDelay(false)
 , m_uTimesExecuted(0)
 , m_uRepeat(0)
 , m_fDelay(0.0f)
+, m_fInterval(0.0f)
+, m_pfnSelector(NULL)
 {
 }
 
@@ -210,6 +210,7 @@ CCScheduler::CCScheduler(void)
 , m_pCurrentTarget(NULL)
 , m_bCurrentTargetSalvaged(false)
 , m_bUpdateHashLocked(false)
+, m_pScriptHandlerEntries(NULL)
 {
 
 }
@@ -221,11 +222,18 @@ CCScheduler::~CCScheduler(void)
 
 void CCScheduler::removeHashElement(_hashSelectorEntry *pElement)
 {
+
+	cocos2d::CCObject *target = pElement->target;
+
     ccArrayFree(pElement->timers);
-    pElement->target->release();
-    pElement->target = NULL;
     HASH_DEL(m_pHashForTimers, pElement);
     free(pElement);
+
+    // make sure the target is released after we have removed the hash element
+    // otherwise we access invalid memory when the release call deletes the target
+    // and the target calls removeAllSelectors() during its destructor
+    target->release();
+
 }
 
 void CCScheduler::scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, bool bPaused)
@@ -436,8 +444,8 @@ void CCScheduler::scheduleUpdateForTarget(CCObject *pTarget, int nPriority, bool
     if (nPriority == 0)
     {
         appendIn(&m_pUpdates0List, pTarget, bPaused);
-    } else
-    if (nPriority < 0)
+    }
+    else if (nPriority < 0)
     {
         priorityIn(&m_pUpdatesNegList, pTarget, nPriority, bPaused);
     }

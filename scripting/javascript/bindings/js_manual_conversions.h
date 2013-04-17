@@ -24,7 +24,16 @@ extern jsval int_to_jsval( JSContext *cx, int number );
 extern jsval uint_to_jsval( JSContext *cx, unsigned int number );
 extern jsval long_to_jsval( JSContext *cx, long number );
 extern jsval longlong_to_jsval( JSContext *cx, long long number );
+/** converts a jsval (JS string) into a char */
+extern JSBool jsval_to_charptr( JSContext *cx, jsval vp, const char **out);
+/* Converts a char ptr into a jsval (using JS string) */
+extern jsval charptr_to_jsval( JSContext *cx, const char *str);
 
+extern JSBool JSB_jsval_to_int32( JSContext *cx, jsval vp, int32_t *outval );
+extern JSBool JSB_jsval_to_uint32( JSContext *cx, jsval vp, uint32_t *outval);
+extern JSBool JSB_jsval_typedarray_to_dataptr( JSContext *cx, jsval vp, GLsizei *count, void **data, JSArrayBufferViewType t);
+extern JSBool JSB_get_arraybufferview_dataptr( JSContext *cx, jsval vp, GLsizei *count, GLvoid **data );
+extern JSBool JSB_jsval_to_uint16( JSContext *cx, jsval vp, uint16_t *outval );
 
 //#ifdef __cplusplus
 //}

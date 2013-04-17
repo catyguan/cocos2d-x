@@ -53,20 +53,13 @@ enum {
 *  - You can add MenuItem objects in runtime using addChild:
 *  - But the only accepted children are MenuItem objects
 */
-class CC_DLL CCMenu : public CCLayer, public CCRGBAProtocol
+class CC_DLL CCMenu : public CCLayerRGBA
 {
-    /** Color: conforms with CCRGBAProtocol protocol */
-    CC_PROPERTY_PASS_BY_REF(ccColor3B, m_tColor, Color);
-    /** Opacity: conforms with CCRGBAProtocol protocol */
-    CC_PROPERTY(GLubyte, m_cOpacity, Opacity);
     /** whether or not the menu will receive events */
     bool m_bEnabled;
     
 public:
-    CCMenu()
-        : m_cOpacity(0)
-        , m_pSelectedItem(NULL)
-    {}
+    CCMenu() : m_pSelectedItem(NULL) {}
     virtual ~CCMenu(){}
 
     /** creates an empty CCMenu */
@@ -125,6 +118,7 @@ public:
     virtual void addChild(CCNode * child, int zOrder);
     virtual void addChild(CCNode * child, int zOrder, int tag);
     virtual void registerWithTouchDispatcher();
+    virtual void removeChild(CCNode* child, bool cleanup);
 
     /**
     @brief For phone event handle functions

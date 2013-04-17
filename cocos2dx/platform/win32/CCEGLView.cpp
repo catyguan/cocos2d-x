@@ -103,10 +103,10 @@ static bool glew_dynamic_binding()
 	// If the current opengl driver doesn't have framebuffers methods, check if an extension exists
 	if (glGenFramebuffers == NULL)
 	{
-		CCLog("OpenGL: glGenFramebuffers is NULL, try to detect an extension\n");
+		CCLog("OpenGL: glGenFramebuffers is NULL, try to detect an extension");
 		if (strstr(gl_extensions, "ARB_framebuffer_object"))
 		{
-			CCLog("OpenGL: ARB_framebuffer_object is supported\n");
+			CCLog("OpenGL: ARB_framebuffer_object is supported");
 
 			glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC) wglGetProcAddress("glIsRenderbuffer");
 			glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC) wglGetProcAddress("glBindRenderbuffer");
@@ -129,7 +129,7 @@ static bool glew_dynamic_binding()
 		else
 		if (strstr(gl_extensions, "EXT_framebuffer_object"))
 		{
-			CCLog("OpenGL: EXT_framebuffer_object is supported\n");
+			CCLog("OpenGL: EXT_framebuffer_object is supported");
 			glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC) wglGetProcAddress("glIsRenderbufferEXT");
 			glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC) wglGetProcAddress("glBindRenderbufferEXT");
 			glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC) wglGetProcAddress("glDeleteRenderbuffersEXT");
@@ -150,8 +150,8 @@ static bool glew_dynamic_binding()
 		}
 		else
 		{
-			CCLog("OpenGL: No framebuffers extension is supported\n");
-			CCLog("OpenGL: Any call to Fbo will crash!\n");
+			CCLog("OpenGL: No framebuffers extension is supported");
+			CCLog("OpenGL: Any call to Fbo will crash!");
 			return false;
 		}
 	}
@@ -248,7 +248,7 @@ bool CCEGLView::initGL()
 		return false;
 	}
 
-    // Enable point size by default on windows. 
+    // Enable point size by default on windows.
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
     return true;
@@ -455,6 +455,11 @@ LRESULT CCEGLView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             if (GetKeyState(VK_LSHIFT) < 0 ||  GetKeyState(VK_RSHIFT) < 0 || GetKeyState(VK_SHIFT) < 0)
                 pDirector->getKeypadDispatcher()->dispatchKeypadMSG(wParam == VK_F1 ? kTypeBackClicked : kTypeMenuClicked);
         }
+        else if (wParam == VK_ESCAPE)
+        {
+            CCDirector::sharedDirector()->getKeypadDispatcher()->dispatchKeypadMSG(kTypeBackClicked);
+        }
+
         if ( m_lpfnAccelerometerKeyHook!=NULL )
         {
             (*m_lpfnAccelerometerKeyHook)( message,wParam,lParam );
@@ -523,7 +528,7 @@ LRESULT CCEGLView::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     default:
         if (m_wndproc)
         {
-            
+
             m_wndproc(message, wParam, lParam, &bProcessed);
             if (bProcessed) break;
         }
@@ -623,13 +628,17 @@ void CCEGLView::resize(int width, int height)
     const CCSize& frameSize = getFrameSize();
     if (frameSize.width > 0)
     {
+        WCHAR wszBuf[MAX_PATH] = {0};
 #ifdef _DEBUG
-        TCHAR buff[MAX_PATH + 1];
-        memset(buff, 0, sizeof(buff));
-        swprintf_s(buff, MAX_PATH, L"%s - %0.0fx%0.0f - %0.2f",
-                   kWindowClassName, frameSize.width, frameSize.height, m_fFrameZoomFactor);
-        SetWindowText(m_hWnd, buff);
+        char szBuf[MAX_PATH + 1];
+        memset(szBuf, 0, sizeof(szBuf));
+        snprintf(szBuf, MAX_PATH, "%s - %0.0fx%0.0f - %0.2f",
+                   m_szViewName, frameSize.width, frameSize.height, m_fFrameZoomFactor);
+        MultiByteToWideChar(CP_UTF8, 0, szBuf, -1, wszBuf, sizeof(wszBuf));
+#else
+        MultiByteToWideChar(CP_UTF8, 0, m_szViewName, -1, wszBuf, sizeof(wszBuf));
 #endif
+        SetWindowText(m_hWnd, wszBuf);
     }
 
     AdjustWindowRectEx(&rcClient, GetWindowLong(m_hWnd, GWL_STYLE), FALSE, GetWindowLong(m_hWnd, GWL_EXSTYLE));

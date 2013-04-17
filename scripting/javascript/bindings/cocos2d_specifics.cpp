@@ -1,10 +1,41 @@
 #include "cocos2d.h"
+#include "cocos-ext.h"
 #include "cocos2d_specifics.hpp"
 #include <typeinfo>
+#include "js_bindings_config.h"
+#include "generated/jsb_cocos2dx_auto.hpp"
+
+USING_NS_CC_EXT;
 
 schedFunc_proxy_t *_schedFunc_target_ht = NULL;
-schedTarget_proxy_t *_schedTarget_native_ht = NULL;
+schedTarget_proxy_t *_schedObj_target_ht = NULL;
 callfuncTarget_proxy_t *_callfuncTarget_native_ht = NULL;
+
+JSTouchDelegate::TouchDelegateMap JSTouchDelegate::sTouchDelegateMap;
+
+void JSTouchDelegate::setDelegateForJSObject(JSObject* pJSObj, JSTouchDelegate* pDelegate)
+{
+    CCAssert(sTouchDelegateMap.find(pJSObj) == sTouchDelegateMap.end(), "");
+    sTouchDelegateMap.insert(TouchDelegatePair(pJSObj, pDelegate));
+}
+
+JSTouchDelegate* JSTouchDelegate::getDelegateForJSObject(JSObject* pJSObj)
+{
+    JSTouchDelegate* pRet = NULL;
+    TouchDelegateMap::iterator iter = sTouchDelegateMap.find(pJSObj);
+    if (iter != sTouchDelegateMap.end())
+    {
+        pRet = iter->second;
+    }
+    return pRet;
+}
+
+void JSTouchDelegate::removeDelegateForJSObject(JSObject* pJSObj)
+{
+    TouchDelegateMap::iterator iter = sTouchDelegateMap.find(pJSObj);
+    CCAssert(iter != sTouchDelegateMap.end(), "");
+    sTouchDelegateMap.erase(pJSObj);
+}
 
 void JSTouchDelegate::setJSObject(JSObject *obj) {
     _mObj = obj;
@@ -21,6 +52,87 @@ void JSTouchDelegate::registerTargettedDelegate(int priority, bool swallowsTouch
                                                          priority,
                                                          swallowsTouches);
 
+}
+
+void JSTouchDelegate::unregisterTouchDelegate()
+{
+    CCDirector* pDirector = CCDirector::sharedDirector();
+    pDirector->getTouchDispatcher()->removeDelegate(this);
+}
+
+bool JSTouchDelegate::ccTouchBegan(CCTouch *pTouch, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent); 
+    jsval retval;
+    bool bRet = false;
+
+    js_proxy_t* p = NULL;
+    JS_GET_NATIVE_PROXY(p, _mObj);
+    CCAssert(p, "js object has been unrooted.");
+
+    ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHBEGAN, 
+        pTouch, _mObj, retval);
+    if(JSVAL_IS_BOOLEAN(retval)) {
+        bRet = JSVAL_TO_BOOLEAN(retval);
+    } 
+
+    return bRet;
+};
+// optional
+
+void JSTouchDelegate::ccTouchMoved(CCTouch *pTouch, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+
+    //jsval retval;
+    js_proxy_t* p = NULL;
+    JS_GET_NATIVE_PROXY(p, _mObj);
+    CCAssert(p, "js object has been unrooted.");
+
+    ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHMOVED, 
+        pTouch, _mObj);
+}
+
+void JSTouchDelegate::ccTouchEnded(CCTouch *pTouch, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+
+    js_proxy_t* p = NULL;
+    JS_GET_NATIVE_PROXY(p, _mObj);
+    CCAssert(p, "js object has been unrooted.");
+
+    ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHENDED, 
+        pTouch, _mObj);
+}
+
+void JSTouchDelegate::ccTouchCancelled(CCTouch *pTouch, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+    js_proxy_t* p = NULL;
+    JS_GET_NATIVE_PROXY(p, _mObj);
+    CCAssert(p, "js object has been unrooted.");
+
+    ScriptingCore::getInstance()->executeCustomTouchEvent(CCTOUCHCANCELLED, 
+        pTouch, _mObj);
+}
+
+// optional
+void JSTouchDelegate::ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+    ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHBEGAN, 
+        pTouches, _mObj);
+}
+
+void JSTouchDelegate::ccTouchesMoved(CCSet *pTouches, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+    ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHMOVED, 
+        pTouches, _mObj);        
+}
+void JSTouchDelegate::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+    ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHENDED, 
+        pTouches, _mObj);
+}
+void JSTouchDelegate::ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent) {
+    CC_UNUSED_PARAM(pEvent);
+    ScriptingCore::getInstance()->executeCustomTouchesEvent(CCTOUCHCANCELLED, 
+        pTouches, _mObj);
 }
 
 static void addCallBackAndThis(JSObject *obj, jsval callback, jsval &thisObj) {
@@ -47,37 +159,11 @@ JSObject* bind_menu_item(JSContext *cx, T* nativeObj, jsval callback, jsval this
 		// bind nativeObj <-> JSObject
 		js_proxy_t *proxy;
 		JS_NEW_PROXY(proxy, nativeObj, tmp);
-		JS_AddNamedObjectRoot(cx, &proxy->obj, "MenuItem");        
+		JS_AddNamedObjectRoot(cx, &proxy->obj, typeid(*nativeObj).name());        
 		addCallBackAndThis(tmp, callback, thisObj);
 
 		return tmp;
 	}
-}
-
-JSBool js_cocos2dx_CCNode_getChildren(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	JSObject *thisObj = JS_THIS_OBJECT(cx, vp);
-	if (thisObj) {
-		js_proxy_t *proxy;
-		JS_GET_NATIVE_PROXY(proxy, thisObj);
-		if (proxy) {
-			cocos2d::CCNode *node = (cocos2d::CCNode *)(proxy->ptr ? proxy->ptr : NULL);
-			cocos2d::CCArray *children = node->getChildren();
-
-			JSObject *jsarr = JS_NewArrayObject(cx, children->count(), NULL);
-
-			for (int i=0; i < children->count(); i++) {
-				cocos2d::CCNode *child = (cocos2d::CCNode*)children->objectAtIndex(i);
-				js_proxy_t *childProxy = js_get_or_create_proxy<cocos2d::CCNode>(cx, child);
-				jsval childVal = OBJECT_TO_JSVAL(childProxy->obj);
-				JS_SetElement(cx, jsarr, i, &childVal);
-			}
-
-			JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsarr));
-		}
-		return JS_TRUE;
-	}
-	return JS_FALSE;
 }
 
 JSBool js_cocos2dx_CCMenu_create(JSContext *cx, uint32_t argc, jsval *vp)
@@ -85,7 +171,7 @@ JSBool js_cocos2dx_CCMenu_create(JSContext *cx, uint32_t argc, jsval *vp)
 	jsval *argv = JS_ARGV(cx, vp);
 	if (argc > 0) {
 		cocos2d::CCArray* array = cocos2d::CCArray::create();
-		int i = 0;
+		uint32_t i = 0;
 		while (i < argc) {
 			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[i]);
@@ -136,6 +222,7 @@ JSBool js_cocos2dx_CCMenu_create(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -144,7 +231,7 @@ JSBool js_cocos2dx_CCSequence_create(JSContext *cx, uint32_t argc, jsval *vp)
 	jsval *argv = JS_ARGV(cx, vp);
 	if (argc > 0) {
 		cocos2d::CCArray* array = cocos2d::CCArray::create();
-		int i = 0;
+		uint32_t i = 0;
 		while (i < argc) {
 			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[i]);
@@ -174,6 +261,7 @@ JSBool js_cocos2dx_CCSequence_create(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -182,7 +270,7 @@ JSBool js_cocos2dx_CCSpawn_create(JSContext *cx, uint32_t argc, jsval *vp)
 	jsval *argv = JS_ARGV(cx, vp);
 	if (argc > 0) {
 		cocos2d::CCArray* array = cocos2d::CCArray::create();
-		int i = 0;
+		uint32_t i = 0;
 		while (i < argc) {
 			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[i]);
@@ -212,6 +300,7 @@ JSBool js_cocos2dx_CCSpawn_create(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -224,6 +313,7 @@ JSBool js_cocos2dx_CCMenuItem_create(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -368,17 +458,20 @@ JSBool js_cocos2dx_CCMenuItemLabel_create(JSContext *cx, uint32_t argc, jsval *v
 JSBool js_cocos2dx_CCMenuItemAtlasFont_create(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	if (argc >= 5) {
+        JSBool ok = JS_TRUE;
 		jsval *argv = JS_ARGV(cx, vp);
 		JSStringWrapper arg0(argv[0]);
 		JSStringWrapper arg1(argv[1]);
-		int arg2; if (!JS_ValueToInt32(cx, argv[2], &arg2)) return JS_FALSE;
-		int arg3; if (!JS_ValueToInt32(cx, argv[3], &arg3)) return JS_FALSE;
-		int arg4; if (!JS_ValueToInt32(cx, argv[4], &arg4)) return JS_FALSE;
+		int arg2; ok &= jsval_to_int32(cx, argv[2], &arg2);
+		int arg3; ok &= jsval_to_int32(cx, argv[3], &arg3);
+		int arg4; ok &= jsval_to_int32(cx, argv[4], &arg4);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		cocos2d::CCMenuItemAtlasFont* ret = cocos2d::CCMenuItemAtlasFont::create(arg0, arg1, arg2, arg3, arg4);
 		JSObject *obj = bind_menu_item<cocos2d::CCMenuItemAtlasFont>(cx, ret, (argc >= 6 ? argv[5] : JSVAL_VOID), (argc == 7 ? argv[6] : JSVAL_VOID));
 		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -404,9 +497,8 @@ JSBool js_cocos2dx_CCMenuItemToggle_create(JSContext *cx, uint32_t argc, jsval *
   if (argc >= 1) {
     jsval *argv = JS_ARGV(cx, vp);
     cocos2d::CCMenuItemToggle* ret = cocos2d::CCMenuItemToggle::create();
-        
-        
-    for (int i=0; i < argc; i++) {
+
+    for (uint32_t i=0; i < argc; i++) {
       js_proxy_t *proxy;
       JSObject *tmpObj = JSVAL_TO_OBJECT(argv[i]);
       JS_GET_NATIVE_PROXY(proxy, tmpObj);
@@ -434,6 +526,7 @@ JSBool js_cocos2dx_CCMenuItemToggle_create(JSContext *cx, uint32_t argc, jsval *
     JS_SET_RVAL(cx, vp, jsret);
     return JS_TRUE;
   }
+  JS_ReportError(cx, "wrong number of arguments");
   return JS_FALSE;
 }
 
@@ -469,23 +562,27 @@ JSBool js_cocos2dx_CCMenuItem_setCallback(JSContext *cx, uint32_t argc, jsval *v
 
 JSBool js_cocos2dx_CCAnimation_create(JSContext *cx, uint32_t argc, jsval *vp)
 {
+    JSBool ok = JS_TRUE;
 	jsval *argv = JS_ARGV(cx, vp);
 	if (argc <= 3) {
 		cocos2d::CCArray* arg0;
 		if (argc > 0) {
-			arg0 = jsval_to_ccarray(cx, argv[0]);
+			ok &= jsval_to_ccarray(cx, argv[0], &arg0);
+            JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		}
 		cocos2d::CCAnimation* ret;
 		double arg1 = 0.0f;
 		if (argc > 0 && argc == 2) {
 			if (argc == 2) {
-				JS_ValueToNumber(cx, argv[1], &arg1);
+				ok &= JS_ValueToNumber(cx, argv[1], &arg1);
+                JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 			}
 			ret = cocos2d::CCAnimation::createWithSpriteFrames(arg0, arg1);
 		} else if (argc == 3) {
 			unsigned int loops;
-			JS_ValueToNumber(cx, argv[1], &arg1);
-			JS_ValueToECMAUint32(cx, argv[1], &loops);
+			ok &= JS_ValueToNumber(cx, argv[1], &arg1);
+			ok &= jsval_to_uint32(cx, argv[2], &loops);
+            JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 			ret = cocos2d::CCAnimation::create(arg0, arg1, loops);
 		} else if (argc == 1) {
 			ret = cocos2d::CCAnimation::createWithSpriteFrames(arg0);
@@ -509,6 +606,7 @@ JSBool js_cocos2dx_CCAnimation_create(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
@@ -516,8 +614,10 @@ JSBool js_cocos2dx_CCLayerMultiplex_create(JSContext *cx, uint32_t argc, jsval *
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	cocos2d::CCArray* arg0;
-
-	arg0 = jsvals_variadic_to_ccarray(cx, argv, argc);
+    JSBool ok = JS_TRUE;
+	ok &= jsvals_variadic_to_ccarray(cx, argv, argc, &arg0);
+    JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+    
 	cocos2d::CCLayerMultiplex* ret = cocos2d::CCLayerMultiplex::createWithArray(arg0);
 	jsval jsret;
 	do {
@@ -536,13 +636,17 @@ JSBool js_cocos2dx_JSTouchDelegate_registerStandardDelegate(JSContext *cx, uint3
 {
 	if (argc >= 1) {
 		jsval *argv = JS_ARGV(cx, vp);
-        
+        JSObject* jsobj = NULL;
+
         JSTouchDelegate *touch = new JSTouchDelegate();
+        touch->autorelease();
         touch->registerStandardDelegate();
-        touch->setJSObject((argc == 1 ? JSVAL_TO_OBJECT(argv[0]) : JSVAL_TO_OBJECT(JSVAL_VOID)));
-        
+        jsobj = (argc == 1 ? JSVAL_TO_OBJECT(argv[0]) : JSVAL_TO_OBJECT(JSVAL_VOID));
+        touch->setJSObject(jsobj);
+        JSTouchDelegate::setDelegateForJSObject(jsobj, touch);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting >= 1", argc);
 	return JS_FALSE;
 }
 
@@ -550,17 +654,39 @@ JSBool js_cocos2dx_JSTouchDelegate_registerTargettedDelegate(JSContext *cx, uint
 {
 	if (argc >= 1) {
 		jsval *argv = JS_ARGV(cx, vp);
-        
+        JSObject* jsobj = NULL;
+
         JSTouchDelegate *touch = new JSTouchDelegate();
+        touch->autorelease();
         touch->registerTargettedDelegate((argc >= 1 ? JSVAL_TO_INT(argv[0]) : 0), (argc >= 2 ? JSVAL_TO_BOOLEAN(argv[1]) : true));
-        touch->setJSObject((argc == 3 ? JSVAL_TO_OBJECT(argv[2]) : JSVAL_TO_OBJECT(JSVAL_VOID)));
         
+        jsobj = (argc == 3 ? JSVAL_TO_OBJECT(argv[2]) : JSVAL_TO_OBJECT(JSVAL_VOID));
+        touch->setJSObject(jsobj);
+        JSTouchDelegate::setDelegateForJSObject(jsobj, touch);
+
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting >=1", argc);
 	return JS_FALSE;
 }
 
-
+JSBool js_cocos2dx_JSTouchDelegate_unregisterTouchDelegate(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    if (argc == 1) {
+        jsval *argv = JS_ARGV(cx, vp);
+        JSObject* jsobj = JSVAL_TO_OBJECT(argv[0]);
+        JSTouchDelegate* pDelegate = JSTouchDelegate::getDelegateForJSObject(jsobj);
+        if (pDelegate)
+        {
+            pDelegate->unregisterTouchDelegate();
+            JSTouchDelegate::removeDelegateForJSObject(jsobj);
+        }
+        
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+    return JS_FALSE;
+}
 
 JSBool js_cocos2dx_swap_native_object(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -602,16 +728,17 @@ JSBool js_cocos2dx_CCNode_copy(JSContext *cx, uint32_t argc, jsval *vp)
 			return JS_TRUE;
 		}
 	}
+    JS_ReportError(cx, "wrong number of arguments");
 	return JS_FALSE;
 }
 
 JSObject* getObjectFromNamespace(JSContext* cx, JSObject *ns, const char *name) {
 	jsval out;
+    JSBool ok = JS_TRUE;
 	if (JS_GetProperty(cx, ns, name, &out) == JS_TRUE) {
 		JSObject *obj;
-		if (JS_ValueToObject(cx, out, &obj) == JS_TRUE) {
-			
-		}
+		ok &= JS_ValueToObject(cx, out, &obj);
+        JSB_PRECONDITION2(ok, cx, NULL, "Error processing arguments");
 	}
 	return NULL;
 }
@@ -632,9 +759,23 @@ JSBool js_platform(JSContext *cx, uint32_t argc, jsval *vp)
 	return JS_TRUE;
 }
 
+JSCallbackWrapper::JSCallbackWrapper()
+: jsCallback(JSVAL_VOID), jsThisObj(JSVAL_VOID), extraData(JSVAL_VOID)
+{
+
+}
+
+JSCallbackWrapper::~JSCallbackWrapper()
+{
+    JSContext* cx = ScriptingCore::getInstance()->getGlobalContext();
+    JS_RemoveValueRoot(cx, &jsCallback);
+}
 
 void JSCallbackWrapper::setJSCallbackFunc(jsval func) {
     jsCallback = func;
+    JSContext* cx = ScriptingCore::getInstance()->getGlobalContext();
+	// Root the callback function.
+    JS_AddNamedValueRoot(cx, &jsCallback, "JSCallbackWrapper_callback_func");
 }
 
 void JSCallbackWrapper::setJSCallbackThis(jsval thisObj) {
@@ -765,7 +906,13 @@ JSBool js_callFunc(JSContext *cx, uint32_t argc, jsval *vp)
     return JS_FALSE;
 }
 
-
+JSScheduleWrapper::~JSScheduleWrapper()
+{
+    if (_pPureJSTarget) {
+        JSContext* cx = ScriptingCore::getInstance()->getGlobalContext();
+        JS_RemoveObjectRoot(cx, &_pPureJSTarget);
+    }
+}
 
 void JSScheduleWrapper::setTargetForSchedule(jsval sched, JSScheduleWrapper *target) {
     do {
@@ -794,39 +941,140 @@ CCArray * JSScheduleWrapper::getTargetForSchedule(jsval sched) {
 }
 
 
-void JSScheduleWrapper::setTargetForNativeNode(CCNode *pNode, JSScheduleWrapper *target)
+void JSScheduleWrapper::setTargetForJSObject(JSObject* jsTargetObj, JSScheduleWrapper *target)
 {
-    CCArray* targetArray = getTargetForNativeNode(pNode);
+    CCArray* targetArray = getTargetForJSObject(jsTargetObj);
     if (NULL == targetArray) {
         targetArray = new CCArray();
         schedTarget_proxy_t *p = (schedTarget_proxy_t *)malloc(sizeof(schedTarget_proxy_t));
         assert(p);
-        p->nativeObj = pNode;
+        p->jsTargetObj = jsTargetObj;
         p->targets = targetArray;
-        HASH_ADD_PTR(_schedTarget_native_ht, nativeObj, p);
+        HASH_ADD_PTR(_schedObj_target_ht, jsTargetObj, p);
     }
     
     CCAssert(!targetArray->containsObject(target), "The target was already added.");
     targetArray->addObject(target);
 }
 
-CCArray * JSScheduleWrapper::getTargetForNativeNode(CCNode *pNode)
+CCArray * JSScheduleWrapper::getTargetForJSObject(JSObject* jsTargetObj)
 {
     schedTarget_proxy_t *t = NULL;
-    HASH_FIND_PTR(_schedTarget_native_ht, &pNode, t);
+    HASH_FIND_PTR(_schedObj_target_ht, &jsTargetObj, t);
     return t != NULL ? t->targets : NULL;
 }
 
-void JSScheduleWrapper::removeAllTargetsForNatiaveNode(CCNode* pNode)
+void JSScheduleWrapper::removeAllTargets()
+{
+    CCLOGINFO("removeAllTargets begin");
+    dump();
+    
+    {
+        schedFunc_proxy_t *current, *tmp;
+        HASH_ITER(hh, _schedFunc_target_ht, current, tmp) {
+            current->targets->removeAllObjects();
+            current->targets->release();
+            HASH_DEL(_schedFunc_target_ht, current);
+            free(current);
+        }
+    }
+    
+    {
+        schedTarget_proxy_t *current, *tmp;
+        HASH_ITER(hh, _schedObj_target_ht, current, tmp) {
+            current->targets->removeAllObjects();
+            current->targets->release();
+            HASH_DEL(_schedObj_target_ht, current);
+            free(current);
+        }
+    }
+    
+    dump();
+    CCLOGINFO("removeAllTargets end");
+}
+
+void JSScheduleWrapper::removeAllTargetsForMinPriority(int minPriority)
+{
+    CCLOGINFO("removeAllTargetsForPriority begin");
+    dump();
+    
+    {
+        schedFunc_proxy_t *current, *tmp;
+        HASH_ITER(hh, _schedFunc_target_ht, current, tmp) {
+            std::vector<CCObject*> objectsNeedToBeReleased;
+            CCArray* targets = current->targets;
+            CCObject* pObj = NULL;
+            CCARRAY_FOREACH(targets, pObj)
+            {
+                JSScheduleWrapper* wrapper = (JSScheduleWrapper*)pObj;
+                bool isUpdateSchedule = wrapper->isUpdateSchedule();
+                if (!isUpdateSchedule || (isUpdateSchedule && wrapper->getPriority() >= minPriority))
+                {
+                    objectsNeedToBeReleased.push_back(pObj);
+                }
+            }
+            
+            std::vector<CCObject*>::iterator iter = objectsNeedToBeReleased.begin();
+            for (; iter != objectsNeedToBeReleased.end(); ++iter)
+            {
+                targets->removeObject(*iter, true);
+            }
+            
+            if (targets->count() == 0)
+            {
+                HASH_DEL(_schedFunc_target_ht, current);
+                targets->release();
+                free(current);
+            }
+        }
+    }
+    
+    {
+        schedTarget_proxy_t *current, *tmp;
+        HASH_ITER(hh, _schedObj_target_ht, current, tmp) {
+            std::vector<CCObject*> objectsNeedToBeReleased;
+            CCArray* targets = current->targets;
+            CCObject* pObj = NULL;
+            CCARRAY_FOREACH(targets, pObj)
+            {
+                JSScheduleWrapper* wrapper = (JSScheduleWrapper*)pObj;
+                bool isUpdateSchedule = wrapper->isUpdateSchedule();
+                if (!isUpdateSchedule || (isUpdateSchedule && wrapper->getPriority() >= minPriority))
+                {
+                    CCLOG("isUpdateSchedule2:%d", isUpdateSchedule);
+                    objectsNeedToBeReleased.push_back(pObj);
+                }
+            }
+            
+            std::vector<CCObject*>::iterator iter = objectsNeedToBeReleased.begin();
+            for (; iter != objectsNeedToBeReleased.end(); ++iter)
+            {
+                targets->removeObject(*iter, true);
+            }
+            
+            if (targets->count() == 0)
+            {
+                HASH_DEL(_schedObj_target_ht, current);
+                targets->release();
+                free(current);
+            }
+        }
+    }
+    
+    dump();
+    CCLOGINFO("removeAllTargetsForPriority end");
+}
+
+void JSScheduleWrapper::removeAllTargetsForJSObject(JSObject* jsTargetObj)
 {
     CCLOGINFO("removeAllTargetsForNatiaveNode begin");
     dump();
     CCArray* removeNativeTargets = NULL;
     schedTarget_proxy_t *t = NULL;
-    HASH_FIND_PTR(_schedTarget_native_ht, &pNode, t);
+    HASH_FIND_PTR(_schedObj_target_ht, &jsTargetObj, t);
     if (t != NULL) {
         removeNativeTargets = t->targets;
-        HASH_DEL(_schedTarget_native_ht, t);
+        HASH_DEL(_schedObj_target_ht, t);
     }
 
     if (removeNativeTargets == NULL) return;
@@ -834,7 +1082,6 @@ void JSScheduleWrapper::removeAllTargetsForNatiaveNode(CCNode* pNode)
     schedFunc_proxy_t *current, *tmp;
     HASH_ITER(hh, _schedFunc_target_ht, current, tmp) {
         std::vector<CCObject*> objectsNeedToBeReleased;
-        JSObject* key = current->jsfuncObj;
         CCArray* targets = current->targets;
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(targets, pObj)
@@ -866,17 +1113,66 @@ void JSScheduleWrapper::removeAllTargetsForNatiaveNode(CCNode* pNode)
     CCLOGINFO("removeAllTargetsForNatiaveNode end");
 }
 
+void JSScheduleWrapper::removeTargetForJSObject(JSObject* jsTargetObj, JSScheduleWrapper* target)
+{
+    CCLOGINFO("removeTargetForJSObject begin");
+    dump();
+    schedTarget_proxy_t *t = NULL;
+    HASH_FIND_PTR(_schedObj_target_ht, &jsTargetObj, t);
+    if (t != NULL) {
+        t->targets->removeObject(target);
+        if (t->targets->count() == 0)
+        {
+            t->targets->release();
+            HASH_DEL(_schedObj_target_ht, t);
+            free(t);
+        }
+    }
+
+    schedFunc_proxy_t *current, *tmp, *removed=NULL;
+
+    HASH_ITER(hh, _schedFunc_target_ht, current, tmp) {
+        CCArray* targets = current->targets;
+        CCObject* pObj = NULL;
+        
+        CCARRAY_FOREACH(targets, pObj)
+        {
+            JSScheduleWrapper* pOneTarget = (JSScheduleWrapper*)pObj;
+            if (pOneTarget == target)
+            {
+                removed = current;
+                break;
+            }
+        }
+        if (removed) break;
+    }
+
+    if (removed)
+    {
+        removed->targets->removeObject(target);
+        if (removed->targets->count() == 0)
+        {
+            removed->targets->release();
+            HASH_DEL(_schedFunc_target_ht, removed);
+            free(removed);
+        }  
+    }
+    dump();
+    CCLOGINFO("removeTargetForJSObject end");
+}
+
 void JSScheduleWrapper::dump()
 {
 #if COCOS2D_DEBUG > 1
-    CCLOGINFO("\n---------JSScheduleWrapper dump begin--------------\n");
+    CCLOG("\n---------JSScheduleWrapper dump begin--------------\n");
+    CCLOG("target hash count = %d, func hash count = %d", HASH_COUNT(_schedObj_target_ht), HASH_COUNT(_schedFunc_target_ht));
     schedTarget_proxy_t *current, *tmp;
     int nativeTargetsCount = 0;
-    HASH_ITER(hh, _schedTarget_native_ht, current, tmp) {
+    HASH_ITER(hh, _schedObj_target_ht, current, tmp) {
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(current->targets, pObj)
         {
-            CCLOGINFO("native %s ( %p ), target[%d]=( %p )", typeid(*current->nativeObj).name(), current->nativeObj, nativeTargetsCount, pObj);
+            CCLOG("js target ( %p ), native target[%d]=( %p )", current->jsTargetObj, nativeTargetsCount, pObj);
             nativeTargetsCount++;
         }
     }
@@ -889,42 +1185,99 @@ void JSScheduleWrapper::dump()
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(current_func->targets, pObj)
         {
-            CCLOGINFO("jsfunc ( %p ), target[%d]=( %p )", current_func->jsfuncObj, jsfuncTargetCount, pObj);
+            CCLOG("js func ( %p ), native target[%d]=( %p )", current_func->jsfuncObj, jsfuncTargetCount, pObj);
             jsfuncTargetCount++;
         }
     }
     CCAssert(nativeTargetsCount == jsfuncTargetCount, "");
-    CCLOGINFO("\n---------JSScheduleWrapper dump end--------------\n");
+    CCLOG("\n---------JSScheduleWrapper dump end--------------\n");
 #endif
 }
 
 void JSScheduleWrapper::scheduleFunc(float dt) const
 {
-    jsval retval = JSVAL_NULL, data = DOUBLE_TO_JSVAL(dt);
+    jsval retval = JSVAL_NULL;
+    jsval data = DOUBLE_TO_JSVAL(dt);
+
     JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
 
     JSBool ok = JS_AddValueRoot(cx, &data);
-    if(!ok) {
+    if (!ok) {
+        CCLOG("scheduleFunc: Root value fails.");
         return;
     }
 
-    if(!jsCallback.isNullOrUndefined() || !jsThisObj.isNullOrUndefined()) {
-        JSAutoCompartment ac(cx, JSVAL_TO_OBJECT(jsThisObj));
-                
-        JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(jsThisObj), jsCallback, 1, &data, &retval);
+    if(!jsCallback.isNullOrUndefined()) {
+        if (!jsThisObj.isNullOrUndefined()) {
+            JSAutoCompartment ac(cx, JSVAL_TO_OBJECT(jsThisObj));
+            JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(jsThisObj), jsCallback, 1, &data, &retval);
+        }
+        else {
+            JS_CallFunctionValue(cx, NULL, jsCallback, 1, &data, &retval);
+        }
     }
 
     JS_RemoveValueRoot(cx, &data);
 }
 
+void JSScheduleWrapper::update(float dt)
+{
+    jsval data = DOUBLE_TO_JSVAL(dt);
+    
+    JSContext *cx = ScriptingCore::getInstance()->getGlobalContext();
+    
+    JSBool ok = JS_AddValueRoot(cx, &data);
+    if (!ok) {
+        CCLOG("scheduleFunc: Root value fails.");
+        return;
+    }
+    
+    ScriptingCore::getInstance()->executeFunctionWithOwner(jsThisObj, "update", 1, &data);
+    
+    JS_RemoveValueRoot(cx, &data);
+}
+
 CCObject* JSScheduleWrapper::getTarget()
 {
-    return m_pTarget;
+    return _pTarget;
 }
 
 void JSScheduleWrapper::setTarget(CCObject* pTarget)
 {
-    m_pTarget = pTarget;
+    _pTarget = pTarget;
+}
+
+void JSScheduleWrapper::setPureJSTarget(JSObject* pPureJSTarget)
+{
+    CCAssert(_pPureJSTarget == NULL, "The pure js target has been set");
+    JSContext* cx = ScriptingCore::getInstance()->getGlobalContext();
+    _pPureJSTarget = pPureJSTarget;
+    JS_AddNamedObjectRoot(cx, &_pPureJSTarget, "Pure JS target");
+}
+
+JSObject* JSScheduleWrapper::getPureJSTarget()
+{
+    return _pPureJSTarget;
+}
+
+void JSScheduleWrapper::setPriority(int priority)
+{
+    _priority = priority;
+}
+
+int  JSScheduleWrapper::getPriority()
+{
+    return _priority;
+}
+
+void JSScheduleWrapper::setUpdateSchedule(bool isUpdateSchedule)
+{
+    _isUpdateSchedule = isUpdateSchedule;
+}
+
+bool JSScheduleWrapper::isUpdateSchedule()
+{
+    return _isUpdateSchedule;
 }
 
 JSBool js_CCNode_unschedule(JSContext *cx, uint32_t argc, jsval *vp)
@@ -936,13 +1289,12 @@ JSBool js_CCNode_unschedule(JSContext *cx, uint32_t argc, jsval *vp)
 		js_proxy_t *proxy;
 		JS_GET_NATIVE_PROXY(proxy, obj);
 		cocos2d::CCNode *node = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
-        
-        if(!node) return JS_FALSE;
+        JSB_PRECONDITION2(node, cx, JS_FALSE, "Invalid Native Object");
         
         CCScheduler *sched = node->getScheduler();
         
         CCArray* targetArray = JSScheduleWrapper::getTargetForSchedule(argv[0]);
-        CCLOG("unschedule target number: %d", targetArray->count());
+        CCLOGINFO("unschedule target number: %d", targetArray->count());
         CCObject* tmp = NULL;
         CCARRAY_FOREACH(targetArray, tmp)
         {
@@ -950,6 +1302,7 @@ JSBool js_CCNode_unschedule(JSContext *cx, uint32_t argc, jsval *vp)
             if (node == target->getTarget())
             {
                 sched->unscheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), target);
+                JSScheduleWrapper::removeTargetForJSObject(obj, target);
                 break;
             }
         }
@@ -970,70 +1323,33 @@ JSBool js_cocos2dx_CCNode_unscheduleAllSelectors(JSContext *cx, uint32_t argc, j
     {
         cobj->unscheduleAllSelectors();
 
-        CCArray *arr = JSScheduleWrapper::getTargetForNativeNode(cobj);
+        CCArray *arr = JSScheduleWrapper::getTargetForJSObject(obj);
 		// If there aren't any targets, just return true.
 		// Otherwise, the for loop will break immediately. 
 		// It will lead to logic errors. 
 		// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
         if(! arr) return JS_TRUE;
+        JSScheduleWrapper* wrapper = NULL;
         for(unsigned int i = 0; i < arr->count(); ++i) {
-            if(arr->objectAtIndex(i)) {
-                cobj->getScheduler()->unscheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), arr->objectAtIndex(i));
+            wrapper = (JSScheduleWrapper*)arr->objectAtIndex(i);
+            if(wrapper) {
+                cobj->getScheduler()->unscheduleAllForTarget(wrapper);
             }
         }
-
+        
+        JSScheduleWrapper::removeAllTargetsForJSObject(obj);
+        
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
         return JS_TRUE;
     }
 	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 0);
 	return JS_FALSE;
 }
 
-
-
-
-JSBool js_cocos2dx_CCScheduler_unscheduleAllSelectorsForTarget(JSContext *cx, uint32_t argc, jsval *vp)
-{
-	jsval *argv = JS_ARGV(cx, vp);
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
-	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
-	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
-	TEST_NATIVE_OBJECT(cx, cobj)
-    
-	if (argc == 1) {
-		cocos2d::CCNode* arg0;
-		do {
-			js_proxy_t *proxy;
-			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			JS_GET_NATIVE_PROXY(proxy, tmpObj);
-			arg0 = (cocos2d::CCNode*)(proxy ? proxy->ptr : NULL);
-			TEST_NATIVE_OBJECT(cx, arg0)
-            cobj->unscheduleAllForTarget(arg0);
-
-            CCArray *arr = JSScheduleWrapper::getTargetForNativeNode(arg0);
-			// If there aren't any targets, just return true.
-			// Otherwise, the for loop will break immediately. 
-			// It will lead to logic errors. 
-			// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
-            if(! arr) return JS_TRUE;
-            for(unsigned int i = 0; i < arr->count(); ++i) {
-                if(arr->objectAtIndex(i)) {
-                    arg0->getScheduler()->unscheduleAllForTarget(arr->objectAtIndex(i));
-                }
-            }
-
-		} while (0);
-        
-		
-		return JS_TRUE;
-	}
-	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
-	return JS_FALSE;
-}
-
-
 JSBool js_CCNode_scheduleOnce(JSContext *cx, uint32_t argc, jsval *vp)
 {
     if (argc >= 1) {
+        JSBool ok = JS_TRUE;
 		jsval *argv = JS_ARGV(cx, vp);
         
         JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -1050,12 +1366,12 @@ JSBool js_CCNode_scheduleOnce(JSContext *cx, uint32_t argc, jsval *vp)
         //
         double delay;
         if( argc >= 2 ) {
-            if( ! JS_ValueToNumber(cx, argv[1], &delay ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[1], &delay );
+            JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         }
         
         bool bFound = false;
-        CCArray* pTargetArr = JSScheduleWrapper::getTargetForNativeNode(node);
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(obj);
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(pTargetArr, pObj)
         {
@@ -1077,7 +1393,7 @@ JSBool js_CCNode_scheduleOnce(JSContext *cx, uint32_t argc, jsval *vp)
             tmpCobj->setTarget(node);
 
             JSScheduleWrapper::setTargetForSchedule(argv[0], tmpCobj);
-            JSScheduleWrapper::setTargetForNativeNode(node, tmpCobj);
+            JSScheduleWrapper::setTargetForJSObject(obj, tmpCobj);
         }
 
         if(argc == 1) {
@@ -1086,18 +1402,34 @@ JSBool js_CCNode_scheduleOnce(JSContext *cx, uint32_t argc, jsval *vp)
             sched->scheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), tmpCobj, 0, 0, delay, !node->isRunning());
         }
 
-        jsb_set_reserved_slot(proxy->obj, 0, argv[0]);
+		/* We shouldn't set the js callback function to reserved slot,
+		   since the target object may execute more than one schedule.
+		   Therefore, previous js callback function will be replaced 
+		   by the current one. For example:
+		      this.scheduleOnce(function() { temporary function 1 }, 0.5);
+		      this.scheduleOnce(function() { temporary function 2 }, 0.5);
+		   In this case, the temporary function 1 will be removed from reserved slot 0.
+		   And temporary function 2 will be set to reserved slot 0 of this object.
+		   If gc is triggered before the 'JSScheduleWrapper::scheduleFunc' is invoked, 
+		   crash will happen. You could simply reproduce it by adding '__jsc__.garbageCollect();' after scheduleOnce.
+		   
+		   [Solution] Because one schedule corresponds to one JSScheduleWrapper, we root 
+		   the js callback function in JSScheduleWrapper::setJSCallbackFunc and unroot it 
+		   at the destructor of JSScheduleWrapper.
+		*/
+        //jsb_set_reserved_slot(proxy->obj, 0, argv[0]);
 
         JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
     }
-    return JS_TRUE;
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
 }
-
-
 
 JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
 {
     if (argc >= 1) {
+        JSBool ok = JS_TRUE;
 		jsval *argv = JS_ARGV(cx, vp);
         
         JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -1106,14 +1438,11 @@ JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
 		cocos2d::CCNode *node = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
         CCScheduler *sched = node->getScheduler();
 
-        js_proxy_t *p = js_get_or_create_proxy<cocos2d::CCScheduler>(cx, sched);        
-
         JSScheduleWrapper *tmpCobj = NULL;
 
     	double interval = 0.0;
         if( argc >= 2 ) {
-            if( ! JS_ValueToNumber(cx, argv[1], &interval ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[1], &interval );
         }
         
         //
@@ -1121,8 +1450,7 @@ JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
         //
         double repeat = 0.0;
         if( argc >= 3 ) {
-            if( ! JS_ValueToNumber(cx, argv[2], &repeat ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[2], &repeat );
         }
         
         //
@@ -1130,12 +1458,13 @@ JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
         //
         double delay = 0.0;
         if( argc >= 4 ) {
-            if( ! JS_ValueToNumber(cx, argv[3], &delay ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[3], &delay );
         }
         
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
         bool bFound = false;
-        CCArray* pTargetArr = JSScheduleWrapper::getTargetForNativeNode(node);
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(obj);
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(pTargetArr, pObj)
         {
@@ -1156,7 +1485,7 @@ JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
             tmpCobj->setJSCallbackFunc(argv[0]);
             tmpCobj->setTarget(node);
             JSScheduleWrapper::setTargetForSchedule(argv[0], tmpCobj);        
-            JSScheduleWrapper::setTargetForNativeNode(node, tmpCobj);
+            JSScheduleWrapper::setTargetForJSObject(obj, tmpCobj);
         }
         
         if(argc == 1) {
@@ -1168,19 +1497,222 @@ JSBool js_CCNode_schedule(JSContext *cx, uint32_t argc, jsval *vp)
         } if (argc == 4) {
             sched->scheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), tmpCobj, interval, (unsigned int)repeat, delay, !node->isRunning());
         }
-        
-        jsb_set_reserved_slot(proxy->obj, 0, argv[0]);
+		
+        // I comment next line with the same reason in the js_CCNode_scheduleOnce.
+        //jsb_set_reserved_slot(proxy->obj, 0, argv[0]);
 
         JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
     }
-    return JS_TRUE;
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
 }
 
-
-JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
+JSBool js_cocos2dx_CCNode_scheduleUpdateWithPriority(JSContext *cx, uint32_t argc, jsval *vp)
 {
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCNode* cobj = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 1) {
+		int arg0 = 0;
+		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
+        JSBool isFoundUpdate = JS_FALSE;
+        ok = JS_HasProperty(cx, obj, "update", &isFoundUpdate);
+        jsval jsUpdateFunc;
+        if (ok && isFoundUpdate) {
+            ok = JS_GetProperty(cx, obj, "update", &jsUpdateFunc);
+        }
+        
+        // if no 'update' property, return JS_TRUE directly.
+        if (!ok) {
+            JS_SET_RVAL(cx, vp, JSVAL_VOID);
+            return JS_TRUE;
+        }
+        
+        JSScheduleWrapper* tmpCobj = NULL;
+        
+        bool bFound = false;
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(obj);
+        CCObject* pObj = NULL;
+        CCARRAY_FOREACH(pTargetArr, pObj)
+        {
+            JSScheduleWrapper* pTarget = (JSScheduleWrapper*)pObj;
+            if (jsUpdateFunc == pTarget->getJSCallbackFunc())
+            {
+                tmpCobj = pTarget;
+                bFound = true;
+                break;
+            }
+        }
+        
+        if (!bFound)
+        {
+            tmpCobj = new JSScheduleWrapper();
+            tmpCobj->autorelease();
+            tmpCobj->setJSCallbackThis(OBJECT_TO_JSVAL(obj));
+            tmpCobj->setJSCallbackFunc(jsUpdateFunc);
+            tmpCobj->setTarget(cobj);
+            tmpCobj->setUpdateSchedule(true);
+            JSScheduleWrapper::setTargetForSchedule(jsUpdateFunc, tmpCobj);
+            JSScheduleWrapper::setTargetForJSObject(obj, tmpCobj);
+        }
+        
+        tmpCobj->setPriority(arg0);
+        cobj->getScheduler()->scheduleUpdateForTarget(tmpCobj, arg0, !cobj->isRunning());
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
     
-    if (argc >= 2) {
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCNode_unscheduleUpdate(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCNode* cobj = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
+	TEST_NATIVE_OBJECT(cx, cobj)
+    
+    if (argc == 0)
+    {
+        cobj->unscheduleUpdate();
+        do {
+			JSObject *tmpObj = obj;
+            
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+			// If there aren't any targets, just return true.
+			// Otherwise, the for loop will break immediately.
+			// It will lead to logic errors.
+			// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
+            if(! arr) return JS_TRUE;
+            
+            JSScheduleWrapper* wrapper = NULL;
+            for(unsigned int i = 0; i < arr->count(); ++i) {
+                wrapper = (JSScheduleWrapper*)arr->objectAtIndex(i);
+                if(wrapper && wrapper->isUpdateSchedule()) {
+                    cobj->getScheduler()->unscheduleUpdateForTarget(wrapper);
+                    CCAssert(OBJECT_TO_JSVAL(tmpObj) == wrapper->getJSCallbackThis(), "Wrong target object.");
+                    JSScheduleWrapper::removeTargetForJSObject(tmpObj, wrapper);
+                    break;
+                }
+            }
+		} while (0);
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+    }
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 0);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCNode_scheduleUpdate(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCNode* cobj = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 0) {
+        
+        JSBool isFoundUpdate = JS_FALSE;
+        ok = JS_HasProperty(cx, obj, "update", &isFoundUpdate);
+        jsval jsUpdateFunc;
+        if (ok && isFoundUpdate) {
+            ok = JS_GetProperty(cx, obj, "update", &jsUpdateFunc);
+        }
+        
+        // if no 'update' property, return JS_TRUE directly.
+        if (!ok) {
+            JS_SET_RVAL(cx, vp, JSVAL_VOID);
+            return JS_TRUE;
+        }
+        
+        JSScheduleWrapper* tmpCobj = NULL;
+        
+        bool bFound = false;
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(obj);
+        CCObject* pObj = NULL;
+        CCARRAY_FOREACH(pTargetArr, pObj)
+        {
+            JSScheduleWrapper* pTarget = (JSScheduleWrapper*)pObj;
+            if (jsUpdateFunc == pTarget->getJSCallbackFunc())
+            {
+                tmpCobj = pTarget;
+                bFound = true;
+                break;
+            }
+        }
+        
+        if (!bFound)
+        {
+            tmpCobj = new JSScheduleWrapper();
+            tmpCobj->autorelease();
+            tmpCobj->setJSCallbackThis(OBJECT_TO_JSVAL(obj));
+            tmpCobj->setJSCallbackFunc(jsUpdateFunc);
+            tmpCobj->setTarget(cobj);
+            tmpCobj->setUpdateSchedule(true);
+            JSScheduleWrapper::setTargetForSchedule(jsUpdateFunc, tmpCobj);
+            JSScheduleWrapper::setTargetForJSObject(obj, tmpCobj);
+        }
+        
+        cobj->getScheduler()->scheduleUpdateForTarget(tmpCobj, 0, !cobj->isRunning());
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+    
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCScheduler_unscheduleAllSelectorsForTarget(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	TEST_NATIVE_OBJECT(cx, cobj)
+    
+	if (argc == 1) {
+		do {
+			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+            
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+			// If there aren't any targets, just return true.
+			// Otherwise, the for loop will break immediately.
+			// It will lead to logic errors.
+			// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
+            if(! arr) return JS_TRUE;
+            
+            JSScheduleWrapper* wrapper = NULL;
+            for(unsigned int i = 0; i < arr->count(); ++i) {
+                wrapper = (JSScheduleWrapper*)arr->objectAtIndex(i);
+                if(wrapper) {
+                    cobj->unscheduleAllForTarget(wrapper);
+                }
+            }
+            JSScheduleWrapper::removeAllTargetsForJSObject(tmpObj);
+            
+		} while (0);
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_CCScheduler_scheduleUpdateForTarget(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    if (argc >= 1) {
+        JSBool ok = JS_TRUE;
 		jsval *argv = JS_ARGV(cx, vp);
         
         JSObject *obj = JS_THIS_OBJECT(cx, vp);
@@ -1188,18 +1720,134 @@ JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_GET_NATIVE_PROXY(proxy, obj);
 		cocos2d::CCScheduler *sched = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
         
-        JSScheduleWrapper *tmpCobj = NULL;
+        JSScheduleWrapper *tmpCObj = NULL;
         
-        cocos2d::CCNode* node;
         JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
         JS_GET_NATIVE_PROXY(proxy, tmpObj);
-        node = (cocos2d::CCNode*)(proxy ? proxy->ptr : NULL);
-        TEST_NATIVE_OBJECT(cx, node)
+        bool isPureJSTarget = proxy ? false : true;
+        
+        JSBool isFoundUpdate = JS_FALSE;
+        ok = JS_HasProperty(cx, tmpObj, "update", &isFoundUpdate);
+        jsval jsUpdateFunc;
+        if (ok && isFoundUpdate) {
+            ok = JS_GetProperty(cx, tmpObj, "update", &jsUpdateFunc);
+        }
+        
+        // if no 'update' property, return JS_TRUE directly.
+        if (!ok) {
+            JS_SET_RVAL(cx, vp, JSVAL_VOID);
+            return JS_TRUE;
+        }
+        
+        int arg1 = 0;
+        if (argc >= 2) {
+            ok &= jsval_to_int32(cx, argv[1], (int32_t *)&arg1);
+        }
+
+        JSBool paused = JS_FALSE;
+        
+        if( argc >= 3 ) {
+            ok &= JS_ValueToBoolean(cx,  argv[2], &paused);
+        }
+        
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
+        bool bFound = false;
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+        CCObject* pObj = NULL;
+        CCARRAY_FOREACH(pTargetArr, pObj)
+        {
+            JSScheduleWrapper* pTarget = (JSScheduleWrapper*)pObj;
+            if (jsUpdateFunc == pTarget->getJSCallbackFunc())
+            {
+                tmpCObj = pTarget;
+                bFound = true;
+                break;
+            }
+        }
+        
+        if (!bFound)
+        {
+            tmpCObj = new JSScheduleWrapper();
+            tmpCObj->autorelease();
+            tmpCObj->setJSCallbackThis(argv[0]);
+            tmpCObj->setJSCallbackFunc(jsUpdateFunc);
+            tmpCObj->setUpdateSchedule(true);
+            if (isPureJSTarget) {
+                tmpCObj->setPureJSTarget(tmpObj);
+            }
+            
+            JSScheduleWrapper::setTargetForSchedule(jsUpdateFunc, tmpCObj);
+            JSScheduleWrapper::setTargetForJSObject(tmpObj, tmpCObj);
+        }
+        tmpCObj->setPriority(arg1);
+        sched->scheduleUpdateForTarget(tmpCObj, arg1, paused);
+        
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
+}
+
+JSBool js_CCScheduler_unscheduleUpdateForTarget(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	TEST_NATIVE_OBJECT(cx, cobj)
+    
+	if (argc == 1) {
+		do {
+			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+            
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+			// If there aren't any targets, just return true.
+			// Otherwise, the for loop will break immediately.
+			// It will lead to logic errors.
+			// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
+            if(! arr) return JS_TRUE;
+            
+            JSScheduleWrapper* wrapper = NULL;
+            for(unsigned int i = 0; i < arr->count(); ++i) {
+                wrapper = (JSScheduleWrapper*)arr->objectAtIndex(i);
+                if(wrapper && wrapper->isUpdateSchedule()) {
+                    cobj->unscheduleUpdateForTarget(wrapper);
+                    CCAssert(argv[0] == wrapper->getJSCallbackThis(), "Wrong target object.");
+                    JSScheduleWrapper::removeTargetForJSObject(tmpObj, wrapper);
+                    break;
+                }
+            }
+		} while (0);
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    if (argc >= 2) {
+        JSBool ok = JS_TRUE;
+		jsval *argv = JS_ARGV(cx, vp);
+        
+        JSObject *obj = JS_THIS_OBJECT(cx, vp);
+		js_proxy_t *proxy;
+		JS_GET_NATIVE_PROXY(proxy, obj);
+		cocos2d::CCScheduler *sched = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+        
+        JSScheduleWrapper *tmpCObj = NULL;
+        
+        JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+        JS_GET_NATIVE_PROXY(proxy, tmpObj);
+        bool isPureJSTarget = proxy ? false : true;
         
     	double interval = 0;
         if( argc >= 3 ) {
-            if( ! JS_ValueToNumber(cx, argv[2], &interval ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[2], &interval );
         }
         
         //
@@ -1207,8 +1855,7 @@ JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
         //
         double repeat = -1;
         if( argc >= 4 ) {
-            if( ! JS_ValueToNumber(cx, argv[3], &repeat ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[3], &repeat );
         }
         
         //
@@ -1216,26 +1863,26 @@ JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
         //
         double delay = 0;
         if( argc >= 5 ) {
-            if( ! JS_ValueToNumber(cx, argv[4], &delay ) )
-                return JS_FALSE;
+            ok &= JS_ValueToNumber(cx, argv[4], &delay );
         }
         
-        JSBool paused = !node->isRunning();
+        JSBool paused = JS_FALSE;
         
         if( argc >= 6 ) {
-            if( ! JS_ValueToBoolean(cx,  argv[4], &paused))
-                return JS_FALSE;
+            ok &= JS_ValueToBoolean(cx,  argv[5], &paused);
         }
         
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
         bool bFound = false;
-        CCArray* pTargetArr = JSScheduleWrapper::getTargetForNativeNode(node);
+        CCArray* pTargetArr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
         CCObject* pObj = NULL;
         CCARRAY_FOREACH(pTargetArr, pObj)
         {
             JSScheduleWrapper* pTarget = (JSScheduleWrapper*)pObj;
             if (argv[1] == pTarget->getJSCallbackFunc())
             {
-                tmpCobj = pTarget;
+                tmpCObj = pTarget;
                 bFound = true;
                 break;
             }
@@ -1243,88 +1890,190 @@ JSBool js_CCScheduler_schedule(JSContext *cx, uint32_t argc, jsval *vp)
 
         if (!bFound)
         {
-            tmpCobj = new JSScheduleWrapper();
-            tmpCobj->autorelease();
-            tmpCobj->setJSCallbackThis(OBJECT_TO_JSVAL(proxy->obj));
-            tmpCobj->setJSCallbackFunc(argv[1]);
-
-            JSScheduleWrapper::setTargetForSchedule(argv[1], tmpCobj);
-            JSScheduleWrapper::setTargetForNativeNode(node, tmpCobj);
+            tmpCObj = new JSScheduleWrapper();
+            tmpCObj->autorelease();
+            tmpCObj->setJSCallbackThis(argv[0]);
+            tmpCObj->setJSCallbackFunc(argv[1]);
+            if (isPureJSTarget) {
+                tmpCObj->setPureJSTarget(tmpObj);
+            }
+            
+            JSScheduleWrapper::setTargetForSchedule(argv[1], tmpCObj);
+            JSScheduleWrapper::setTargetForJSObject(tmpObj, tmpCObj);
         }
         
-        sched->scheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), tmpCobj, interval, repeat, delay, paused);
+        sched->scheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), tmpCObj, interval, repeat, delay, paused);
                 
         JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
     }
-    return JS_TRUE;
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
 }
 
+JSBool js_CCScheduler_unscheduleCallbackForTarget(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    jsval *argv = JS_ARGV(cx, vp);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	TEST_NATIVE_OBJECT(cx, cobj)
+    
+	if (argc == 2) {
+		do {
+			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+            
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+			// If there aren't any targets, just return true.
+			// Otherwise, the for loop will break immediately.
+			// It will lead to logic errors.
+			// For details to reproduce it, please refer to SchedulerTest/SchedulerUpdate.
+            if(! arr) return JS_TRUE;
+            
+            JSScheduleWrapper* wrapper = NULL;
+            for(unsigned int i = 0; i < arr->count(); ++i) {
+                wrapper = (JSScheduleWrapper*)arr->objectAtIndex(i);
+                if(wrapper && wrapper->getJSCallbackFunc() == argv[1]) {
+                    cobj->unscheduleSelector(schedule_selector(JSScheduleWrapper::scheduleFunc), wrapper);
+                    JSScheduleWrapper::removeTargetForJSObject(tmpObj, wrapper);
+                    break;
+                }
+            }
+		} while (0);
+        
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCScheduler_unscheduleAll(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 0) {
+        cobj->unscheduleAll();
+        JSScheduleWrapper::removeAllTargets();
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
+	}
+    
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCScheduler_unscheduleAllCallbacksWithMinPriority(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 1) {
+		int arg0;
+		ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+		cobj->unscheduleAllWithMinPriority(arg0);
+        JSScheduleWrapper::removeAllTargetsForMinPriority(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
+		return JS_TRUE;
+	}
+    
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
 
 
 JSBool js_cocos2dx_CCScheduler_pauseTarget(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-	    
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy;
+    JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCScheduler *sched = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+    
 	if (argc == 1) {
-		cocos2d::CCNode* arg0;
 		do {
-			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			JS_GET_NATIVE_PROXY(proxy, tmpObj);
-			arg0 = (cocos2d::CCNode*)(proxy ? proxy->ptr : NULL);
-			TEST_NATIVE_OBJECT(cx, arg0)
-            CCArray *arr = JSScheduleWrapper::getTargetForNativeNode(arg0);
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
             if(! arr) return JS_TRUE;
             for(unsigned int i = 0; i < arr->count(); ++i) {
                 if(arr->objectAtIndex(i)) {
-                    arg0->getScheduler()->pauseTarget(arr->objectAtIndex(i));
+                    sched->pauseTarget(arr->objectAtIndex(i));
                 }
             }
 
 		} while (0);
-		//cobj->pauseTarget(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-
 
 JSBool js_cocos2dx_CCScheduler_resumeTarget(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy;
+    JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCScheduler *sched = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
     
 	if (argc == 1) {
-		cocos2d::CCNode* arg0;
 		do {
-			js_proxy_t *proxy;
 			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
-			JS_GET_NATIVE_PROXY(proxy, tmpObj);
-			arg0 = (cocos2d::CCNode*)(proxy ? proxy->ptr : NULL);
-			TEST_NATIVE_OBJECT(cx, arg0)
-            CCArray *arr = JSScheduleWrapper::getTargetForNativeNode(arg0);
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
             if(! arr) return JS_TRUE;
             for(unsigned int i = 0; i < arr->count(); ++i) {
                 if(arr->objectAtIndex(i)) {
-                    arg0->getScheduler()->resumeTarget(arr->objectAtIndex(i));
+                    sched->resumeTarget(arr->objectAtIndex(i));
                 }
             }
             
 		} while (0);
-		//cobj->pauseTarget(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	}
 	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
 
-
+JSBool js_cocos2dx_CCScheduler_isTargetPaused(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCScheduler* cobj = (cocos2d::CCScheduler *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 1) {
+        JSBool ret = JS_FALSE;
+		do {
+			JSObject *tmpObj = JSVAL_TO_OBJECT(argv[0]);
+            CCArray *arr = JSScheduleWrapper::getTargetForJSObject(tmpObj);
+            if(! arr) return JS_TRUE;
+            for(unsigned int i = 0; i < arr->count(); ++i) {
+                if(arr->objectAtIndex(i)) {
+                    ret = cobj->isTargetPaused(arr->objectAtIndex(i)) ? JS_TRUE : JS_FALSE;
+                    // break directly since all targets have the same `pause` status.
+                    break;
+                }
+            }
+		} while (0);
+        JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(ret));
+		return JS_TRUE;
+	}
+    
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
 
 JSBool js_doNothing(JSContext *cx, uint32_t argc, jsval *vp) {
     return JS_TRUE;
 }
-
-
 
 JSBool js_forceGC(JSContext *cx, uint32_t argc, jsval *vp) {
     JSRuntime *rt = JS_GetRuntime(cx);
@@ -1343,6 +2092,7 @@ JSBool js_cocos2dx_retain(JSContext *cx, uint32_t argc, jsval *vp)
 			return JS_TRUE;
 		}
 	}
+    JS_ReportError(cx, "Invalid Native Object.");
 	return JS_FALSE;
 }
 
@@ -1357,6 +2107,7 @@ JSBool js_cocos2dx_release(JSContext *cx, uint32_t argc, jsval *vp)
 			return JS_TRUE;
 		}
 	}
+    JS_ReportError(cx, "Invalid Native Object.");
 	return JS_FALSE;
 }
 
@@ -1382,6 +2133,8 @@ JSBool js_cocos2dx_CCSet_constructor(JSContext *cx, uint32_t argc, jsval *vp)
 		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 		return JS_TRUE;
 	}
+    
+    JS_ReportError(cx, "Error in js_cocos2dx_CCSet_constructor");
 	return JS_FALSE;
 }
 
@@ -1389,25 +2142,28 @@ JSBool js_cocos2dx_CCNode_setPosition(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    JSBool ok = JS_TRUE;
 	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
 	cocos2d::CCNode* cobj = (cocos2d::CCNode *)(proxy ? proxy->ptr : NULL);
 	TEST_NATIVE_OBJECT(cx, cobj)
     
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+        ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		cobj->setPosition(arg0);
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	} if (argc == 2) {
         double x;
-        if( ! JS_ValueToNumber(cx, argv[0], &x ) ) {
-            return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[0], &x );
         double y;
-        if( ! JS_ValueToNumber(cx, argv[1], &y ) ) {
-            return JS_FALSE;
-        }
-        cobj->setPosition(CCPoint(x,y));
+        ok &= JS_ValueToNumber(cx, argv[1], &y );
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
+        cobj->setPosition(ccp(x,y));
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
         return JS_TRUE;
     }
 	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
@@ -1419,25 +2175,27 @@ JSBool js_cocos2dx_CCSprite_setPosition(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    JSBool ok = JS_TRUE;
 	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
 	cocos2d::CCSprite* cobj = (cocos2d::CCSprite *)(proxy ? proxy->ptr : NULL);
 	TEST_NATIVE_OBJECT(cx, cobj)
     
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		cobj->setPosition(arg0);
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
 		return JS_TRUE;
 	} if (argc == 2) {
         double x;
-        if( ! JS_ValueToNumber(cx, argv[0], &x ) ) {
-                return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[0], &x );
         double y;
-        if( ! JS_ValueToNumber(cx, argv[1], &y ) ) {
-                return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[1], &y );
+
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         cobj->setPosition(CCPoint(x,y));
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
         return JS_TRUE;
     }
 	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
@@ -1449,6 +2207,7 @@ JSBool js_cocos2dx_CCTMXLayer_tileFlagsAt(JSContext *cx, uint32_t argc, jsval *v
 {
 	jsval *argv = JS_ARGV(cx, vp);
 	JSObject *obj;
+    JSBool ok = JS_TRUE;
 	cocos2d::CCTMXLayer* cobj;
 	obj = JS_THIS_OBJECT(cx, vp);
 	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
@@ -1457,7 +2216,7 @@ JSBool js_cocos2dx_CCTMXLayer_tileFlagsAt(JSContext *cx, uint32_t argc, jsval *v
     
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::ccTMXTileFlags flags;
 		unsigned int ret = cobj->tileGIDAt(arg0, &flags);
 		jsval jsret;
@@ -1465,9 +2224,9 @@ JSBool js_cocos2dx_CCTMXLayer_tileFlagsAt(JSContext *cx, uint32_t argc, jsval *v
 		JS_SET_RVAL(cx, vp, jsret);
 		return JS_TRUE;
 	}
+    JS_ReportError(cx, "wrong number of arguments");
     return JS_FALSE;
 }
-
 
 template<class T>
 JSBool js_BezierActions_create(JSContext *cx, uint32_t argc, jsval *vp) {
@@ -1519,22 +2278,20 @@ JSBool js_BezierActions_create(JSContext *cx, uint32_t argc, jsval *vp) {
 template<class T>
 JSBool js_CardinalSplineActions_create(JSContext *cx, uint32_t argc, jsval *vp) {
 	jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
     
     if (argc == 3) {
         double dur;
-        if( ! JS_ValueToNumber(cx, argv[0], &dur) ) {
-            return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[0], &dur);
         
         int num;
         CCPoint *arr;
-        jsval_to_ccarray_of_CCPoint(cx, argv[1], &arr, &num);
+        ok &= jsval_to_ccarray_of_CCPoint(cx, argv[1], &arr, &num);
         
         double ten;
-        if( ! JS_ValueToNumber(cx, argv[2], &ten) ) {
-            return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[2], &ten);
         
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         
         CCPointArray *points = CCPointArray::create(num);
         
@@ -1573,17 +2330,17 @@ JSBool js_CardinalSplineActions_create(JSContext *cx, uint32_t argc, jsval *vp) 
 template<class T>
 JSBool js_CatmullRomActions_create(JSContext *cx, uint32_t argc, jsval *vp) {
 	jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
     
     if (argc == 2) {
         double dur;
-        if( ! JS_ValueToNumber(cx, argv[0], &dur) ) {
-            return JS_FALSE;
-        }
+        ok &= JS_ValueToNumber(cx, argv[0], &dur);
         
         int num;
         CCPoint *arr;
-        jsval_to_ccarray_of_CCPoint(cx, argv[1], &arr, &num);
+        ok &= jsval_to_ccarray_of_CCPoint(cx, argv[1], &arr, &num);
         
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         
         CCPointArray *points = CCPointArray::create(num);
         
@@ -1645,16 +2402,39 @@ JSBool JSB_CCCatmullRomTo_actionWithDuration(JSContext *cx, uint32_t argc, jsval
 	return js_CatmullRomActions_create<cocos2d::CCCatmullRomTo>(cx, argc, vp);
 }
 
+JSBool js_cocos2dx_ccGLEnableVertexAttribs(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    JSBool ok = JS_TRUE;
+	jsval *argv = JS_ARGV(cx, vp);
+    
+	if (argc == 1) {
+		unsigned int arg0;
+		ok &= jsval_to_uint32(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
+		ccGLEnableVertexAttribs(arg0);
+		JS_SET_RVAL(cx, vp, JSVAL_NULL);
+		return JS_TRUE;
+	}
+	
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+	return JS_FALSE;
+}
+
+
+
 JSBool js_cocos2dx_ccpAdd(JSContext *cx, uint32_t argc, jsval *vp)
 {
+    JSBool ok = JS_TRUE;
 	jsval *argv = JS_ARGV(cx, vp);
     
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpAdd(arg0, arg1);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1666,16 +2446,20 @@ JSBool js_cocos2dx_ccpAdd(JSContext *cx, uint32_t argc, jsval *vp)
 	return JS_FALSE;
 }
 
+
+
 JSBool js_cocos2dx_ccpDistance(JSContext *cx, uint32_t argc, jsval *vp)
 {
+    JSBool ok = JS_TRUE;
 	jsval *argv = JS_ARGV(cx, vp);
     
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		float ret = ccpDistance(arg0, arg1);
 		
 		jsval jsret = DOUBLE_TO_JSVAL(ret);
@@ -1690,15 +2474,16 @@ JSBool js_cocos2dx_ccpDistance(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpClamp(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 3) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
 		cocos2d::CCPoint arg2;
-		arg1 = jsval_to_ccpoint(cx, argv[2]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[2], &arg2);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpClamp(arg0, arg1, arg2);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1713,11 +2498,11 @@ JSBool js_cocos2dx_ccpClamp(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpLengthSQ(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
-
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		float ret = ccpLengthSQ(arg0);
 
 		jsval jsret = DOUBLE_TO_JSVAL(ret);
@@ -1733,10 +2518,11 @@ JSBool js_cocos2dx_ccpLengthSQ(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpLength(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+        ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 
 		float ret = ccpLength(arg0);
 
@@ -1753,11 +2539,12 @@ JSBool js_cocos2dx_ccpLength(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpNeg(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
-               
+        ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpNeg(arg0);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1773,13 +2560,14 @@ JSBool js_cocos2dx_ccpNeg(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpSub(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpSub(arg0, arg1);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1795,16 +2583,15 @@ JSBool js_cocos2dx_ccpSub(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpMult(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
-		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
-
+        cocos2d::CCPoint arg0;
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        
 		double arg1;
-		if( ! JS_ValueToNumber(cx, argv[1], &arg1) ) {
-		  return JS_FALSE;
-		}
-		
+		ok &= JS_ValueToNumber(cx, argv[1], &arg1);
+        
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 		
 		CCPoint ret = ccpMult(arg0, arg1);
 		
@@ -1821,13 +2608,14 @@ JSBool js_cocos2dx_ccpMult(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpMidpoint(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpMidpoint(arg0, arg1);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1844,13 +2632,14 @@ JSBool js_cocos2dx_ccpMidpoint(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpDot(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		float ret = ccpDot(arg0, arg1);
 		
 		jsval jsret = DOUBLE_TO_JSVAL(ret);
@@ -1866,13 +2655,14 @@ JSBool js_cocos2dx_ccpDot(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpCross(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		float ret = ccpCross(arg0, arg1);
 		
 		jsval jsret = DOUBLE_TO_JSVAL(ret);
@@ -1888,11 +2678,11 @@ JSBool js_cocos2dx_ccpCross(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpPerp(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
-      
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         
 		CCPoint ret = ccpPerp(arg0);
 		
@@ -1910,11 +2700,11 @@ JSBool js_cocos2dx_ccpPerp(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpRPerp(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
-        
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         
 		CCPoint ret = ccpRPerp(arg0);
 		
@@ -1932,13 +2722,14 @@ JSBool js_cocos2dx_ccpRPerp(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpProject(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpProject(arg0, arg1);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1954,13 +2745,14 @@ JSBool js_cocos2dx_ccpProject(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpRotate(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 2) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
 		cocos2d::CCPoint arg1;
-		arg1 = jsval_to_ccpoint(cx, argv[1]);
-		
+		ok &= jsval_to_ccpoint(cx, argv[1], &arg1);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        
 		CCPoint ret = ccpRotate(arg0, arg1);
 		
 		jsval jsret = ccpoint_to_jsval(cx, ret);
@@ -1976,10 +2768,11 @@ JSBool js_cocos2dx_ccpRotate(JSContext *cx, uint32_t argc, jsval *vp)
 JSBool js_cocos2dx_ccpNormalize(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	jsval *argv = JS_ARGV(cx, vp);
-    
+    JSBool ok = JS_TRUE;
 	if (argc == 1) {
 		cocos2d::CCPoint arg0;
-		arg0 = jsval_to_ccpoint(cx, argv[0]);
+		ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         
 		CCPoint ret = ccpNormalize(arg0);
 		
@@ -1992,34 +2785,6 @@ JSBool js_cocos2dx_ccpNormalize(JSContext *cx, uint32_t argc, jsval *vp)
     JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
 	return JS_FALSE;
 }
-
-
-
-extern JSObject* js_cocos2dx_CCNode_prototype;
-extern JSObject* js_cocos2dx_CCLayerColor_prototype;
-extern JSObject* js_cocos2dx_CCSprite_prototype;
-extern JSObject* js_cocos2dx_CCTMXLayer_prototype;
-extern JSObject* js_cocos2dx_CCAction_prototype;
-extern JSObject* js_cocos2dx_CCAnimation_prototype;
-extern JSObject* js_cocos2dx_CCMenuItem_prototype;
-extern JSObject* js_cocos2dx_CCSpriteFrame_prototype;
-extern JSObject* js_cocos2dx_CCSet_prototype;
-extern JSObject* js_cocos2dx_CCSprite_prototype;
-extern JSObject* js_cocos2dx_CCSpriteBatchNode_prototype;
-//extern JSObject* js_cocos2dx_CCMotionStreak_prototype;
-extern JSObject* js_cocos2dx_CCAtlasNode_prototype;
-extern JSObject* js_cocos2dx_CCParticleBatchNode_prototype;
-extern JSObject* js_cocos2dx_CCParticleSystem_prototype;
-extern JSObject* js_cocos2dx_CCCatmullRomBy_prototype;
-extern JSObject* js_cocos2dx_CCCatmullRomTo_prototype;
-extern JSObject* js_cocos2dx_CCCardinalSplineTo_prototype;
-extern JSObject* js_cocos2dx_CCCardinalSplineBy_prototype;
-extern JSObject* js_cocos2dx_CCBezierTo_prototype;
-extern JSObject* js_cocos2dx_CCBezierBy_prototype;
-extern JSObject* js_cocos2dx_CCScheduler_prototype;
-extern JSObject* js_cocos2dx_CCDrawNode_prototype;
-extern JSObject* js_cocos2dx_CCTexture2D_prototype;
-extern JSObject* js_cocos2dx_CCMenu_prototype;
 
 // setBlendFunc
 template<class T>
@@ -2035,8 +2800,8 @@ JSBool js_cocos2dx_setBlendFunc(JSContext *cx, uint32_t argc, jsval *vp)
     if (argc == 2)
     {
         GLenum src, dst;
-        JS_ValueToInt32(cx, argv[0], (int32_t*)&src);
-        JS_ValueToInt32(cx, argv[1], (int32_t*)&dst);
+        jsval_to_int32(cx, argv[0], (int32_t*)&src);
+        jsval_to_int32(cx, argv[1], (int32_t*)&dst);
         ccBlendFunc blendFunc = {src, dst};
         cobj->setBlendFunc(blendFunc);
         return JS_TRUE;
@@ -2097,15 +2862,14 @@ JSBool js_cocos2dx_CCTexture2D_setTexParameters(JSContext *cx, uint32_t argc, js
         jsval *argvp = JS_ARGV(cx,vp);
         JSBool ok = JS_TRUE;
 
-        GLint arg0, arg1, arg2, arg3;
+        GLuint arg0, arg1, arg2, arg3;
 
-        ok &= JS_ValueToInt32(cx, *argvp++, &arg0);
-        ok &= JS_ValueToInt32(cx, *argvp++, &arg1);
-        ok &= JS_ValueToInt32(cx, *argvp++, &arg2);
-        ok &= JS_ValueToInt32(cx, *argvp++, &arg3);
+        ok &= jsval_to_uint32(cx, *argvp++, &arg0);
+        ok &= jsval_to_uint32(cx, *argvp++, &arg1);
+        ok &= jsval_to_uint32(cx, *argvp++, &arg2);
+        ok &= jsval_to_uint32(cx, *argvp++, &arg3);
 
-        if( ! ok )
-            return JS_FALSE;
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
 
         ccTexParams param = { arg0, arg1, arg2, arg3 };
 
@@ -2122,40 +2886,43 @@ JSBool js_cocos2dx_CCTexture2D_setTexParameters(JSContext *cx, uint32_t argc, js
 JSBool js_cocos2dx_CCMenu_alignItemsInRows(JSContext *cx, uint32_t argc, jsval *vp)
 {
     JSObject* jsthis = (JSObject *)JS_THIS_OBJECT(cx, vp);
+    JSBool ok = JS_TRUE;
     js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, jsthis);
     CCMenu* cobj = (CCMenu*)(proxy ? proxy->ptr : NULL);
     TEST_NATIVE_OBJECT(cx, cobj)
 
     jsval *argvp = JS_ARGV(cx,vp);
 
-    CCArray* pArray = jsvals_variadic_to_ccarray(cx, argvp, argc);
-    if (pArray)
+    CCArray* pArray = NULL;
+    ok &= jsvals_variadic_to_ccarray(cx, argvp, argc, &pArray);
+    if (ok && pArray)
     {
         cobj->alignItemsInRowsWithArray(pArray);
         JS_SET_RVAL(cx, vp, JSVAL_VOID);
         return JS_TRUE;
     }
-
+    JS_ReportError(cx, "Error in js_cocos2dx_CCMenu_alignItemsInRows");
     return JS_FALSE;
 }
 
 JSBool js_cocos2dx_CCMenu_alignItemsInColumns(JSContext *cx, uint32_t argc, jsval *vp)
 {
     JSObject* jsthis = (JSObject *)JS_THIS_OBJECT(cx, vp);
+    JSBool ok = JS_TRUE;
     js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, jsthis);
     CCMenu* cobj = (CCMenu*)(proxy ? proxy->ptr : NULL);
     TEST_NATIVE_OBJECT(cx, cobj)
 
     jsval *argvp = JS_ARGV(cx,vp);
-
-    CCArray* pArray = jsvals_variadic_to_ccarray(cx, argvp, argc);
-    if (pArray)
+    CCArray* pArray = NULL;
+    ok &= jsvals_variadic_to_ccarray(cx, argvp, argc, &pArray);
+    if (ok && pArray)
     {
         cobj->alignItemsInColumnsWithArray(pArray);
         JS_SET_RVAL(cx, vp, JSVAL_VOID);
         return JS_TRUE;
     }
-
+    JS_ReportError(cx, "Error in js_cocos2dx_CCMenu_alignItemsInColumns");
     return JS_FALSE;
 }
 
@@ -2163,6 +2930,7 @@ JSBool js_cocos2dx_CCMenu_alignItemsInColumns(JSContext *cx, uint32_t argc, jsva
 JSBool js_cocos2dx_CCTMXLayer_getTileFlagsAt(JSContext *cx, uint32_t argc, jsval *vp)
 {
     jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
     JSObject *obj;
     CCTMXLayer* cobj;
     obj = JS_THIS_OBJECT(cx, vp);
@@ -2172,7 +2940,9 @@ JSBool js_cocos2dx_CCTMXLayer_getTileFlagsAt(JSContext *cx, uint32_t argc, jsval
     if (argc == 1)
     {
         ccTMXTileFlags flags;
-        CCPoint arg0 = jsval_to_ccpoint(cx, argv[0]);
+        CCPoint arg0;
+        ok &= jsval_to_ccpoint(cx, argv[0], &arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
         cobj->tileGIDAt(arg0, &flags);
         
         JS_SET_RVAL(cx, vp, UINT_TO_JSVAL((uint32_t)flags));
@@ -2196,23 +2966,25 @@ JSBool js_cocos2dx_CCDrawNode_drawPolygon(JSContext *cx, uint32_t argc, jsval *v
     if ( argc == 4) {
         jsval *argvp = JS_ARGV(cx,vp);
         JSBool ok = JS_TRUE;
-        JSObject *argArray; ccColor4F argFillColor; double argWidth; ccColor4F argBorderColor; 
+        JSObject *argArray = NULL;
+        ccColor4F argFillColor = ccc4f(0.0f, 0.0f, 0.0f, 0.0f);
+        double argWidth = 0.0;
+        ccColor4F argBorderColor = ccc4f(0.0f, 0.0f, 0.0f, 0.0f);
 
+        // Points
         ok &= JS_ValueToObject(cx, *argvp++, &argArray);
-        if( ! (argArray && JS_IsArrayObject(cx, argArray) ) )
-            return JS_FALSE;
+        JSB_PRECONDITION2( (argArray && JS_IsArrayObject(cx, argArray)) , cx, JS_FALSE, "Vertex should be anArray object");
 
-        JSObject *tmp_arg;
-        ok &= JS_ValueToObject( cx, *argvp++, &tmp_arg );
-        argFillColor = *(ccColor4F*)JS_GetArrayBufferViewData( tmp_arg, cx );
+        // Color 4F
+        ok &= jsval_to_cccolor4f(cx, *argvp++, &argFillColor);
 
+        // Width
         ok &= JS_ValueToNumber( cx, *argvp++, &argWidth );
 
-        ok &= JS_ValueToObject( cx, *argvp++, &tmp_arg );
-        argBorderColor = *(ccColor4F*)JS_GetArrayBufferViewData( tmp_arg, cx );
+        // Color Border (4F)
+        ok &= jsval_to_cccolor4f(cx, *argvp++, &argBorderColor);
 
-        if( ! ok )
-            return JS_FALSE;
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error parsing arguments");
 
         {
             uint32_t l;
@@ -2222,12 +2994,13 @@ JSBool js_cocos2dx_CCDrawNode_drawPolygon(JSContext *cx, uint32_t argc, jsval *v
             CCPoint* verts = new CCPoint[ l ];
             CCPoint p;
 
-            for( int i=0; i<l; i++ ) {
+            for( uint32_t i=0; i<l; i++ ) {
                 jsval pointvp;
-                if( ! JS_GetElement(cx, argArray, i, &pointvp) )
-                    return JS_FALSE;
-                p = jsval_to_ccpoint(cx, pointvp);
-
+                ok &= JS_GetElement(cx, argArray, i, &pointvp);
+                JSB_PRECONDITION2(ok, cx, JS_FALSE, "JS_GetElement fails.");
+                
+                ok &= jsval_to_ccpoint(cx, pointvp, &p);
+                JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
                 verts[i] = p;
             }
 
@@ -2239,7 +3012,294 @@ JSBool js_cocos2dx_CCDrawNode_drawPolygon(JSContext *cx, uint32_t argc, jsval *v
     }
 
     JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 4);
-    return JS_FALSE;	
+    return JS_FALSE;
+}
+
+static JSBool jsval_to_string_vector(JSContext* cx, jsval v, std::vector<std::string>& ret) {
+    JSObject *jsobj;
+    JSBool ok = JS_ValueToObject( cx, v, &jsobj );
+    JSB_PRECONDITION2( ok, cx, JS_FALSE, "Error converting value to object");
+	JSB_PRECONDITION2( jsobj && JS_IsArrayObject( cx, jsobj),  cx, JS_FALSE, "Object must be an array");
+    
+    uint32_t len = 0;
+    JS_GetArrayLength(cx, jsobj, &len);
+
+    for (uint32_t i=0; i < len; i++) {
+        jsval elt;
+        if (JS_GetElement(cx, jsobj, i, &elt)) {
+            
+            if (JSVAL_IS_STRING(elt))
+            {
+                JSStringWrapper str(JSVAL_TO_STRING(elt));
+                ret.push_back(str.get());
+            }
+        }
+    }
+
+    return JS_TRUE;
+}
+
+
+static jsval string_vector_to_jsval(JSContext* cx, const std::vector<std::string>& arr) {
+    
+    JSObject *jsretArr = JS_NewArrayObject(cx, 0, NULL);
+    
+    int i = 0;
+    for(std::vector<std::string>::const_iterator iter = arr.begin(); iter != arr.end(); ++iter, ++i) {
+        jsval arrElement = c_string_to_jsval(cx, iter->c_str());
+        if(!JS_SetElement(cx, jsretArr, i, &arrElement)) {
+            break;
+        }
+    }
+    return OBJECT_TO_JSVAL(jsretArr);
+}
+
+JSBool js_cocos2dx_CCFileUtils_setSearchResolutionsOrder(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCFileUtils* cobj = (cocos2d::CCFileUtils *)(proxy ? proxy->ptr : NULL);
+    JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    
+    if (argc == 1) {
+        std::vector<std::string> arg0;
+        ok &= jsval_to_string_vector(cx, argv[0], arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        cobj->setSearchResolutionsOrder(arg0);
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+    return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCFileUtils_setSearchPaths(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCFileUtils* cobj = (cocos2d::CCFileUtils *)(proxy ? proxy->ptr : NULL);
+    JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    
+    if (argc == 1) {
+        std::vector<std::string> arg0;
+        ok &= jsval_to_string_vector(cx, argv[0], arg0);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        cobj->setSearchPaths(arg0);
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 1);
+    return JS_FALSE;
+}
+JSBool js_cocos2dx_CCFileUtils_getSearchPaths(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCFileUtils* cobj = (cocos2d::CCFileUtils *)(proxy ? proxy->ptr : NULL);
+    JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    
+    if (argc == 0) {
+        std::vector<std::string> ret = cobj->getSearchPaths();
+        jsval jsret;
+        jsret = string_vector_to_jsval(cx, ret);
+        JS_SET_RVAL(cx, vp, jsret);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 0);
+    return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCFileUtils_getStringFromFile(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    jsval *argv = JS_ARGV(cx, vp);
+    JSBool ok = JS_TRUE;
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCFileUtils* cobj = (cocos2d::CCFileUtils *)(proxy ? proxy->ptr : NULL);
+    JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    
+    if (argc == 1) {
+        const char* arg0;
+        std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        unsigned long size = 0;
+        unsigned char* data = cobj->getFileData(arg0, "rb", &size);
+        if (data && size > 0) {
+            //JSString* str = JS_NewStringCopyN(cx, (const char*)ret, (size_t)size);
+            jsval jsret = c_string_to_jsval(cx, (char*)data);
+            JS_SET_RVAL(cx, vp, jsret);
+            return JS_TRUE;
+        }
+        JS_ReportError(cx, "get file(%s) data fails", arg0);
+        return JS_FALSE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 3);
+    return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCFileUtils_getByteArrayFromFile(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    // TODO:
+    CCAssert(false, "not implemented!");
+    return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCFileUtils_getSearchResolutionsOrder(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);
+    js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+    cocos2d::CCFileUtils* cobj = (cocos2d::CCFileUtils *)(proxy ? proxy->ptr : NULL);
+    JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    
+    if (argc == 0) {
+        std::vector<std::string> ret = cobj->getSearchResolutionsOrder();
+        jsval jsret;
+        jsret = string_vector_to_jsval(cx, ret);
+        JS_SET_RVAL(cx, vp, jsret);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 0);
+    return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCGLProgram_setUniformLocationWith4f(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCGLProgram* cobj = (cocos2d::CCGLProgram *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+    int arg0;
+    double arg1;
+    double arg2;
+    double arg3;
+    double arg4;
+    ok &= jsval_to_int32(cx, argv[0], (int32_t *)&arg0);
+    ok &= JS_ValueToNumber(cx, argv[1], &arg1);
+    
+    if(argc == 2) {
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+        cobj->setUniformLocationWith1f(arg0, arg1);
+    }
+	if (argc == 3) {
+        ok &= JS_ValueToNumber(cx, argv[2], &arg2);
+		JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+		cobj->setUniformLocationWith2f(arg0, arg1, arg2);
+	}
+    if(argc == 4) {
+        ok &= JS_ValueToNumber(cx, argv[3], &arg3);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+		cobj->setUniformLocationWith3f(arg0, arg1, arg2, arg3);
+    }
+    if(argc == 5) {
+        ok &= JS_ValueToNumber(cx, argv[4], &arg4);
+        JSB_PRECONDITION2(ok, cx, JS_FALSE, "Error processing arguments");
+		cobj->setUniformLocationWith4f(arg0, arg1, arg2, arg3, arg4);
+    }
+    
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 5);
+	return JS_FALSE;
+}
+
+JSBool js_cocos2dx_CCGLProgram_create(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+    if(argc != 2) {
+        JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 2);
+        return JS_FALSE;
+    }
+    
+    const char *arg0, *arg1;
+    std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+    std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
+
+    CCGLProgram* ret = new CCGLProgram();
+    ret->autorelease();
+    
+    ret->initWithVertexShaderFilename(arg0, arg1);
+    
+    jsval jsret;
+    do {
+        if (ret) {
+            js_proxy_t *p;
+            JS_GET_PROXY(p, ret);
+            if (p) {
+                jsret = OBJECT_TO_JSVAL(p->obj);
+            } else {
+                // create a new js obj of that class
+                js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::CCGLProgram>(cx, ret);
+                jsret = OBJECT_TO_JSVAL(proxy->obj);
+            }
+        } else {
+            jsret = JSVAL_NULL;
+        }
+    } while (0);
+    JS_SET_RVAL(cx, vp, jsret);
+    return JS_TRUE;
+
+}
+
+
+JSBool js_cocos2dx_CCGLProgram_createWithString(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	jsval *argv = JS_ARGV(cx, vp);
+	JSBool ok = JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx,  vp);
+    if(argc != 2) {
+        JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 2);
+        return JS_FALSE;
+    }
+    
+    const char *arg0, *arg1;
+    std::string arg0_tmp; ok &= jsval_to_std_string(cx, argv[0], &arg0_tmp); arg0 = arg0_tmp.c_str();
+    std::string arg1_tmp; ok &= jsval_to_std_string(cx, argv[1], &arg1_tmp); arg1 = arg1_tmp.c_str();
+    
+    CCGLProgram* ret = new CCGLProgram();
+    ret->initWithVertexShaderByteArray(arg0, arg1);
+    
+    jsval jsret;
+    do {
+        if (ret) {
+            js_proxy_t *p;
+            JS_GET_PROXY(p, ret);
+            if (p) {
+                jsret = OBJECT_TO_JSVAL(p->obj);
+            } else {
+                // create a new js obj of that class
+                js_proxy_t *proxy = js_get_or_create_proxy<cocos2d::CCGLProgram>(cx, ret);
+                jsret = OBJECT_TO_JSVAL(proxy->obj);
+            }
+        } else {
+            jsret = JSVAL_NULL;
+        }
+    } while (0);
+    JS_SET_RVAL(cx, vp, jsret);
+    return JS_TRUE;
+    
+}
+
+JSBool js_cocos2dx_CCGLProgram_getProgram(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	js_proxy_t *proxy; JS_GET_NATIVE_PROXY(proxy, obj);
+	cocos2d::CCGLProgram* cobj = (cocos2d::CCGLProgram *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2( cobj, cx, JS_FALSE, "Invalid Native Object");
+	if (argc == 0) {
+        GLuint ret = cobj->getProgram();
+        JS_SET_RVAL(cx, vp, UINT_TO_JSVAL((uint32_t)ret));
+		return JS_TRUE;
+	}
+    
+	JS_ReportError(cx, "wrong number of arguments: %d, was expecting %d", argc, 0);
+	return JS_FALSE;
 }
 
 void register_cocos2dx_js_extensions(JSContext* cx, JSObject* global)
@@ -2260,39 +3320,61 @@ void register_cocos2dx_js_extensions(JSContext* cx, JSObject* global)
 	JS_DefineFunction(cx, global, "__getPlatform", js_platform, 0, JSPROP_READONLY | JSPROP_PERMANENT);
 
 	JSObject *tmpObj;
-	JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "getChildren", js_cocos2dx_CCNode_getChildren, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "onExit", js_doNothing, 1, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "onEnter", js_doNothing, 1, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "onEnterTransitionDidFinish", js_doNothing, 0, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "onExitTransitionDidStart", js_doNothing, 0, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "init", js_doNothing, 0, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
 
-    JS_DefineFunction(cx, js_cocos2dx_CCScheduler_prototype, "resumeTarget", js_cocos2dx_CCScheduler_resumeTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCScheduler_prototype, "pauseTarget", js_cocos2dx_CCScheduler_pauseTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "schedule", js_CCNode_schedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "scheduleOnce", js_CCNode_scheduleOnce, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "unschedule", js_CCNode_unschedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCNode_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
     
-    JS_DefineFunction(cx, js_cocos2dx_CCScheduler_prototype, "scheduleCallbackForTarget", js_CCScheduler_schedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCScheduler_prototype, "unscheduleAllCallbacksForTarget", js_cocos2dx_CCScheduler_unscheduleAllSelectorsForTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCGLProgram_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCGLProgram_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCNode_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "onExit", js_doNothing, 1, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "onEnter", js_doNothing, 1, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "onEnterTransitionDidFinish", js_doNothing, 0, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "onExitTransitionDidStart", js_doNothing, 0, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "init", js_doNothing, 0, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "schedule", js_CCNode_schedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "scheduleOnce", js_CCNode_scheduleOnce, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "scheduleUpdateWithPriority", js_cocos2dx_CCNode_scheduleUpdateWithPriority, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "unscheduleUpdate", js_cocos2dx_CCNode_unscheduleUpdate, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "scheduleUpdate", js_cocos2dx_CCNode_scheduleUpdate, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "unschedule", js_CCNode_unschedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "unscheduleAllCallbacks", js_cocos2dx_CCNode_unscheduleAllSelectors, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCNode_prototype, "setPosition", js_cocos2dx_CCNode_setPosition, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     
+    JS_DefineFunction(cx, jsb_CCGLProgram_prototype, "setUniformLocationF32", js_cocos2dx_CCGLProgram_setUniformLocationWith4f, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCGLProgram_prototype, "getProgram", js_cocos2dx_CCGLProgram_getProgram, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "resumeTarget", js_cocos2dx_CCScheduler_resumeTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "pauseTarget", js_cocos2dx_CCScheduler_pauseTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "scheduleUpdateForTarget", js_CCScheduler_scheduleUpdateForTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "unscheduleUpdateForTarget", js_CCScheduler_unscheduleUpdateForTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "scheduleCallbackForTarget", js_CCScheduler_schedule, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "unscheduleCallbackForTarget", js_CCScheduler_unscheduleCallbackForTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "unscheduleAllCallbacksForTarget", js_cocos2dx_CCScheduler_unscheduleAllSelectorsForTarget, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "unscheduleAllCallbacks", js_cocos2dx_CCScheduler_unscheduleAll, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "unscheduleAllCallbacksWithMinPriority", js_cocos2dx_CCScheduler_unscheduleAllCallbacksWithMinPriority, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCScheduler_prototype, "isTargetPaused", js_cocos2dx_CCScheduler_isTargetPaused, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     
-    JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "setPosition", js_cocos2dx_CCNode_setPosition, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-
-    JS_DefineFunction(cx, js_cocos2dx_CCSprite_prototype, "setPosition", js_cocos2dx_CCSprite_setPosition, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     
-    JS_DefineFunction(cx, js_cocos2dx_CCTMXLayer_prototype, "getTileFlagsAt", js_cocos2dx_CCTMXLayer_getTileFlagsAt, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCSprite_prototype, "setPosition", js_cocos2dx_CCSprite_setPosition, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    
+    JS_DefineFunction(cx, jsb_CCTMXLayer_prototype, "getTileFlagsAt", js_cocos2dx_CCTMXLayer_getTileFlagsAt, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 
-    JS_DefineFunction(cx, js_cocos2dx_CCDrawNode_prototype, "drawPoly", js_cocos2dx_CCDrawNode_drawPolygon, 4, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCDrawNode_prototype, "setBlendFunc", js_cocos2dx_CCDrawNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCDrawNode_prototype, "drawPoly", js_cocos2dx_CCDrawNode_drawPolygon, 4, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCDrawNode_prototype, "setBlendFunc", js_cocos2dx_CCDrawNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
 
-    JS_DefineFunction(cx, js_cocos2dx_CCTexture2D_prototype, "setTexParameters", js_cocos2dx_CCTexture2D_setTexParameters, 4, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCMenu_prototype, "alignItemsInRows", js_cocos2dx_CCMenu_alignItemsInRows, 1, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCMenu_prototype, "alignItemsInColumns", js_cocos2dx_CCMenu_alignItemsInColumns, 1, JSPROP_ENUMERATE | JSPROP_SHARED | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCTexture2D_prototype, "setTexParameters", js_cocos2dx_CCTexture2D_setTexParameters, 4, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCMenu_prototype, "alignItemsInRows", js_cocos2dx_CCMenu_alignItemsInRows, 1, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCMenu_prototype, "alignItemsInColumns", js_cocos2dx_CCMenu_alignItemsInColumns, 1, JSPROP_ENUMERATE  | JSPROP_PERMANENT);
 
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "setSearchResolutionsOrder", js_cocos2dx_CCFileUtils_setSearchResolutionsOrder, 1, JSPROP_PERMANENT );
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "setSearchPaths", js_cocos2dx_CCFileUtils_setSearchPaths, 1, JSPROP_PERMANENT );
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "getSearchPaths", js_cocos2dx_CCFileUtils_getSearchPaths, 0, JSPROP_PERMANENT );
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "getSearchResolutionsOrder", js_cocos2dx_CCFileUtils_getSearchResolutionsOrder, 0, JSPROP_PERMANENT );
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "getStringFromFile", js_cocos2dx_CCFileUtils_getStringFromFile, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    
+    JS_DefineFunction(cx, jsb_CCFileUtils_prototype, "getByteArrayFromFile", js_cocos2dx_CCFileUtils_getByteArrayFromFile, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    
     tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.BezierBy; })()"));
     JS_DefineFunction(cx, tmpObj, "create", JSB_CCBezierBy_actionWithDuration, 2, JSPROP_READONLY | JSPROP_PERMANENT);
     
@@ -2310,34 +3392,25 @@ void register_cocos2dx_js_extensions(JSContext* cx, JSObject* global)
     
     tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.CatmullRomTo; })()"));
     JS_DefineFunction(cx, tmpObj, "create", JSB_CCCatmullRomTo_actionWithDuration, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-        
-	JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCNode_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
     
-    JS_DefineFunction(cx, js_cocos2dx_CCSprite_prototype, "setBlendFunc", js_cocos2dx_CCSprite_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCSpriteBatchNode_prototype, "setBlendFunc", js_cocos2dx_CCSpriteBatchNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    //JS_DefineFunction(cx, js_cocos2dx_CCMotionStreak_prototype, "setBlendFunc", js_cocos2dx_CCMotionStreak_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCAtlasNode_prototype, "setBlendFunc", js_cocos2dx_CCAtlasNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCParticleBatchNode_prototype, "setBlendFunc", js_cocos2dx_CCParticleBatchNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCLayerColor_prototype, "setBlendFunc", js_cocos2dx_CCLayerColor_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCParticleSystem_prototype, "setBlendFunc", js_cocos2dx_CCParticleSystem_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCSprite_prototype, "setBlendFunc", js_cocos2dx_CCSprite_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCSpriteBatchNode_prototype, "setBlendFunc", js_cocos2dx_CCSpriteBatchNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    //JS_DefineFunction(cx, jsb_CCMotionStreak_prototype, "setBlendFunc", js_cocos2dx_CCMotionStreak_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCAtlasNode_prototype, "setBlendFunc", js_cocos2dx_CCAtlasNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCParticleBatchNode_prototype, "setBlendFunc", js_cocos2dx_CCParticleBatchNode_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCLayerColor_prototype, "setBlendFunc", js_cocos2dx_CCLayerColor_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCParticleSystem_prototype, "setBlendFunc", js_cocos2dx_CCParticleSystem_setBlendFunc, 2, JSPROP_READONLY | JSPROP_PERMANENT);
 
-	JS_DefineFunction(cx, js_cocos2dx_CCAction_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCAction_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCAction_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCAnimation_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCAnimation_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCAnimation_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCSpriteFrame_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCSpriteFrame_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, js_cocos2dx_CCMenuItem_prototype, "setCallback", js_cocos2dx_CCMenuItem_setCallback, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    JS_DefineFunction(cx, js_cocos2dx_CCTMXLayer_prototype, "getTileFlagsAt", js_cocos2dx_CCTMXLayer_tileFlagsAt, 2, JSPROP_READONLY | JSPROP_PERMANENT);
-    
-    
-    
-	tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.Node.prototype; })()"));
-    JS_DefineFunction(cx, tmpObj, "unscheduleAllCallbacks", js_cocos2dx_CCNode_unscheduleAllSelectors, 1, JSPROP_READONLY | JSPROP_PERMANENT);
-	JS_DefineFunction(cx, tmpObj, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAction_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAction_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAction_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAnimation_prototype, "copy", js_cocos2dx_CCNode_copy, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAnimation_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCAnimation_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCSpriteFrame_prototype, "retain", js_cocos2dx_retain, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCSpriteFrame_prototype, "release", js_cocos2dx_release, 0, JSPROP_READONLY | JSPROP_PERMANENT);
+	JS_DefineFunction(cx, jsb_CCMenuItem_prototype, "setCallback", js_cocos2dx_CCMenuItem_setCallback, 2, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, jsb_CCTMXLayer_prototype, "getTileFlagsAt", js_cocos2dx_CCTMXLayer_tileFlagsAt, 2, JSPROP_READONLY | JSPROP_PERMANENT);
 
 	tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.Menu; })()"));
 	JS_DefineFunction(cx, tmpObj, "create", js_cocos2dx_CCMenu_create, 0, JSPROP_READONLY | JSPROP_PERMANENT);
@@ -2363,16 +3436,23 @@ void register_cocos2dx_js_extensions(JSContext* cx, JSObject* global)
 	JS_DefineFunction(cx, tmpObj, "create", js_cocos2dx_CCAnimation_create, 0, JSPROP_READONLY | JSPROP_PERMANENT);
     tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.LayerMultiplex; })()"));
     JS_DefineFunction(cx, tmpObj, "create", js_cocos2dx_CCLayerMultiplex_create, 0, JSPROP_READONLY | JSPROP_PERMANENT);
-
+    
 	JS_DefineFunction(cx, ns, "registerTargettedDelegate", js_cocos2dx_JSTouchDelegate_registerTargettedDelegate, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineFunction(cx, ns, "registerStandardDelegate", js_cocos2dx_JSTouchDelegate_registerStandardDelegate, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, ns, "unregisterTouchDelegate", js_cocos2dx_JSTouchDelegate_unregisterTouchDelegate, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 
 	tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.CallFunc; })()"));
 	JS_DefineFunction(cx, tmpObj, "create", js_callFunc, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 
+    
+	tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return cc.GLProgram; })()"));
+	JS_DefineFunction(cx, tmpObj, "create", js_cocos2dx_CCGLProgram_create, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+    JS_DefineFunction(cx, tmpObj, "createWithString", js_cocos2dx_CCGLProgram_createWithString, 1, JSPROP_READONLY | JSPROP_PERMANENT);
+
      tmpObj = JSVAL_TO_OBJECT(anonEvaluate(cx, global, "(function () { return this; })()"));
     JS_DefineFunction(cx, tmpObj, "garbageCollect", js_forceGC, 1, JSPROP_READONLY | JSPROP_PERMANENT);
 
+    JS_DefineFunction(cx, ns, "glEnableVertexAttribs", js_cocos2dx_ccGLEnableVertexAttribs, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     JS_DefineFunction(cx, ns, "pAdd", js_cocos2dx_ccpAdd, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     JS_DefineFunction(cx, ns, "pDistance", js_cocos2dx_ccpDistance, 1, JSPROP_READONLY | JSPROP_PERMANENT);
     JS_DefineFunction(cx, ns, "pSub", js_cocos2dx_ccpSub, 0, JSPROP_READONLY | JSPROP_PERMANENT);
@@ -2393,5 +3473,5 @@ void register_cocos2dx_js_extensions(JSContext* cx, JSObject* global)
     // add constructor for CCSet
     JSFunction *ccSetConstructor = JS_NewFunction(cx, js_cocos2dx_CCSet_constructor, 0, JSPROP_READONLY | JSPROP_PERMANENT, NULL, "constructor");
     JSObject *ctor = JS_GetFunctionObject(ccSetConstructor);
-    JS_LinkConstructorAndPrototype(cx, ctor, js_cocos2dx_CCSet_prototype);
+    JS_LinkConstructorAndPrototype(cx, ctor, jsb_CCSet_prototype);
 }

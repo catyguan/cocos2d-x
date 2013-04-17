@@ -62,6 +62,12 @@ public:
      */
     void removeObserver(CCObject *target,const char *name);
     
+    /** @brief Removes all notifications registered by this target
+     *  @param target The target of this notification.
+     *  @returns the number of observers removed
+     */
+    int removeAllObservers(CCObject *target);
+
     /** @brief Posts one notification event by name.
      *  @param name The name of this notification.
      */

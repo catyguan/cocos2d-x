@@ -8,15 +8,23 @@ LOCAL_MODULE_FILENAME := libscriptingcore-spidermonkey
 
 LOCAL_SRC_FILES := ScriptingCore.cpp \
                    cocos2d_specifics.cpp \
+                   jsb_cocos2dx_extension_manual.cpp \
                    js_manual_conversions.cpp \
                    cocosjs_manual_conversions.cpp \
                    js_bindings_chipmunk_manual.cpp \
                    js_bindings_chipmunk_functions.cpp \
                    js_bindings_chipmunk_auto_classes.cpp \
                    js_bindings_chipmunk_registration.cpp \
+                   js_bindings_system_functions.cpp \
+                   js_bindings_system_registration.cpp \
                    js_bindings_ccbreader.cpp \
                    js_bindings_core.cpp \
-                   generated/cocos2dx.cpp
+                   js_bindings_opengl.cpp \
+                   jsb_opengl_functions.cpp \
+                   jsb_opengl_manual.cpp \
+                   jsb_opengl_registration.cpp \
+                   generated/jsb_cocos2dx_auto.cpp \
+                   generated/jsb_cocos2dx_extension_auto.cpp 
 
 LOCAL_CFLAGS := -DCOCOS2D_JAVASCRIPT
 
