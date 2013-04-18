@@ -1074,13 +1074,6 @@ void CCNode::scheduleUpdateWithPriority(int priority)
     m_pScheduler->scheduleUpdateForTarget(this, priority, !m_bRunning);
 }
 
-void CCNode::scheduleUpdateWithPriorityLua(int nHandler, int priority)
-{
-    unscheduleUpdate();
-    m_nUpdateScriptHandler = nHandler;
-    m_pScheduler->scheduleUpdateForTarget(this, priority, !m_bRunning);
-}
-
 void CCNode::unscheduleUpdate()
 {
     m_pScheduler->unscheduleUpdateForTarget(this);    

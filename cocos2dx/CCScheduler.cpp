@@ -210,7 +210,6 @@ CCScheduler::CCScheduler(void)
 , m_pCurrentTarget(NULL)
 , m_bCurrentTargetSalvaged(false)
 , m_bUpdateHashLocked(false)
-, m_pScriptHandlerEntries(NULL)
 {
 
 }

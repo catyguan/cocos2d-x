@@ -433,11 +433,13 @@
     </ClCompile>
     <ClCompile Include="..\cocoa\CCValue.cpp">
       <Filter>cocoa</Filter>
+    </ClCompile>
     <ClCompile Include="..\platform\win32\CCFileUtilsWin32.cpp">
       <Filter>platform\win32</Filter>
     </ClCompile>
     <ClCompile Include="..\cocoa\CCValueSupport.cpp">
       <Filter>cocoa</Filter>
+    </ClCompile>
     <ClCompile Include="..\platform\CCFileUtils.cpp">
       <Filter>platform</Filter>
     </ClCompile>
@@ -899,16 +901,19 @@
     </ClInclude>
     <ClInclude Include="..\cocoa\CCValue.h">
       <Filter>cocoa</Filter>
+    </ClInclude>
     <ClInclude Include="..\platform\win32\CCFileUtilsWin32.h">
       <Filter>platform\win32</Filter>
     </ClInclude>
     <ClInclude Include="..\cocoa\CCValueSupport.h">
       <Filter>cocoa</Filter>
+    </ClInclude>
     <ClInclude Include="..\support\ccUTF8.h">
       <Filter>support</Filter>
     </ClInclude>
     <ClInclude Include="..\base_nodes\CCNode_Events.h">
       <Filter>base_nodes</Filter>
+    </ClInclude>
     <ClInclude Include="..\support\user_default\CCUserDefault.h">
       <Filter>support\user_default</Filter>
     </ClInclude>

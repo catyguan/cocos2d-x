@@ -52,10 +52,6 @@ typedef union {
 class CC_DLL CCValue
 {
 public:
-	static std::string EMPTY;
-	static CCValueArray EMPTY_PARAM;
-	
-public:
 	static const CCValue nullValue();
     static const CCValue intValue(const int intValue);
     static const CCValue numberValue(const double numberValue);
@@ -133,11 +129,11 @@ public:
 	bool isString() const {
 		return m_type==CCValueTypeString;
 	}
-    const std::string& stringValue(void) const {
+    const std::string stringValue(void) const {
 		if(m_type==CCValueTypeString) {
 			return m_fieldString;
 		}
-		return EMPTY;
+		return "";
     }
 
 	bool isMap() const {
@@ -196,7 +192,7 @@ public:
 
 	CCValue call(CCValueArray& params,bool throwErr);
 	bool callback(std::string err, CCValue result);
-	bool result(CCValue result){return callback(EMPTY, result);};
+	bool result(CCValue result){return callback("", result);};
 	bool error(std::string err){return callback(err, nullValue());};
 
 private:

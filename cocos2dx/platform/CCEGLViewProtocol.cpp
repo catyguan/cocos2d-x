@@ -156,7 +156,7 @@ void CCEGLViewProtocol::setScissorInPoints(float x , float y , float w , float h
 
 bool CCEGLViewProtocol::isScissorEnabled()
 {
-	return glIsEnabled(GL_SCISSOR_TEST);
+	return glIsEnabled(GL_SCISSOR_TEST)!=0;
 }
 
 CCRect CCEGLViewProtocol::getScissorRect()

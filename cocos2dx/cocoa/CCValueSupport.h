@@ -46,7 +46,7 @@ public:
 #define ccvpMap(params,idx)	(params.size()>idx?params[idx].mapValue():NULL)
 #define ccvpBoolean(params,idx)	(params.size()>idx?params[idx].booleanValue():false)
 #define ccvpInt(params,idx)	(params.size()>idx?params[idx].intValue():0)
-#define ccvpString(params,idx)	(params.size()>idx?params[idx].stringValue():CCValue::EMPTY)
+#define ccvpString(params,idx)	(params.size()>idx?params[idx].stringValue():std::string())
 #define ccvpSize(params, idx) (params.size()>idx?CCValueUtil::size(params[idx]):CCSizeMake(0,0))
 #define ccvpPoint(params, idx) (params.size()>idx?CCValueUtil::point(params[idx]):CCPointZero)
 #define ccvpColor(params, idx) (params.size()>idx?CCValueUtil::color4b(params[idx]):ccc4(0,0,0,255))

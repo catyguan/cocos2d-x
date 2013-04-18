@@ -29,7 +29,7 @@
 // webph headers in this way.
 #include "webp/decode.h"
 #else
-#include "decode.h"
+// #include "decode.h"
 #endif
 #include "ccMacros.h"
 #include <stdlib.h>
@@ -40,6 +40,7 @@ NS_CC_BEGIN
 
 bool CCImage::_initWithWebpData(void *pData, int nDataLen)
 {
+#ifdef __native_client__
 	bool bRet = false;
 	do
 	{
@@ -72,6 +73,9 @@ bool CCImage::_initWithWebpData(void *pData, int nDataLen)
         bRet = true;
 	} while (0);
 	return bRet;
+#else
+	return false;
+#endif
 }
 
 NS_CC_END

@@ -5,9 +5,6 @@
 NS_CC_BEGIN
 
 // CCValue
-std::string CCValue::EMPTY;
-CCValueArray CCValue::EMPTY_PARAM;
-
 const CCValue CCValue::nullValue()
 {
 	CCValue value;

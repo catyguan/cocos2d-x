@@ -60,10 +60,12 @@ THE SOFTWARE.
     #include "./compat/stdint.h"
 #endif
 
-#define _WINSOCKAPI_
 // Structure timeval has define in winsock.h, include windows.h for it.
 #include <Windows.h>
+#if !(defined(_WINSOCKAPI_))
+#define _WINSOCKAPI_
 #include <WinSock2.h>
+#endif
 
 struct timezone
 {
