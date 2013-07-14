@@ -13,6 +13,8 @@ enum TargetPlatform
     kTargetIpad,
     kTargetBlackBerry,
     kTargetNaCl,
+    kTargetEmscripten,
+    kTargetTizen
 };
 
 typedef void (CALLBACK *CCApplicationRunnable)(void* data, long mstick);

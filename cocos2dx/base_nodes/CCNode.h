@@ -49,6 +49,9 @@ class CCRGBAProtocol;
 class CCLabelProtocol;
 class CCScheduler;
 class CCActionManager;
+class CCComponent;
+class CCDictionary;
+class CCComponentContainer;
 
 /**
  * @addtogroup base_nodes
@@ -325,21 +328,21 @@ public:
      * @param x     X coordinate for position
      * @param y     Y coordinate for position
      */
-    void setPosition(float x, float y);
+    virtual void setPosition(float x, float y);
     /**
      * Gets position in a more efficient way, returns two number instead of a CCPoint object
      *
      * @see setPosition(float, float)
      */
-    void getPosition(float* x, float* y);
+    virtual void getPosition(float* x, float* y);
     /**
      * Gets/Sets x or y coordinate individually for position.
      * These methods are used in Lua and Javascript Bindings
      */
-    void  setPositionX(float x);
-    float getPositionX(void);
-    void  setPositionY(float y);
-    float getPositionY(void);
+    virtual void  setPositionX(float x);
+    virtual float getPositionX(void);
+    virtual void  setPositionY(float y);
+    virtual float getPositionY(void);
     
     
     /**
@@ -433,7 +436,7 @@ public:
      *
      * @return The untransformed size of the node.
      */
-    virtual const CCSize& getContentSize();
+    virtual const CCSize& getContentSize() const;
 
     
     /**
@@ -632,7 +635,7 @@ public:
      *
      * @return The amount of children.
      */
-    unsigned int getChildrenCount(void);
+    unsigned int getChildrenCount(void) const;
     
     /**
      * Sets the parent node
@@ -792,7 +795,7 @@ public:
      *
      * @return A interger that identifies the node.
      */
-    virtual int getTag();
+    virtual int getTag() const;
     /**
      * Changes the tag that is used to identify the node easily.
      *
@@ -1292,7 +1295,31 @@ public:
      *  @endcode
      */
     void setAdditionalTransform(const CCAffineTransform& additionalTransform);
+    
     /// @} end of Coordinate Converters
+
+      /// @{
+    /// @name component functions
+    /** 
+     *   gets a component by its name
+     */
+    CCComponent* getComponent(const char *pName) const;
+    
+    /** 
+     *   adds a component
+     */
+    virtual bool addComponent(CCComponent *pComponent);
+    
+    /** 
+     *   removes a component by its name      
+     */
+    virtual bool removeComponent(const char *pName);
+    
+    /**
+     *   removes all components
+     */
+    virtual void removeAllComponents();
+    /// @} end of component functions
 
 private:
     /// lazy allocs
@@ -1371,6 +1398,9 @@ protected:
                                           ///< Used by CCLayer and CCScene.
     
     bool m_bReorderChildDirty;          ///< children order dirty flag
+    
+    CCComponentContainer *m_pComponentContainer;        ///< Dictionary of components
+
 };
 
 //#pragma mark - CCNodeRGBA
