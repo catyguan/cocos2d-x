@@ -36,10 +36,10 @@ THE SOFTWARE.
 
 #ifndef CCAssert
 #if COCOS2D_DEBUG > 0
-extern bool CC_DLL cc_assert_script_compatible(const char *msg);
+
 #define CCAssert(cond, msg) do {                              \
       if (!(cond)) {                                          \
-        if (!cc_assert_script_compatible(msg) && strlen(msg)) \
+        if (strlen(msg)>0) \
           cocos2d::CCLog("Assert failed: %s", msg);           \
         CC_ASSERT(cond);                                      \
       } \

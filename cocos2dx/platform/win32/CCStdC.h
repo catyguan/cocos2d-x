@@ -99,11 +99,5 @@ int CC_DLL gettimeofday(struct timeval *, struct timezone *);
 
 NS_CC_END
 
-#else
-
-#include <winsock.h>
-
-#endif // __MINGW32__
-
 #endif  // __CC_STD_C_H__
 
