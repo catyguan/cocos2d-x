@@ -503,4 +503,140 @@ CCValue* CCValueBuilder::mapAddV(CCValueMap* map, const char* key)
 	return &(map->find(key)->second);
 }
 
+// CCValueReader
+static CCValue nullValue;
+CCValueReader::CCValueReader(CCValue* value)
+{
+	m_value = value;
+}
+
+CCValueReader::~CCValueReader()
+{
+
+}
+
+CCValue* CCValueReader::value()
+{
+	return m_value;
+}
+
+bool CCValueReader::isMap()
+{
+	return m_value->isMap();
+}
+
+CCValue* CCValueReader::get(const char* name)
+{
+	const CCValue* r = getNull(name);
+	if(r!=NULL)return (CCValue*) r;
+	return &nullValue;
+}
+
+CCValue* CCValueReader::getNull(const char* name)
+{
+	if(m_value->isMap()) {
+		CCValueMap* map = m_value->mapValue();
+		CCValueMapIterator it = map->find(name);
+		if(it!=map->end()) {
+			const CCValue* r = &(it->second);
+			return (CCValue*) r;
+		}
+	}
+	return NULL;
+}
+
+bool CCValueReader::beMap(const char* name)
+{
+	const CCValue* v = getNull(name);
+	if(v!=NULL && v->isMap()) {
+		if(m_value!=NULL) {
+			m_stack.push_back(m_value);
+		}
+		m_value = (CCValue*) v;
+		return true;
+	}
+	return false;
+}
+
+bool CCValueReader::beArray(const char* name)
+{
+	const CCValue* v = getNull(name);
+	if(v!=NULL && v->isArray()) {
+		if(m_value!=NULL) {
+			m_stack.push_back(m_value);
+		}
+		m_value = (CCValue*) v;
+		return true;
+	}
+	return false;
+}
+
+bool CCValueReader::isArray()
+{
+	return m_value->isArray();
+}
+
+int CCValueReader::arraySize()
+{
+	if(m_value->isArray()) {
+		return m_value->arrayValue()->size();
+	}
+	return 0;
+}
+
+CCValue* CCValueReader::getNull(int idx)
+{
+	if(m_value->isArray()) {
+		CCValueArray* a = m_value->arrayValue();
+		if(idx<(int) a->size()) {
+			return &a->at(idx);
+		}
+	}
+	return NULL;
+}
+CCValue* CCValueReader::get(int idx)
+{
+	CCValue* r = getNull(idx);
+	if(r!=NULL)return r;
+	return &nullValue;
+}
+
+bool CCValueReader::beMap(int idx)
+{
+	const CCValue* v = getNull(idx);
+	if(v!=NULL && v->isMap()) {
+		if(m_value!=NULL) {
+			m_stack.push_back(m_value);
+		}
+		m_value = (CCValue*) v;
+		return true;
+	}
+	return false;
+}
+
+bool CCValueReader::beArray(int idx)
+{
+	const CCValue* v = getNull(idx);
+	if(v!=NULL && v->isArray()) {
+		if(m_value!=NULL) {
+			m_stack.push_back(m_value);
+		}
+		m_value = (CCValue*) v;
+		return true;
+	}
+	return false;
+}
+
+void CCValueReader::pop()
+{
+	if(m_stack.size()>0) {
+		std::vector<CCValue*>::const_iterator it = m_stack.end();
+		it--;
+		m_value = *it;
+		m_stack.erase(it);
+	} else {
+		CC_ASSERT(false);
+	}
+}
+
 NS_CC_END

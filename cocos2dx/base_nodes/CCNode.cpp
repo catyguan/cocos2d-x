@@ -1592,6 +1592,7 @@ bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
 				} else {
 					if(h->call.canCall()) {
 						if(ps.size()==0) {
+							ps.push_back(CCValue::objectValue(this));
 							ps.push_back(CCValue::stringValue(name));
 							if(e!=NULL) {
 								ps.push_back(e->toValue());
@@ -1603,6 +1604,7 @@ bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
 				r = true;
 			}
 		}
+		ps.clear();
 	}
 	return r;
 }

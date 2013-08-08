@@ -258,6 +258,34 @@ protected:
 	CCVBItem* m_current;
 };
 
+class CC_DLL CCValueReader
+{
+public:
+	CCValueReader(CCValue* value);
+	~CCValueReader();
+
+	CCValue* value();
+
+	bool isMap();
+	CCValue* get(const char* name);
+	CCValue* getNull(const char* name);
+	bool beMap(const char* name);
+	bool beArray(const char* name);
+	
+	bool isArray();
+	int arraySize();
+	CCValue* get(int idx);
+	CCValue* getNull(int idx);
+	bool beMap(int idx);
+	bool beArray(int idx);
+	
+	void pop();
+
+protected:
+	std::vector<CCValue*> m_stack;
+	CCValue* m_value;
+};
+
 NS_CC_END
 
 #endif // __CCVALUE_H__
