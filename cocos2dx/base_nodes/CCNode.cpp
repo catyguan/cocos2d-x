@@ -1331,17 +1331,193 @@ void CCNode::removeAllComponents()
     m_pComponentContainer->removeAll();
 }
 
+// catyguan
+#include "../cocoa/CCValueSupport.h"
+// cc_call
 CC_BEGIN_CALLS(CCNode, CCObject)
-	CC_DEFINE_CALL(CCNode, visible)
+	CC_DEFINE_CALL(CCNode, addChild)
+	CC_DEFINE_CALL(CCNode, removeChild)
+	CC_DEFINE_CALL(CCNode, anchorPoint)
+	CC_DEFINE_CALL(CCNode, contentSize)
+	CC_DEFINE_CALL(CCNode, ignoreAnchorPointForPosition)
+	CC_DEFINE_CALL(CCNode, rotationX)
+	CC_DEFINE_CALL(CCNode, rotationY)
+	CC_DEFINE_CALL(CCNode, rotation)
+	CC_DEFINE_CALL(CCNode, positionX)
+	CC_DEFINE_CALL(CCNode, positionY)
+	CC_DEFINE_CALL(CCNode, position)
+	CC_DEFINE_CALL(CCNode, scaleX)
+	CC_DEFINE_CALL(CCNode, scaleY)	
+	CC_DEFINE_CALL(CCNode, scale)
+	CC_DEFINE_CALL(CCNode, skewX)
+	CC_DEFINE_CALL(CCNode, skewY)
+	CC_DEFINE_CALL(CCNode, tag)
+	CC_DEFINE_CALL(CCNode, position)
+	CC_DEFINE_CALL(CCNode, visible)	
+	CC_DEFINE_CALL(CCNode, zOrder)
+	CC_DEFINE_CALL(CCNode, onEvent)
+	CC_DEFINE_CALL(CCNode, removeEvent)
 CC_END_CALLS(CCNode, CCObject)
 
+CCValue CCNode::CALLNAME(addChild)(CCValueArray& params) {
+	CCNode* ch = ccvpObject(params,0,CCNode);
+	int zOrder = ccvpInt(params,1);
+	int tag = ccvpInt(params,2);
+	bool r = false;
+	if(ch!=NULL) {
+		addChild(ch, zOrder, tag);
+		r = true;
+	}
+	return CCValue::booleanValue(r);
+}
+CCValue CCNode::CALLNAME(removeChild)(CCValueArray& params) {
+	bool r = false;
+	if(params.size()>0) {
+		if(params[0].isString()) {
+			std::string id = params[0].stringValue();
+			removeChildById(id.c_str());
+			r = true;
+		} else {
+			removeChildByTag(params[0].intValue());
+			r = true;
+		}
+	}
+	return CCValue::intValue(r);
+}
+CCValue CCNode::CALLNAME(anchorPoint)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCPoint pt = ccvpPoint(params, 0);
+		setAnchorPoint(pt);
+	}
+	CCPoint pt2 = getAnchorPoint();
+	return CCValueUtil::point(pt2.x, pt2.y);
+}
+CCValue CCNode::CALLNAME(contentSize)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCSize sz = ccvpSize(params, 0);
+		setContentSize(sz);
+	}
+	CCSize sz2 = getContentSize();
+	return CCValueUtil::size(sz2.width, sz2.height);
+}
+CCValue CCNode::CALLNAME(rotationX)(CCValueArray& params) {
+	if(params.size()>0) {
+		setRotationX(params[0].floatValue());
+	}
+	return CCValue::numberValue(getRotationX());
+}
+CCValue CCNode::CALLNAME(rotationY)(CCValueArray& params) {
+	if(params.size()>0) {
+		setRotationY(params[0].floatValue());
+	}
+	return CCValue::numberValue(getRotationY());
+}
+CCValue CCNode::CALLNAME(rotation)(CCValueArray& params) {
+	if(params.size()>0) {
+		setRotation(params[0].floatValue());
+	}
+	return CCValue::numberValue(getRotation());
+}
+CCValue CCNode::CALLNAME(ignoreAnchorPointForPosition)(CCValueArray& params) {
+	if(params.size()>0) {
+		ignoreAnchorPointForPosition(params[0].booleanValue());
+	}
+	return CCValue::booleanValue(isIgnoreAnchorPointForPosition());
+}
 CCValue CCNode::CALLNAME(visible)(CCValueArray& params) {
 	if(params.size()>0) {
 		setVisible(params[0].booleanValue());
 	}
 	return CCValue::booleanValue(isVisible());
 }
+CCValue CCNode::CALLNAME(scaleX)(CCValueArray& params) {
+	if(params.size()>0) {
+		setScaleX(params[0].floatValue());
+	}
+	return CCValue::numberValue(getScaleX());
+}
+CCValue CCNode::CALLNAME(scaleY)(CCValueArray& params) {
+	if(params.size()>0) {
+		setScaleY(params[0].floatValue());
+	}	
+	return CCValue::numberValue(getScaleY());
+}
+CCValue CCNode::CALLNAME(scale)(CCValueArray& params) {
+	if(params.size()>0) {
+		setScale(params[0].floatValue());
+	}
+	return CCValue::numberValue(getScale());
+}
+CCValue CCNode::CALLNAME(tag)(CCValueArray& params) {
+	if(params.size()>0) {
+		setTag(params[0].intValue());
+	}
+	return CCValue::intValue(getTag());
+}
+CCValue CCNode::CALLNAME(positionX)(CCValueArray& params) {
+	if(params.size()>0) {
+		setPositionX(params[0].floatValue());
+	}	
+	return CCValue::numberValue(getPositionX());
+}
+CCValue CCNode::CALLNAME(positionY)(CCValueArray& params) {
+	if(params.size()>0) {
+		setPositionY(params[0].floatValue());
+	}	
+	return CCValue::numberValue(getPositionY());
+}
+CCValue CCNode::CALLNAME(position)(CCValueArray& params) {
+	if(params.size()==1) {
+		CCPoint pt = ccvpPoint(params, 0);
+		setPosition(pt);
+		return CCValue::nullValue();
+	} else if(params.size()==2) {
+		float x = params[0].floatValue();
+		float y = params[1].floatValue();
+		setPosition(x, y);
+		return CCValue::nullValue();
+	}
+	float x = getPositionX();
+	float y = getPositionY();
+	return CCValueUtil::point(x, y);
+}
+CCValue CCNode::CALLNAME(skewX)(CCValueArray& params) {
+	if(params.size()>0) {
+		setSkewX(params[0].floatValue());
+	}	
+	return CCValue::numberValue(getSkewX());
+}
+CCValue CCNode::CALLNAME(skewY)(CCValueArray& params) {
+	if(params.size()>0) {
+		setSkewY(params[0].floatValue());
+	}	
+	return CCValue::numberValue(getSkewY());
+}
+CCValue CCNode::CALLNAME(zOrder)(CCValueArray& params) {
+	if(params.size()>0) {
+		setZOrder(params[0].intValue());
+	}
+	return CCValue::intValue(getZOrder());
+}
+CCValue CCNode::CALLNAME(onEvent)(CCValueArray& params) {
+	std::string name = ccvpString(params, 0);
+	std::string id = ccvpString(params,1);
+	CCValue call = params.size()>2?params[2]:CCValue::nullValue();
+	if(name.length()==0 || id.length()==0 || !call.canCall()) {
+		throw new std::string("invalid params for onEvent");
+	}
+	onEvent(name.c_str(), id.c_str(), call);
+	return CCValue::booleanValue(true);
+}
+CCValue CCNode::CALLNAME(removeEvent)(CCValueArray& params) {
+	std::string name = ccvpString(params, 0);
+	std::string id = ccvpString(params,1);
+	return CCValue::booleanValue(removeEventHandler(name.c_str(), id.c_str()));
+}
+// end cc_call
 
+// catyguan
+// attribute
 bool CCNode::hasAttribute(const char* name)
 {
 	if(m_pAttributes!=NULL) {
@@ -1385,6 +1561,10 @@ void CCNode::clearAttributes()
 		m_pAttributes->clear();
 	}
 }
+// end attributes
+
+// catyguan
+// events
 typedef std::list<CCNodeEventHandlerItem*>::const_iterator ehitor;
 
 bool CCNode::hasEventHandler(const char* name)
@@ -1403,10 +1583,23 @@ bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
 {
 	bool r = false;
 	if(m_pEventHandlers!=NULL) {
+		CCValueArray ps;
 		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
 			CCNodeEventHandlerItem* h = (*it);
 			if(h->type.compare(name)==0) {
-				(h->handleObject->*h->handler)(this, name, e);
+				if(h->handleObject!=NULL) {
+					(h->handleObject->*h->handler)(this, name, e);
+				} else {
+					if(h->call.canCall()) {
+						if(ps.size()==0) {
+							ps.push_back(CCValue::stringValue(name));
+							if(e!=NULL) {
+								ps.push_back(e->toValue());
+							}
+						}
+						h->call.call(ps, false);
+					}
+				}
 				r = true;
 			}
 		}
@@ -1415,18 +1608,35 @@ bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
 }
 void CCNode::onEvent(const char* name,CCObject* obj,SEL_NodeEventHandler handler)
 {
+	onEvent(name,NULL, obj,handler,CCValue::nullValue());
+}
+void CCNode::onEvent(const char* name,const char* id, CCValue call)
+{
+	onEvent(name,id,NULL,NULL,call);
+}
+void CCNode::onEvent(const char* name,const char* id, CCObject* obj,SEL_NodeEventHandler handler,CCValue call)
+{
 	if(m_pEventHandlers==NULL)m_pEventHandlers = new std::list<CCNodeEventHandlerItem*>();
 	CCNodeEventHandlerItem* h = new CCNodeEventHandlerItem();
 	h->type = name;
-	h->handleObject = obj;
-	if(h->handleObject!=this) {
-		CC_SAFE_RETAIN(obj);
+	if(id!=NULL) {
+		h->id = id;
 	}
-	h->handler = handler;
+	if(obj!=NULL) {
+		h->handleObject = obj;
+		if(h->handleObject!=this) {
+			CC_SAFE_RETAIN(obj);
+		}
+		h->handler = handler;
+	} else {
+		obj = NULL;
+		h->handler = NULL;
+	}
+	h->call = call;
+	h->call.retain();
 	m_pEventHandlers->push_back(h);
 }
-
-bool CCNode::removeEventHandler(const char* name,CCObject* obj)
+bool CCNode::removeEventHandler(const char* name,const char* id, CCObject* obj)
 {
 	bool r = false;
 	if(m_pEventHandlers!=NULL) {
@@ -1436,21 +1646,28 @@ bool CCNode::removeEventHandler(const char* name,CCObject* obj)
 			CCNodeEventHandlerItem* h = (*cur);
 			bool nm = false;
 			bool om = false;
+			bool idm = false;
 			if(name!=NULL) {
 				nm = h->type.compare(name)==0;
 			} else {
 				nm = true;
+			}
+			if(id!=NULL) {
+				idm = h->id.compare(id)==0;
+			} else {
+				idm = true;
 			}
 			if(obj!=NULL) {
 				om = h->handleObject==obj;
 			} else {
 				om = true;
 			}
-			if(om && nm) {
+			if(om && nm && idm) {
 				m_pEventHandlers->erase(cur);
 				if(h->handleObject!=this) {
 					CC_SAFE_RELEASE(h->handleObject);
 				}
+				h->call.cleanup();
 				delete h;
 				r = true;
 			}		
@@ -1458,17 +1675,27 @@ bool CCNode::removeEventHandler(const char* name,CCObject* obj)
 	}
 	return r;
 }
+bool CCNode::removeEventHandler(const char* name,CCObject* obj)
+{
+	return removeEventHandler(name,NULL,obj);
+}
+bool CCNode::removeEventHandler(const char* name,const char* id)
+{
+	return removeEventHandler(name,id,NULL);
+}
 void CCNode::clearEventHandlers()
 {
 	if(m_pEventHandlers!=NULL) {
 		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
 			CCNodeEventHandlerItem* h = (*it);
 			CC_SAFE_RELEASE(h->handleObject);
+			h->call.cleanup();
 			delete h;
 		}
 		m_pEventHandlers->clear();
 	}	
 }
+// end events
 
 // CCNodeRGBA
 CCNodeRGBA::CCNodeRGBA()
@@ -1605,5 +1832,46 @@ void CCNodeRGBA::setCascadeColorEnabled(bool cascadeColorEnabled)
     _cascadeColorEnabled = cascadeColorEnabled;
 }
 
+// catyguan
+// cc_call
+CC_BEGIN_CALLS(CCNodeRGBA, CCNode)
+	CC_DEFINE_CALL(CCNodeRGBA, opacity)
+	CC_DEFINE_CALL(CCNodeRGBA, color)
+	CC_DEFINE_CALL(CCNodeRGBA, cascadeColorEnabled)
+	CC_DEFINE_CALL(CCNodeRGBA, opacityModifyRGB)
+CC_END_CALLS(CCNodeRGBA, CCNode)
+
+CCValue CCNodeRGBA::CALLNAME(opacity)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		int v = params[0].intValue();
+		setOpacity(v & 0xFF);
+	}
+	return CCValue::intValue(getOpacity());
+}
+CCValue CCNodeRGBA::CALLNAME(color)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		ccColor3B v = CCValueUtil::color3b(params[0]);
+		setColor(v);
+		return CCValue::nullValue();
+	} else {
+		ccColor3B v = getColor();
+		return CCValueUtil::color3b(v);
+	}
+}
+CCValue CCNodeRGBA::CALLNAME(cascadeColorEnabled)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		bool v = params[0].booleanValue();
+		setCascadeColorEnabled(v);
+	}
+	return CCValue::booleanValue(isCascadeColorEnabled());
+}
+CCValue CCNodeRGBA::CALLNAME(opacityModifyRGB)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		bool v = params[0].booleanValue();
+		setOpacityModifyRGB(v);
+	}
+	return CCValue::booleanValue(isOpacityModifyRGB());
+}
+// end cc_call
 
 NS_CC_END

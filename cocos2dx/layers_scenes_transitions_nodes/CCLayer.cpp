@@ -38,6 +38,9 @@ THE SOFTWARE.
 // extern
 #include "kazmath/GL/matrix.h"
 
+// catyguan
+#include "../cocoa/CCValueSupport.h"
+
 NS_CC_BEGIN
 
 // CCLayer
@@ -500,6 +503,48 @@ void CCLayerRGBA::setCascadeColorEnabled(bool cascadeColorEnabled)
 {
     _cascadeColorEnabled = cascadeColorEnabled;
 }
+
+// catyguan
+// cc_call
+CC_BEGIN_CALLS(CCLayerRGBA, CCLayer)
+	CC_DEFINE_CALL(CCLayerRGBA, opacity)
+	CC_DEFINE_CALL(CCLayerRGBA, color)
+	CC_DEFINE_CALL(CCLayerRGBA, cascadeColorEnabled)
+	CC_DEFINE_CALL(CCLayerRGBA, opacityModifyRGB)
+CC_END_CALLS(CCLayerRGBA, CCLayer)
+
+CCValue CCLayerRGBA::CALLNAME(opacity)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		int v = params[0].intValue();
+		setOpacity(v & 0xFF);
+	}
+	return CCValue::intValue(getOpacity());
+}
+CCValue CCLayerRGBA::CALLNAME(color)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		ccColor3B v = CCValueUtil::color3b(params[0]);
+		setColor(v);
+		return CCValue::nullValue();
+	} else {
+		ccColor3B v = getColor();
+		return CCValueUtil::color3b(v);
+	}
+}
+CCValue CCLayerRGBA::CALLNAME(cascadeColorEnabled)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		bool v = params[0].booleanValue();
+		setCascadeColorEnabled(v);
+	}
+	return CCValue::booleanValue(isCascadeColorEnabled());
+}
+CCValue CCLayerRGBA::CALLNAME(opacityModifyRGB)(CCValueArray& params) {	 
+	if(params.size()>0) {
+		bool v = params[0].booleanValue();
+		setOpacityModifyRGB(v);
+	}
+	return CCValue::booleanValue(isOpacityModifyRGB());
+}
+// end cc_call
 
 /// CCLayerColor
 

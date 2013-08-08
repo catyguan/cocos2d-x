@@ -1020,6 +1020,14 @@ CCAccelerometer* CCDirector::getAccelerometer()
     return m_pAccelerometer;
 }
 
+CCScene* CCDirector::currentScene()
+{
+	if(m_pNextScene!=NULL) {
+		return m_pNextScene;
+	}
+	return getRunningScene();
+}
+
 /***************************************************
 * implementation of DisplayLinkDirector
 **************************************************/

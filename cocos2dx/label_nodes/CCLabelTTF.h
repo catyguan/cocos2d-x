@@ -150,6 +150,22 @@ public:
     
     const char* getFontName();
     void setFontName(const char *fontName);
+
+	// catyguan
+	// cc_call
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(enableShadow)
+	CC_DECLARE_CALL(enableStroke)
+	CC_DECLARE_CALL(fontColor)
+	CC_DECLARE_CALL(content)
+	CC_DECLARE_CALL(horizontalAlignment)
+	CC_DECLARE_CALL(alignLeft)
+	CC_DECLARE_CALL(verticalAlignment)
+	CC_DECLARE_CALL(dimensions)
+	CC_DECLARE_CALL(fontSize)
+	CC_DECLARE_CALL(fontName)
+	CC_DECLARE_CALLS_END
+	// end cc_call
     
 private:
     bool updateTexture();

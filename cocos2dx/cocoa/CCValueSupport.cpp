@@ -83,6 +83,14 @@ CCSize CCValueUtil::size(CCValue& v)
 	return CCSizeMake(0,0);
 }
 
+CCValue CCValueUtil::size(float w, float h)
+{
+	CCValueMap map;
+	map["width"] = CCValue::numberValue(w);
+	map["height"] = CCValue::numberValue(h);
+	return CCValue::mapValue(map);
+}
+
 CCPoint CCValueUtil::point(CCValue& v)
 {
 	CCValueMap* map = v.mapValue();
@@ -100,6 +108,14 @@ CCPoint CCValueUtil::point(CCValue& v)
 		return CCPointMake(x, y);
 	}
 	return CCPointZero;
+}
+
+CCValue CCValueUtil::point(float x, float y)
+{
+	CCValueMap map;
+	map["x"] = CCValue::numberValue(x);
+	map["y"] = CCValue::numberValue(y);
+	return CCValue::mapValue(map);
 }
 
 ccColor4B CCValueUtil::color4b(CCValue& v)
@@ -126,6 +142,37 @@ ccColor4B CCValueUtil::color4b(CCValue& v)
 		}		
 	}
 	return ccc4(r,g,b,o);
+}
+
+ccColor3B CCValueUtil::color3b(CCValue& v)
+{
+	GLubyte r = 0, g = 0, b = 0;
+	CCValueMap* map = v.mapValue();
+	if(map!=NULL) {		
+		CCValueMapIterator it;
+		it = map->find("r");
+		if(it!=map->end()) {
+			r = it->second.intValue() & 0xFF;
+		}
+		it = map->find("g");
+		if(it!=map->end()) {
+			g = it->second.intValue() & 0xFF;
+		}
+		it = map->find("b");
+		if(it!=map->end()) {
+			b = it->second.intValue() & 0xFF;
+		}		
+	}
+	return ccc3(r,g,b);
+}
+
+CCValue CCValueUtil::color3b(ccColor3B& v)
+{
+	CCValueMap map;
+	map["r"] = CCValue::intValue(v.r);
+	map["g"] = CCValue::intValue(v.g);
+	map["b"] = CCValue::intValue(v.b);
+	return CCValue::mapValue(map);
 }
 
 NS_CC_END

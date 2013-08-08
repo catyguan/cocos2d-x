@@ -309,6 +309,9 @@ public:
     void setContentScaleFactor(float scaleFactor);
     float getContentScaleFactor(void);
 
+	// catyguan
+	CCScene* currentScene();
+
 public:
     /** CCScheduler associated with this director
      @since v2.0

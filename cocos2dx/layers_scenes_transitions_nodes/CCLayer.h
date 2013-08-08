@@ -179,6 +179,17 @@ public:
     
     virtual void setOpacityModifyRGB(bool bValue) {}
     virtual bool isOpacityModifyRGB() { return false; }
+
+	// catyguan
+	// cc_call
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(opacity)
+	CC_DECLARE_CALL(color)
+	CC_DECLARE_CALL(cascadeColorEnabled)
+	CC_DECLARE_CALL(opacityModifyRGB)
+	CC_DECLARE_CALLS_END
+	// end cc_call
+
 protected:
 	GLubyte		_displayedOpacity, _realOpacity;
 	ccColor3B	_displayedColor, _realColor;

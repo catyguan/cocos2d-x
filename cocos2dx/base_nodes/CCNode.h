@@ -128,6 +128,8 @@ enum {
 class CC_DLL CCNodeEvent
 {
 public:
+	virtual CCValue toValue(){return CCValue::nullValue();};
+
 	CCNodeEvent(){};
 	virtual ~CCNodeEvent(){};
 };
@@ -136,9 +138,11 @@ typedef void (CCObject::*SEL_NodeEventHandler)(class CCNode* node, const char* t
 #define nodeevent_selector(_SELECTOR) (SEL_NodeEventHandler)(&_SELECTOR)
 
 typedef struct {
+	std::string id;
 	std::string type;	
 	CCObject* handleObject;
 	SEL_NodeEventHandler handler;
+	CCValue call;
 } CCNodeEventHandlerItem;
 
 class CC_DLL CCNode : public CCObject
@@ -364,12 +368,6 @@ public:
      */
     virtual float getSkewX();
 
-	// catyguan
-	// attributes
-	CCValueMap* m_pAttributes;
-	// events
-	std::list<CCNodeEventHandlerItem*>* m_pEventHandlers;
-	
     /**
      * Changes the Y skew angle of the node in degrees.
      *
@@ -745,17 +743,25 @@ public:
     virtual void setGrid(CCGridBase *pGrid);
     
 	// catyguan
+	// attributes
 	bool hasAttribute(const char* name);
 	CCValue attribute(const char* name);
 	virtual void attribute(const char* name, CCValue v);
 	virtual bool removeAttribute(const char* name);
 	virtual void clearAttributes();
+	// end attributes
 
+	// event
 	bool hasEventHandler(const char* name);
 	virtual bool raiseEvent(const char* name, CCNodeEvent* e);
-	virtual void onEvent(const char* name,CCObject* obj,SEL_NodeEventHandler handler);
-	virtual bool removeEventHandler(const char* name,CCObject* obj);
+	void onEvent(const char* name,CCObject* obj,SEL_NodeEventHandler handler);
+	void onEvent(const char* name, const char* id, CCValue call);
+	virtual void onEvent(const char* name,const char* id, CCObject* obj,SEL_NodeEventHandler handler, CCValue call);
+	bool removeEventHandler(const char* name,CCObject* obj);
+	bool removeEventHandler(const char* name,const char* id);
+	virtual bool removeEventHandler(const char* name, const char* id, CCObject* obj);
 	virtual void clearEventHandlers();
+	// end event
 
     
     
@@ -1337,8 +1343,29 @@ private:
 	// catyguan
 	// cc_call
 	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(addChild)
+	CC_DECLARE_CALL(removeChild)
+	CC_DECLARE_CALL(anchorPoint)
+	CC_DECLARE_CALL(contentSize)
+	CC_DECLARE_CALL(ignoreAnchorPointForPosition)
 	CC_DECLARE_CALL(visible)
+	CC_DECLARE_CALL(rotationX)
+	CC_DECLARE_CALL(rotationY)
+	CC_DECLARE_CALL(rotation)
+	CC_DECLARE_CALL(scaleX)
+	CC_DECLARE_CALL(scaleY)
+	CC_DECLARE_CALL(scale)
+	CC_DECLARE_CALL(positionX)
+	CC_DECLARE_CALL(positionY)
+	CC_DECLARE_CALL(position)
+	CC_DECLARE_CALL(skewX)
+	CC_DECLARE_CALL(skewY)
+	CC_DECLARE_CALL(tag)
+	CC_DECLARE_CALL(zOrder)
+	CC_DECLARE_CALL(onEvent)
+	CC_DECLARE_CALL(removeEvent)
 	CC_DECLARE_CALLS_END
+	// end cc_call
 protected:
     float m_fRotationX;                 ///< rotation angle on x-axis
     float m_fRotationY;                 ///< rotation angle on y-axis
@@ -1400,6 +1427,14 @@ protected:
     bool m_bReorderChildDirty;          ///< children order dirty flag
     
     CCComponentContainer *m_pComponentContainer;        ///< Dictionary of components
+	
+	// catyguan
+	// attributes
+	CCValueMap* m_pAttributes;
+	// end attributes
+	// events
+	std::list<CCNodeEventHandlerItem*>* m_pEventHandlers;
+	// end events
 
 };
 
@@ -1438,6 +1473,16 @@ public:
     
     virtual void setOpacityModifyRGB(bool bValue) {};
     virtual bool isOpacityModifyRGB() { return false; };
+
+	// catyguan
+	// cc_call
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(opacity)
+	CC_DECLARE_CALL(color)
+	CC_DECLARE_CALL(cascadeColorEnabled)
+	CC_DECLARE_CALL(opacityModifyRGB)
+	CC_DECLARE_CALLS_END
+	// end cc_call
 
 protected:
 	GLubyte		_displayedOpacity;

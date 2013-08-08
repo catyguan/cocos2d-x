@@ -27,6 +27,8 @@ THE SOFTWARE.
 #include "shaders/CCGLProgram.h"
 #include "shaders/CCShaderCache.h"
 #include "CCApplication.h"
+// catyguan
+#include "../cocoa/CCValueSupport.h"
 
 NS_CC_BEGIN
 
@@ -287,6 +289,103 @@ void CCLabelTTF::setFontName(const char *fontName)
             this->updateTexture();
         }
     }
+}
+
+// catyguan
+// cc_call
+CC_BEGIN_CALLS(CCLabelTTF, CCSprite)
+	CC_DEFINE_CALL(CCLabelTTF, enableShadow)
+	CC_DEFINE_CALL(CCLabelTTF, enableStroke)
+	CC_DEFINE_CALL(CCLabelTTF, fontColor)
+	CC_DEFINE_CALL(CCLabelTTF, content)
+	CC_DEFINE_CALL(CCLabelTTF, horizontalAlignment)
+	CC_DEFINE_CALL(CCLabelTTF, alignLeft)
+	CC_DEFINE_CALL(CCLabelTTF, verticalAlignment)
+	CC_DEFINE_CALL(CCLabelTTF, dimensions)
+	CC_DEFINE_CALL(CCLabelTTF, fontSize)
+	CC_DEFINE_CALL(CCLabelTTF, fontName)
+CC_END_CALLS(CCLabelTTF, CCSprite)
+
+CCValue CCLabelTTF::CALLNAME(enableShadow)(CCValueArray& params) {
+	bool enable = ccvpBoolean(params,0);	
+	if(enable) {
+		CCSize shadowOffset = ccvpSize(params,1);
+		float shadowOpacity = ccvpFloat(params,2);
+		float shadowBlur = ccvpFloat(params,3);
+		bool mustUpdateTexture = params.size()>4?params[4].booleanValue():true;
+		enableShadow(shadowOffset, shadowOpacity, shadowBlur, mustUpdateTexture);
+	} else {
+		bool mustUpdateTexture = params.size()>1?params[1].booleanValue():true;
+		disableShadow(mustUpdateTexture);
+	}
+	return CCValue::nullValue();
+}
+CCValue CCLabelTTF::CALLNAME(enableStroke)(CCValueArray& params) {
+	bool enable = ccvpBoolean(params,0);	
+	if(enable) {
+		ccColor4B c4b = ccvpColor(params,1);
+		ccColor3B strokeColor = ccc3(c4b.r, c4b.g, c4b.b);
+		float strokeSize = ccvpFloat(params,2);		
+		bool mustUpdateTexture = params.size()>3?params[3].booleanValue():true;
+		enableStroke(strokeColor, strokeSize, mustUpdateTexture);
+	} else {
+		bool mustUpdateTexture = params.size()>1?params[1].booleanValue():true;
+		disableStroke(mustUpdateTexture);
+	}
+	return CCValue::nullValue();
+}
+CCValue CCLabelTTF::CALLNAME(fontColor)(CCValueArray& params) {
+	if(params.size()>0) {
+		ccColor4B c4b = ccvpColor(params,1);
+		setFontFillColor(ccc3(c4b.r, c4b.g, c4b.b));
+	}
+	return CCValue::nullValue();
+}
+CCValue CCLabelTTF::CALLNAME(content)(CCValueArray& params) {
+	if(params.size()>0) {
+		std::string s = params[0].stringValue();
+		setString(s.c_str());
+	}
+	return CCValue::stringValue(getString());
+}
+CCValue CCLabelTTF::CALLNAME(horizontalAlignment)(CCValueArray& params) {
+	if(params.size()>0) {
+		int v = params[0].intValue();
+		setHorizontalAlignment(cocos2d::CCTextAlignment(v));
+	}
+	return CCValue::intValue(getHorizontalAlignment());
+}
+CCValue CCLabelTTF::CALLNAME(alignLeft)(CCValueArray& params) {
+	setHorizontalAlignment(cocos2d::CCTextAlignment::kCCTextAlignmentLeft);
+	return CCValue::nullValue();
+}
+CCValue CCLabelTTF::CALLNAME(verticalAlignment)(CCValueArray& params) {
+	if(params.size()>0) {
+		int v = params[0].intValue();
+		setVerticalAlignment(cocos2d::CCVerticalTextAlignment(v));
+	}
+	return CCValue::intValue(getVerticalAlignment());
+}
+CCValue CCLabelTTF::CALLNAME(dimensions)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCSize sz = ccvpSize(params, 0);
+		setDimensions(sz);
+	}
+	CCSize sz2 = getDimensions();
+	return CCValueUtil::size(sz2.width, sz2.height);
+}
+CCValue CCLabelTTF::CALLNAME(fontSize)(CCValueArray& params) {
+	if(params.size()>0) {
+		float v = params[0].floatValue();
+		setFontSize(v);
+	}
+	return CCValue::numberValue(getFontSize());
+}
+CCValue CCLabelTTF::CALLNAME(fontName)(CCValueArray& params) {
+	if(params.size()>0) {
+		setFontName(params[0].stringValue().c_str());
+	}
+	return CCValue::stringValue(getFontName());
 }
 
 // Helper
