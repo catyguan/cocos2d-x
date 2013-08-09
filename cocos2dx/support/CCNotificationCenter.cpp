@@ -51,6 +51,13 @@ CCNotificationCenter *CCNotificationCenter::sharedNotificationCenter(void)
     }
     return s_sharedNotifCenter;
 }
+// catyguan
+void CCNotificationCenter::releaseObserver(CCObject *target,const char *name)
+{
+	if(s_sharedNotifCenter) {
+		s_sharedNotifCenter->removeObserver(target, name);
+	}
+}
 
 void CCNotificationCenter::purgeNotificationCenter(void)
 {

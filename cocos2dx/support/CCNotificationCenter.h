@@ -41,6 +41,8 @@ public:
     
     /** Gets the single instance of CCNotificationCenter. */
     static CCNotificationCenter *sharedNotificationCenter(void);
+	// catyguan
+	static void releaseObserver(CCObject *target,const char *name);
 
     /** Destroys the single instance of CCNotificationCenter. */
     static void purgeNotificationCenter(void);

@@ -98,8 +98,8 @@ CCParticleSystemQuad::~CCParticleSystemQuad()
         glDeleteVertexArrays(1, &m_uVAOname);
 #endif
     }
-    
-    CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVNET_COME_TO_FOREGROUND);
+    // catyguan
+    CCNotificationCenter::releaseObserver(this, EVNET_COME_TO_FOREGROUND);
 }
 
 // implementation CCParticleSystemQuad

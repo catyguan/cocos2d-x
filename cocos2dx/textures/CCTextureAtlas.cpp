@@ -64,8 +64,8 @@ CCTextureAtlas::~CCTextureAtlas()
     glDeleteVertexArrays(1, &m_uVAOname);
 #endif
     CC_SAFE_RELEASE(m_pTexture);
-    
-    CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVNET_COME_TO_FOREGROUND);
+    // catyguan
+    CCNotificationCenter::releaseObserver(this, EVNET_COME_TO_FOREGROUND);
 }
 
 unsigned int CCTextureAtlas::getTotalQuads()

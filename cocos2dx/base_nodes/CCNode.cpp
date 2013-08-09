@@ -1583,9 +1583,11 @@ bool CCNode::raiseEvent(const char* name, CCNodeEvent* e)
 {
 	bool r = false;
 	if(m_pEventHandlers!=NULL) {
+		std::list<CCNodeEventHandlerItem*> tmp;
 		CCValueArray ps;
-		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
+		for(ehitor it=m_pEventHandlers->begin();m_pEventHandlers!=NULL && it!=m_pEventHandlers->end();) {
 			CCNodeEventHandlerItem* h = (*it);
+			it++;
 			if(h->type.compare(name)==0) {
 				if(h->handleObject!=NULL) {
 					(h->handleObject->*h->handler)(this, name, e);
@@ -1690,7 +1692,9 @@ void CCNode::clearEventHandlers()
 	if(m_pEventHandlers!=NULL) {
 		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();it++) {
 			CCNodeEventHandlerItem* h = (*it);
-			CC_SAFE_RELEASE(h->handleObject);
+			if(h->handleObject!=this) {
+				CC_SAFE_RELEASE(h->handleObject);
+			}
 			h->call.cleanup();
 			delete h;
 		}

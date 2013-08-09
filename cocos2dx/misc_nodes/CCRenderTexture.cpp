@@ -87,8 +87,9 @@ CCRenderTexture::~CCRenderTexture()
     CC_SAFE_DELETE(m_pUITextureImage);
 
 #if CC_ENABLE_CACHE_TEXTURE_DATA
-    CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVENT_COME_TO_BACKGROUND);
-    CCNotificationCenter::sharedNotificationCenter()->removeObserver(this, EVNET_COME_TO_FOREGROUND);
+	// catyguan
+    CCNotificationCenter::releaseObserver(this, EVENT_COME_TO_BACKGROUND);
+    CCNotificationCenter::releaseObserver(this, EVNET_COME_TO_FOREGROUND);
 #endif
 }
 
