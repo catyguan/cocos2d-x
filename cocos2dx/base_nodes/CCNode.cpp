@@ -92,6 +92,7 @@ CCNode::CCNode(void)
 , m_bReorderChildDirty(false)
 , m_pAttributes(NULL)
 , m_pEventHandlers(NULL)
+, m_pMethods(NULL)
 , m_pComponentContainer(NULL)
 {
     // set default scheduler and actionManager
@@ -137,6 +138,8 @@ CCNode::~CCNode(void)
     CC_SAFE_DELETE(m_pComponentContainer);
 
     // catyguan
+	removeAllMethods();
+	CC_SAFE_DELETE(m_pMethods);
 	clearEventHandlers();
 	CC_SAFE_DELETE(m_pEventHandlers);
 	CC_SAFE_DELETE(m_pAttributes);
@@ -145,6 +148,19 @@ CCNode::~CCNode(void)
 bool CCNode::init()
 {
     return true;
+}
+
+bool CCNode::setup(CCValue& properties)
+{
+	if(methodCanCall("setupObject")) {
+		CCValueArray ps;
+		ps.push_back(properties);
+		CCValue r;
+		if(methodCall("setupObject", ps,r)) {
+			return r.booleanValue();
+		}
+	}
+	return true;
 }
 
 float CCNode::getSkewX()
@@ -1335,6 +1351,10 @@ void CCNode::removeAllComponents()
 #include "../cocoa/CCValueSupport.h"
 // cc_call
 CC_BEGIN_CALLS(CCNode, CCObject)
+	CC_DEFINE_CALL(CCNode, bindMethod)
+	CC_DEFINE_CALL(CCNode, removeMethod)
+	CC_DEFINE_CALL(CCNode, removeAllMethods)
+	CC_DEFINE_CALL(CCNode, setup)
 	CC_DEFINE_CALL(CCNode, addChild)
 	CC_DEFINE_CALL(CCNode, removeChild)
 	CC_DEFINE_CALL(CCNode, anchorPoint)
@@ -1357,8 +1377,77 @@ CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, zOrder)
 	CC_DEFINE_CALL(CCNode, onEvent)
 	CC_DEFINE_CALL(CCNode, removeEvent)
-CC_END_CALLS(CCNode, CCObject)
+// CC_END_CALLS(CCNode, CCObject)
+{NULL,NULL}};
 
+bool CCNode::methodCanCall(const char* method)
+{
+	if(m_pMethods!=NULL) {
+		CCValueMapIterator it = m_pMethods->find(method);
+		if(it!=m_pMethods->end())return true;
+	}
+	return false;
+}
+
+bool CCNode::canCall(const char* method){
+	if(CCObject::canCallImpl(this, s_CALLS_CCNode, method)) { return true; }
+	if(methodCanCall(method))return true;	
+	return CCObject::canCall(method);
+}
+
+bool CCNode::methodCall(const char* method, CCValueArray& params,CCValue& r)
+{
+	if(m_pMethods!=NULL) {
+		CCValueMapIterator it = m_pMethods->find(method);
+		if(it!=m_pMethods->end()) {
+			CCValue call = it->second;
+			if(call.canCall()) {
+				call.retain();
+				params.insert(params.begin(), CCValue::objectValue(this));
+				r = call.call(params, false);
+				call.cleanup();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+CCValue CCNode::call(const char* method, CCValueArray& params){
+	if(method==NULL)return invoke(params);
+	CCValue r;
+	if(CCObject::callImpl(this, s_CALLS_CCNode, r, method, params)) { return r; }
+	if(methodCall(method, params, r)) {
+		return r;
+	}	
+	return CCObject::call(method, params);
+}
+
+CCValue CCNode::CALLNAME(bindMethod)(CCValueArray& params) {
+	std::string name = ccvpString(params,0);
+	CCValue call = ccvp(params,1);
+	bindMethod(name.c_str(), call);
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(removeMethod)(CCValueArray& params) {
+	std::string name = ccvpString(params,0);
+	removeMethod(name.c_str());
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(removeAllMethods)(CCValueArray& params) {
+	removeAllMethods();
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(setup)(CCValueArray& params) {
+	bool r = false;
+	if(params.size()>0) {
+		r = setup(params[0]);
+	} else {
+		CCValue tmp;
+		r = setup(tmp);
+	}
+	return CCValue::booleanValue(r);
+}
 CCValue CCNode::CALLNAME(addChild)(CCValueArray& params) {
 	CCNode* ch = ccvpObject(params,0,CCNode);
 	int zOrder = ccvpInt(params,1);
@@ -1517,6 +1606,34 @@ CCValue CCNode::CALLNAME(removeEvent)(CCValueArray& params) {
 // end cc_call
 
 // catyguan
+// methods
+void CCNode::bindMethod(const char* name, CCValue call)
+{
+	if(m_pMethods==NULL) {
+		m_pMethods = new CCValueMap();
+	}
+	CCValueMapIterator it = m_pMethods->find(name);
+	if(it!=m_pMethods->end()) {
+		m_pMethods->erase(it);
+	}
+	(*m_pMethods)[name] = call;
+	m_pMethods->at(name).retain();
+}
+void CCNode::removeMethod(const char* name)
+{
+	if(m_pMethods!=NULL) {
+		CCValueMapIterator it = m_pMethods->find(name);
+		if(it!=m_pMethods->end()) {
+			m_pMethods->erase(it);
+		}
+	}
+}
+void CCNode::removeAllMethods()
+{
+	if(m_pMethods!=NULL) {
+		m_pMethods->clear();
+	}
+}
 // attribute
 bool CCNode::hasAttribute(const char* name)
 {

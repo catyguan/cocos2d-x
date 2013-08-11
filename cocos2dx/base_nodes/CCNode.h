@@ -166,6 +166,9 @@ public:
      *  @return Whether the initialization was successful.
      */
     virtual bool init();
+	// catyguan
+	virtual bool setup(CCValue& properties);
+	// end catyguan
 	/**
      * Allocates and initializes a node.
      * @return A initialized node which is marked as "autorelease".
@@ -743,6 +746,13 @@ public:
     virtual void setGrid(CCGridBase *pGrid);
     
 	// catyguan
+	// methods
+	void bindMethod(const char* name, CCValue call);
+	void removeMethod(const char* name);
+	void removeAllMethods();
+	bool methodCanCall(const char* method);
+	bool methodCall(const char* method, CCValueArray& params, CCValue& r);
+	// end methods
 	// attributes
 	bool hasAttribute(const char* name);
 	CCValue attribute(const char* name);
@@ -1343,6 +1353,10 @@ private:
 	// catyguan
 	// cc_call
 	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(bindMethod)
+	CC_DECLARE_CALL(removeMethod)
+	CC_DECLARE_CALL(removeAllMethods)
+	CC_DECLARE_CALL(setup)
 	CC_DECLARE_CALL(addChild)
 	CC_DECLARE_CALL(removeChild)
 	CC_DECLARE_CALL(anchorPoint)
@@ -1429,6 +1443,9 @@ protected:
     CCComponentContainer *m_pComponentContainer;        ///< Dictionary of components
 	
 	// catyguan
+	// methods
+	CCValueMap* m_pMethods;
+	// end methods
 	// attributes
 	CCValueMap* m_pAttributes;
 	// end attributes
