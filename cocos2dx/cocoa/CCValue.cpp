@@ -545,6 +545,17 @@ CCValue* CCValueReader::getNull(const char* name)
 	return NULL;
 }
 
+void CCValueReader::remove(const char* name)
+{
+	if(m_value->isMap()) {
+		CCValueMap* map = m_value->mapValue();
+		CCValueMapIterator it = map->find(name);
+		if(it!=map->end()) {
+			map->erase(it);
+		}
+	}
+}
+
 bool CCValueReader::beMap(const char* name)
 {
 	const CCValue* v = getNull(name);

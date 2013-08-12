@@ -611,7 +611,7 @@ CCLayerColor * CCLayerColor::create(const ccColor4B& color)
 bool CCLayerColor::init()
 {
     CCSize s = CCDirector::sharedDirector()->getWinSize();
-    return initWithColor(ccc4(0,0,0,0), s.width, s.height);
+    return initWithColor(ccc4(0,0,0,255), s.width, s.height);
 }
 
 bool CCLayerColor::initWithColor(const ccColor4B& color, GLfloat w, GLfloat h)

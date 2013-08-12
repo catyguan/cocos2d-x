@@ -62,6 +62,7 @@ public:
 
 #define CC_BEGIN_CALLS(CLASS,SCLASS) static CALL_INFO s_CALLS_##CLASS[] = {
 #define CC_DEFINE_CALL(CLASS, name) {#name, (CC_OBJECT_CALL) &CLASS::call_##name},
+#define CC_DEFINE_CALL_ALIAS(CLASS, name, newname) {#name, (CC_OBJECT_CALL) &CLASS::call_##newname},
 #define CC_END_CALLS(CLASS,SCALL) {NULL,NULL}}; \
 	bool CLASS::canCall(const char* method){ \
 		if(CCObject::canCallImpl(this, s_CALLS_##CLASS, method)) { return true; } \

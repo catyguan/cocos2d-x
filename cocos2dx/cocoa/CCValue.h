@@ -269,6 +269,7 @@ public:
 	bool isMap();
 	CCValue* get(const char* name);
 	CCValue* getNull(const char* name);
+	void remove(const char* name);
 	bool beMap(const char* name);
 	bool beArray(const char* name);
 	

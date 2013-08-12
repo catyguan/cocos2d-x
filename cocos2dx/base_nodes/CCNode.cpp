@@ -152,12 +152,63 @@ bool CCNode::init()
 
 bool CCNode::setup(CCValue& properties)
 {
-	if(methodCanCall("setupObject")) {
-		CCValueArray ps;
-		ps.push_back(properties);
-		CCValue r;
-		if(methodCall("setupObject", ps,r)) {
-			return r.booleanValue();
+	if(properties.isMap()) {
+		CCValueMap* map = properties.mapValue();
+		CCValueMapIterator it = map->begin();
+		for(;it!=map->end();it++) {
+			std::string name = it->first;
+			if(name.compare("children")==0) {
+				if(it->second.isObject()) {
+					CCObject* obj = it->second.objectValue();
+					if(obj!=NULL) {
+						CCNode* node = dynamic_cast<CCNode*>(obj);
+						if(node!=NULL) {
+							addChild(node);
+						}
+					}
+				} else if(it->second.isArray()) {
+					CCValueArray* arr = it->second.arrayValue();
+					CCValueArrayIterator it2 = arr->begin();
+					for(;it2!=arr->end();it2++) {
+						CCObject* obj = it2->objectValue();
+						if(obj!=NULL) {
+							CCNode* node = dynamic_cast<CCNode*>(obj);
+							if(node!=NULL) {
+								addChild(node);
+							}
+						}
+					}					
+				}
+			} else if(name.compare("methods")==0) {
+				const CCValue& ms = it->second;
+				if(ms.isMap()) {
+					CCValueMap* map2 = ms.mapValue();
+					CCValueMapIterator it2 = map2->begin();
+					for(;it2!=map2->end();it2++) {
+						if(it2->second.canCall()) {
+							bindMethod(it->first.c_str(), it2->second);
+						}
+					}
+				}
+			} else if(name.compare("onEvent")==0) {
+				const CCValue& ms = it->second;
+				if(ms.isMap()) {
+					CCValueMap* map2 = ms.mapValue();
+					CCValueMapIterator it2 = map2->begin();
+					for(;it2!=map2->end();it2++) {
+						if(it2->second.canCall()) {
+							std::string id = "setup_"+it->first;
+							onEvent(it->first.c_str(), id.c_str(), it2->second);
+						}
+					}
+				}
+			} else {
+				if(canCall(name.c_str())) {
+					CCValueArray ps;
+					ps.push_back(it->second);
+					call(it->first.c_str(), ps);
+				}
+			}
 		}
 	}
 	return true;
@@ -1359,18 +1410,23 @@ CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, removeChild)
 	CC_DEFINE_CALL(CCNode, anchorPoint)
 	CC_DEFINE_CALL(CCNode, contentSize)
+	CC_DEFINE_CALL(CCNode, width)
+	CC_DEFINE_CALL(CCNode, height)
 	CC_DEFINE_CALL(CCNode, ignoreAnchorPointForPosition)
 	CC_DEFINE_CALL(CCNode, rotationX)
 	CC_DEFINE_CALL(CCNode, rotationY)
 	CC_DEFINE_CALL(CCNode, rotation)
 	CC_DEFINE_CALL(CCNode, positionX)
+	CC_DEFINE_CALL_ALIAS(CCNode, x, positionX)	
 	CC_DEFINE_CALL(CCNode, positionY)
+	CC_DEFINE_CALL_ALIAS(CCNode, y, positionY)
 	CC_DEFINE_CALL(CCNode, position)
 	CC_DEFINE_CALL(CCNode, scaleX)
 	CC_DEFINE_CALL(CCNode, scaleY)	
 	CC_DEFINE_CALL(CCNode, scale)
 	CC_DEFINE_CALL(CCNode, skewX)
 	CC_DEFINE_CALL(CCNode, skewY)
+	CC_DEFINE_CALL(CCNode, id)
 	CC_DEFINE_CALL(CCNode, tag)
 	CC_DEFINE_CALL(CCNode, position)
 	CC_DEFINE_CALL(CCNode, visible)	
@@ -1489,6 +1545,24 @@ CCValue CCNode::CALLNAME(contentSize)(CCValueArray& params) {
 	CCSize sz2 = getContentSize();
 	return CCValueUtil::size(sz2.width, sz2.height);
 }
+CCValue CCNode::CALLNAME(width)(CCValueArray& params) {
+	if(params.size()>0) {
+		int v = ccvpInt(params,0);
+		CCSize sz = getContentSize();
+		setContentSize(CCSizeMake(v, sz.height));
+	}
+	CCSize sz2 = getContentSize();
+	return CCValue::intValue(sz2.width);
+}
+CCValue CCNode::CALLNAME(height)(CCValueArray& params) {
+	if(params.size()>0) {
+		int v = ccvpInt(params,0);
+		CCSize sz = getContentSize();
+		setContentSize(CCSizeMake(sz.width, v));
+	}
+	CCSize sz2 = getContentSize();
+	return CCValue::intValue(sz2.height);
+}
 CCValue CCNode::CALLNAME(rotationX)(CCValueArray& params) {
 	if(params.size()>0) {
 		setRotationX(params[0].floatValue());
@@ -1536,6 +1610,12 @@ CCValue CCNode::CALLNAME(scale)(CCValueArray& params) {
 		setScale(params[0].floatValue());
 	}
 	return CCValue::numberValue(getScale());
+}
+CCValue CCNode::CALLNAME(id)(CCValueArray& params) {
+	if(params.size()>0) {
+		setId(params[0].stringValue().c_str());
+	}
+	return CCValue::stringValue(getId());
 }
 CCValue CCNode::CALLNAME(tag)(CCValueArray& params) {
 	if(params.size()>0) {
