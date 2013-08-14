@@ -66,21 +66,72 @@ void CCValueUtil::append(CCValueArray& r,CCValueArray& a)
 
 CCSize CCValueUtil::size(CCValue& v)
 {
-	CCValueMap* map = v.mapValue();
-	if(map!=NULL) {
-		float w = 0, h = 0;
-		CCValueMapIterator it;
-		it = map->find("width");
-		if(it!=map->end()) {
-			w = it->second.floatValue();
+	if(v.isMap()) {
+		CCValueMap* map = v.mapValue();
+		if(map!=NULL) {
+			float w = 0, h = 0;
+			CCValueMapIterator it;
+			it = map->find("width");
+			if(it!=map->end()) {
+				w = it->second.floatValue();
+			}
+			it = map->find("height");
+			if(it!=map->end()) {
+				h = it->second.floatValue();
+			}
+			return CCSizeMake(w, h);
 		}
-		it = map->find("height");
-		if(it!=map->end()) {
-			h = it->second.floatValue();
+	} else if(v.isArray()) {
+		CCValueArray* arr = v.arrayValue();
+		if(arr!=NULL && arr->size()==2) {
+			float w = 0, h = 0;
+			w = (*arr)[0].floatValue();
+			h = (*arr)[1].floatValue();
+			return CCSizeMake(w, h);
 		}
-		return CCSizeMake(w, h);
 	}
 	return CCSizeMake(0,0);
+}
+
+CCRect CCValueUtil::rect(CCValue& v)
+{
+	if(v.isMap()) {
+		CCValueMap* map = v.mapValue();
+		if(map!=NULL) {
+			float w = 0, h = 0;
+			float x = 0, y = 0;
+			CCValueMapIterator it;
+			it = map->find("x");
+			if(it!=map->end()) {
+				x = it->second.floatValue();
+			}
+			it = map->find("y");
+			if(it!=map->end()) {
+				y = it->second.floatValue();
+			}
+			it = map->find("width");
+			if(it!=map->end()) {
+				w = it->second.floatValue();
+			}
+			it = map->find("height");
+			if(it!=map->end()) {
+				h = it->second.floatValue();
+			}
+			return CCRectMake(0,0,w,h);
+		}
+	} else if(v.isArray()) {
+		CCValueArray* arr = v.arrayValue();
+		if(arr!=NULL && arr->size()==4) {
+			float x = 0, y = 0;
+			x = (*arr)[0].floatValue();
+			y = (*arr)[1].floatValue();
+			float w = 0, h = 0;
+			w = (*arr)[1].floatValue();
+			h = (*arr)[2].floatValue();
+			return CCRectMake(x,y,w, h);
+		}
+	}
+	return CCRectMake(0,0,0,0);
 }
 
 CCValue CCValueUtil::size(float w, float h)
@@ -93,19 +144,29 @@ CCValue CCValueUtil::size(float w, float h)
 
 CCPoint CCValueUtil::point(CCValue& v)
 {
-	CCValueMap* map = v.mapValue();
-	if(map!=NULL) {
-		float x = 0, y = 0;
-		CCValueMapIterator it;
-		it = map->find("x");
-		if(it!=map->end()) {
-			x = it->second.floatValue();
+	if(v.isMap()) {
+		CCValueMap* map = v.mapValue();
+		if(map!=NULL) {
+			float x = 0, y = 0;
+			CCValueMapIterator it;
+			it = map->find("x");
+			if(it!=map->end()) {
+				x = it->second.floatValue();
+			}
+			it = map->find("y");
+			if(it!=map->end()) {
+				y = it->second.floatValue();
+			}
+			return CCPointMake(x, y);
 		}
-		it = map->find("y");
-		if(it!=map->end()) {
-			y = it->second.floatValue();
+	} else if(v.isArray()) {
+		CCValueArray* arr = v.arrayValue();
+		if(arr!=NULL && arr->size()==2) {
+			float x = 0, y = 0;
+			x = (*arr)[0].floatValue();
+			y = (*arr)[1].floatValue();
+			return CCPointMake(x, y);
 		}
-		return CCPointMake(x, y);
 	}
 	return CCPointZero;
 }
@@ -121,25 +182,35 @@ CCValue CCValueUtil::point(float x, float y)
 ccColor4B CCValueUtil::color4b(CCValue& v)
 {
 	GLubyte r = 0, g = 0, b = 0, o = 255;
-	CCValueMap* map = v.mapValue();
-	if(map!=NULL) {		
-		CCValueMapIterator it;
-		it = map->find("r");
-		if(it!=map->end()) {
-			r = it->second.intValue() & 0xFF;
+	if(v.isMap()) {
+		CCValueMap* map = v.mapValue();
+		if(map!=NULL) {		
+			CCValueMapIterator it;
+			it = map->find("r");
+			if(it!=map->end()) {
+				r = it->second.intValue() & 0xFF;
+			}
+			it = map->find("g");
+			if(it!=map->end()) {
+				g = it->second.intValue() & 0xFF;
+			}
+			it = map->find("b");
+			if(it!=map->end()) {
+				b = it->second.intValue() & 0xFF;
+			}
+			it = map->find("o");
+			if(it!=map->end()) {
+				o = it->second.intValue() & 0xFF;
+			}		
 		}
-		it = map->find("g");
-		if(it!=map->end()) {
-			g = it->second.intValue() & 0xFF;
+	} else if(v.isArray()) {
+		CCValueArray* arr = v.arrayValue();
+		if(arr!=NULL && arr->size()==4) {
+			r = (*arr)[0].intValue();
+			g = (*arr)[1].intValue();
+			b = (*arr)[1].intValue();
+			o = (*arr)[1].intValue();
 		}
-		it = map->find("b");
-		if(it!=map->end()) {
-			b = it->second.intValue() & 0xFF;
-		}
-		it = map->find("o");
-		if(it!=map->end()) {
-			o = it->second.intValue() & 0xFF;
-		}		
 	}
 	return ccc4(r,g,b,o);
 }
@@ -147,21 +218,30 @@ ccColor4B CCValueUtil::color4b(CCValue& v)
 ccColor3B CCValueUtil::color3b(CCValue& v)
 {
 	GLubyte r = 0, g = 0, b = 0;
-	CCValueMap* map = v.mapValue();
-	if(map!=NULL) {		
-		CCValueMapIterator it;
-		it = map->find("r");
-		if(it!=map->end()) {
-			r = it->second.intValue() & 0xFF;
+	if(v.isMap()) {
+		CCValueMap* map = v.mapValue();
+		if(map!=NULL) {		
+			CCValueMapIterator it;
+			it = map->find("r");
+			if(it!=map->end()) {
+				r = it->second.intValue() & 0xFF;
+			}
+			it = map->find("g");
+			if(it!=map->end()) {
+				g = it->second.intValue() & 0xFF;
+			}
+			it = map->find("b");
+			if(it!=map->end()) {
+				b = it->second.intValue() & 0xFF;
+			}		
 		}
-		it = map->find("g");
-		if(it!=map->end()) {
-			g = it->second.intValue() & 0xFF;
+	} else if(v.isArray()) {
+		CCValueArray* arr = v.arrayValue();
+		if(arr!=NULL && arr->size()==3) {
+			r = (*arr)[0].intValue();
+			g = (*arr)[1].intValue();
+			b = (*arr)[1].intValue();
 		}
-		it = map->find("b");
-		if(it!=map->end()) {
-			b = it->second.intValue() & 0xFF;
-		}		
 	}
 	return ccc3(r,g,b);
 }

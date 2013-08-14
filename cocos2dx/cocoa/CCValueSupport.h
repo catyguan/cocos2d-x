@@ -36,8 +36,9 @@ class CC_DLL CCValueUtil
 public:
 	static void append(CCValueArray& r,CCValueArray& a1);
 
-	static CCSize size(CCValue& v);
 	static CCPoint point(CCValue& v);
+	static CCSize size(CCValue& v);
+	static CCRect rect(CCValue& v);
 	static ccColor4B color4b(CCValue& v);
 	static ccColor3B color3b(CCValue& v);
 
@@ -54,6 +55,7 @@ public:
 #define ccvpFloat(params,idx)	(params.size()>idx?params[idx].floatValue():0)
 #define ccvpString(params,idx)	(params.size()>idx?params[idx].stringValue():std::string())
 #define ccvpSize(params, idx) (params.size()>idx?CCValueUtil::size(params[idx]):CCSizeMake(0,0))
+#define ccvpRect(params, idx) (params.size()>idx?CCValueUtil::rect(params[idx]):CCRectMake(0,0,0,0))
 #define ccvpPoint(params, idx) (params.size()>idx?CCValueUtil::point(params[idx]):CCPointZero)
 #define ccvpColor(params, idx) (params.size()>idx?CCValueUtil::color4b(params[idx]):ccc4(0,0,0,255))
 #define ccvpColor3B(params, idx) (params.size()>idx?CCValueUtil::color3b(params[idx]):ccc3(0,0,0))

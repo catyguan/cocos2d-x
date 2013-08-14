@@ -186,7 +186,7 @@ bool CCNode::setup(CCValue& properties)
 					CCValueMapIterator it2 = map2->begin();
 					for(;it2!=map2->end();it2++) {
 						if(it2->second.canCall()) {
-							bindMethod(it->first.c_str(), it2->second);
+							bindMethod(it2->first.c_str(), it2->second);
 						}
 					}
 				}
@@ -197,8 +197,8 @@ bool CCNode::setup(CCValue& properties)
 					CCValueMapIterator it2 = map2->begin();
 					for(;it2!=map2->end();it2++) {
 						if(it2->second.canCall()) {
-							std::string id = "setup_"+it->first;
-							onEvent(it->first.c_str(), id.c_str(), it2->second);
+							std::string id = "setup_"+it2->first;
+							onEvent(it2->first.c_str(), id.c_str(), it2->second);
 						}
 					}
 				}
@@ -1408,6 +1408,10 @@ CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, setup)
 	CC_DEFINE_CALL(CCNode, addChild)
 	CC_DEFINE_CALL(CCNode, removeChild)
+	CC_DEFINE_CALL(CCNode, runAction)
+	CC_DEFINE_CALL(CCNode, stopAllActions)
+	CC_DEFINE_CALL(CCNode, stopAction)
+	CC_DEFINE_CALL(CCNode, getAction)
 	CC_DEFINE_CALL(CCNode, anchorPoint)
 	CC_DEFINE_CALL(CCNode, contentSize)
 	CC_DEFINE_CALL(CCNode, width)
@@ -1528,6 +1532,39 @@ CCValue CCNode::CALLNAME(removeChild)(CCValueArray& params) {
 		}
 	}
 	return CCValue::intValue(r);
+}
+CCValue CCNode::CALLNAME(runAction)(CCValueArray& params) {
+	CCAction* obj = ccvpObject(params,0,CCAction);
+	runAction(obj);
+	return CCValue::booleanValue(true);
+}
+CCValue CCNode::CALLNAME(stopAllActions)(CCValueArray& params) {
+	stopAllActions();
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(stopAction)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCValue& v = params[0];
+		if(v.isInt() || v.isNumber()) {
+			stopActionByTag(v.intValue());
+			return CCValue::booleanValue(true);
+		} else if(v.isString()) {
+			stopActionById(v.stringValue().c_str());
+			return CCValue::booleanValue(true);
+		}
+	}
+	return CCValue::booleanValue(false);
+}
+CCValue CCNode::CALLNAME(getAction)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCValue& v = params[0];
+		if(v.isInt() || v.isNumber()) {
+			return CCValue::objectValue(getActionByTag(v.intValue()));
+		} else if(v.isString()) {
+			return CCValue::objectValue(getActionById(v.stringValue().c_str()));
+		}
+	}
+	return CCValue::nullValue();
 }
 CCValue CCNode::CALLNAME(anchorPoint)(CCValueArray& params) {
 	if(params.size()>0) {
