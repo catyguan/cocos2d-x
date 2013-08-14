@@ -112,6 +112,7 @@ const CCValue CCValue::ocallValue(CCObject* obj, CC_OBJECT_CALL call)
 
 CCValue::CCValue(const CCValue& rhs)
 {
+	m_type = CCValueTypeNull;
     copy(rhs);
 }
 
