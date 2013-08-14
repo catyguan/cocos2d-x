@@ -190,6 +190,26 @@ bool CCNode::setup(CCValue& properties)
 						}
 					}
 				}
+			} else if(name.compare("layout")==0) {
+				const CCValue& ms = it->second;
+				if(ms.isMap()) {
+					std::string p("layout_");
+					CCValueMap* map2 = ms.mapValue();
+					CCValueMapIterator it2 = map2->begin();
+					for(;it2!=map2->end();it2++) {
+						std::string id = p+it2->first;
+						this->attribute(id.c_str(), it2->second);
+					}
+				}
+			} else if(name.compare("attributes")==0) {
+				const CCValue& ms = it->second;
+				if(ms.isMap()) {
+					CCValueMap* map2 = ms.mapValue();
+					CCValueMapIterator it2 = map2->begin();
+					for(;it2!=map2->end();it2++) {
+						this->attribute(it2->first.c_str(), it2->second);
+					}
+				}
 			} else if(name.compare("onEvent")==0) {
 				const CCValue& ms = it->second;
 				if(ms.isMap()) {
@@ -1776,6 +1796,7 @@ void CCNode::attribute(const char* name, CCValue v)
 	} else {
 		if(m_pAttributes==NULL)m_pAttributes = new CCValueMap();
 		(*m_pAttributes)[name] = v;
+		(*m_pAttributes)[name].retain();
 	}
 }
 bool CCNode::removeAttribute(const char* name)
@@ -1867,7 +1888,7 @@ void CCNode::onEvent(const char* name,const char* id, CCObject* obj,SEL_NodeEven
 		}
 		h->handler = handler;
 	} else {
-		obj = NULL;
+		h->handleObject = NULL;
 		h->handler = NULL;
 	}
 	h->call = call;
