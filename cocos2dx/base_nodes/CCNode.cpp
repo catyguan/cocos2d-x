@@ -705,7 +705,21 @@ CCNode* CCNode::getChildById(const char* id)
 
 CCObject* CCNode::findChildById(const char* id)
 {
-	return getChildById(id);
+	CCObject* obj = getChildById(id);
+	if(obj!=NULL)return obj;
+	if(m_pChildren && m_pChildren->count() > 0)
+    {
+        CCObject* child;
+        CCARRAY_FOREACH(m_pChildren, child)
+        {
+            CCNode* pNode = (CCNode*) child;
+			if(pNode->m_nId.size()==0) {
+				CCObject* r = pNode->findChildById(id);
+				if(r!=NULL)return r;
+			}
+        }
+    }
+    return NULL;
 }
 
 /* "add" logic MUST only be on this method
