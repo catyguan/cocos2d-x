@@ -1543,12 +1543,20 @@ CCValue CCNode::CALLNAME(setup)(CCValueArray& params) {
 	return CCValue::booleanValue(r);
 }
 CCValue CCNode::CALLNAME(addChild)(CCValueArray& params) {
-	CCNode* ch = ccvpObject(params,0,CCNode);
-	int zOrder = ccvpInt(params,1);
-	int tag = ccvpInt(params,2);
+	CCNode* ch = ccvpObject(params,0,CCNode);	
 	bool r = false;
 	if(ch!=NULL) {
-		addChild(ch, zOrder, tag);
+		if(params.size()>1) {
+			int zOrder = ccvpInt(params,1);
+			if(params.size()>2) {
+				int tag = ccvpInt(params,2);
+				addChild(ch, zOrder, tag);
+			} else {
+				addChild(ch, zOrder);					
+			}
+		} else {
+			addChild(ch);
+		}
 		r = true;
 	}
 	return CCValue::booleanValue(r);
@@ -1742,7 +1750,7 @@ CCValue CCNode::CALLNAME(zOrder)(CCValueArray& params) {
 CCValue CCNode::CALLNAME(onEvent)(CCValueArray& params) {
 	std::string name = ccvpString(params, 0);
 	std::string id = ccvpString(params,1);
-	CCValue call = params.size()>2?params[2]:CCValue::nullValue();
+	CCValue call = ccvp(params,2 );
 	if(name.length()==0 || id.length()==0 || !call.canCall()) {
 		throw new std::string("invalid params for onEvent");
 	}
