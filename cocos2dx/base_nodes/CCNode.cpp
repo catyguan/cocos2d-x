@@ -497,12 +497,21 @@ const CCSize& CCNode::getContentSize() const
 
 void CCNode::setContentSize(const CCSize & size)
 {
-    if ( ! size.equals(m_obContentSize))
+    if (!size.equals(m_obContentSize))
     {
+		// catyguan
+		CCSize old = m_obContentSize;
+
         m_obContentSize = size;
 
         m_obAnchorPointInPoints = ccp(m_obContentSize.width * m_obAnchorPoint.x, m_obContentSize.height * m_obAnchorPoint.y );
         m_bTransformDirty = m_bInverseDirty = true;
+
+		// catyguan
+		if(hasEventHandler(NODE_EVENT_RESIZE)) {
+			CCResizeEvent e(m_obContentSize, old);
+			raiseEvent(NODE_EVENT_RESIZE, &e);
+		}	
     }
 }
 
@@ -1071,7 +1080,7 @@ void CCNode::onEnter()
 
     m_bRunning = true;
 
-	raiseEvent("enter",NULL);	
+	raiseEvent(NODE_EVENT_ENTER,NULL);	
 }
 
 void CCNode::onEnterTransitionDidFinish()
@@ -1092,7 +1101,7 @@ void CCNode::onExit()
 
     arrayMakeObjectsPerformSelector(m_pChildren, onExit, CCNode*);    
 	
-	raiseEvent("exit",NULL);	
+	raiseEvent(NODE_EVENT_EXIT,NULL);	
 }
 
 void CCNode::setActionManager(CCActionManager* actionManager)
@@ -1577,6 +1586,9 @@ CCValue CCNode::CALLNAME(removeChild)(CCValueArray& params) {
 }
 CCValue CCNode::CALLNAME(runAction)(CCValueArray& params) {
 	CCAction* obj = ccvpObject(params,0,CCAction);
+	if(obj==NULL) {
+		throw new std::string("runAction() param 1 expect CCAction");
+	}
 	runAction(obj);
 	return CCValue::booleanValue(true);
 }

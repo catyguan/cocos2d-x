@@ -486,6 +486,10 @@ public:
     void setFlipY(bool bFlipY);
     
     /// @} End of Sprite properties getter/setters
+
+	// catyguan
+	void scaleWidth(float width);
+    void scaleHeight(float height);
     
 protected:
     void updateColor(void);
@@ -534,6 +538,12 @@ protected:
     // image is flipped
     bool m_bFlipX;                              /// Whether the sprite is flipped horizaontally or not.
     bool m_bFlipY;                              /// Whether the sprite is flipped vertically or not.
+
+	// catyguan
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(scaleWidth)
+	CC_DECLARE_CALL(scaleHeight)
+	CC_DECLARE_CALLS_END
 };
 
 

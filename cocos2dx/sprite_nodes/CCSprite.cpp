@@ -47,6 +47,8 @@ THE SOFTWARE.
 #include "kazmath/GL/matrix.h"
 #include <string.h>
 
+#include "../cocoa/CCValueSupport.h"
+
 using namespace std;
 
 NS_CC_BEGIN
@@ -1104,6 +1106,40 @@ void CCSprite::setTexture(CCTexture2D *texture)
 CCTexture2D* CCSprite::getTexture(void)
 {
     return m_pobTexture;
+}
+
+// catyguan
+void CCSprite::scaleWidth(float w)
+{
+	CCSize sz = getContentSize();
+	if(sz.width>0) {
+		setScaleX(w/sz.width);
+	}
+}
+
+void CCSprite::scaleHeight(float h)
+{
+	CCSize sz = getContentSize();
+	if(sz.height>0) {
+		setScaleY(h/sz.height);
+	}
+}
+
+CC_BEGIN_CALLS(CCSprite, CCNodeRGBA)	
+	CC_DEFINE_CALL(CCSprite, scaleWidth)
+	CC_DEFINE_CALL(CCSprite, scaleHeight)
+CC_END_CALLS(CCSprite, CCNodeRGBA)
+
+CCValue CCSprite::CALLNAME(scaleWidth)(CCValueArray& params) {	
+	float v = ccvpFloat(params, 0);
+	scaleWidth(v);
+	return CCValue::nullValue();
+}
+
+CCValue CCSprite::CALLNAME(scaleHeight)(CCValueArray& params) {	
+	float v = ccvpFloat(params, 0);
+	scaleWidth(v);
+	return CCValue::nullValue();
 }
 
 NS_CC_END
