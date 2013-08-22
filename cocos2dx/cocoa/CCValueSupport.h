@@ -45,6 +45,8 @@ public:
 	static CCValue size(float x, float y);
 	static CCValue point(float x, float y);	
 	static CCValue color3b(ccColor3B& v);
+
+	static std::string toString(CCValue& v);
 };
 
 #define ccvp(params,idx) (params.size()>idx?params[idx]:CCValue::nullValue())

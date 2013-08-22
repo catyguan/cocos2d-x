@@ -255,4 +255,27 @@ CCValue CCValueUtil::color3b(ccColor3B& v)
 	return CCValue::mapValue(map);
 }
 
+std::string CCValueUtil::toString(CCValue& v)
+{
+	char buf[128];
+	int pos;
+	switch(v.getType()) {	
+	case CCValueTypeInt:		
+		pos = sprintf(buf, "%d", v.intValue());
+		buf[pos] = 0;
+		return buf;
+	case CCValueTypeNumber:
+		pos = sprintf(buf, "%f", v.floatValue());
+		buf[pos] = 0;
+		return buf;
+	case CCValueTypeBoolean:
+		return v.booleanValue()?"true":"false";
+	case CCValueTypeString:
+		return v.stringValue();
+    case CCValueTypeNull:
+	default:
+		return "";
+	}
+}
+
 NS_CC_END
