@@ -126,12 +126,22 @@ CCRect CCValueUtil::rect(CCValue& v)
 			x = (*arr)[0].floatValue();
 			y = (*arr)[1].floatValue();
 			float w = 0, h = 0;
-			w = (*arr)[1].floatValue();
-			h = (*arr)[2].floatValue();
+			w = (*arr)[2].floatValue();
+			h = (*arr)[3].floatValue();
 			return CCRectMake(x,y,w, h);
 		}
 	}
 	return CCRectMake(0,0,0,0);
+}
+
+CCValue CCValueUtil::rect(CCRect& rect)
+{
+	CCValueMap map;
+	map["x"] = CCValue::intValue(rect.origin.x);
+	map["y"] = CCValue::intValue(rect.origin.y);
+	map["width"] = CCValue::intValue(rect.size.width);
+	map["height"] = CCValue::intValue(rect.size.height);
+	return CCValue::mapValue(map);
 }
 
 CCValue CCValueUtil::size(float w, float h)
@@ -205,11 +215,13 @@ ccColor4B CCValueUtil::color4b(CCValue& v)
 		}
 	} else if(v.isArray()) {
 		CCValueArray* arr = v.arrayValue();
-		if(arr!=NULL && arr->size()==4) {
+		if(arr!=NULL && arr->size()>=3) {
 			r = (*arr)[0].intValue();
 			g = (*arr)[1].intValue();
-			b = (*arr)[1].intValue();
-			o = (*arr)[1].intValue();
+			b = (*arr)[2].intValue();
+			if(arr->size()>3) {
+				o = (*arr)[3].intValue();
+			}
 		}
 	}
 	return ccc4(r,g,b,o);
@@ -240,7 +252,7 @@ ccColor3B CCValueUtil::color3b(CCValue& v)
 		if(arr!=NULL && arr->size()==3) {
 			r = (*arr)[0].intValue();
 			g = (*arr)[1].intValue();
-			b = (*arr)[1].intValue();
+			b = (*arr)[2].intValue();
 		}
 	}
 	return ccc3(r,g,b);
@@ -254,6 +266,8 @@ CCValue CCValueUtil::color3b(ccColor3B& v)
 	map["b"] = CCValue::intValue(v.b);
 	return CCValue::mapValue(map);
 }
+
+
 
 std::string CCValueUtil::toString(CCValue& v)
 {

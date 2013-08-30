@@ -541,8 +541,11 @@ protected:
 
 	// catyguan
 	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(createFrame)
+	CC_DECLARE_CALL(displayFrame)
 	CC_DECLARE_CALL(scaleWidth)
 	CC_DECLARE_CALL(scaleHeight)
+	CC_DECLARE_CALL(texture)
 	CC_DECLARE_CALLS_END
 };
 

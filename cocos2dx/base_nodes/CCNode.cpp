@@ -1216,6 +1216,12 @@ void CCNode::schedule(SEL_SCHEDULE selector, float interval, unsigned int repeat
     m_pScheduler->scheduleSelector(selector, this, interval , repeat, delay, !m_bRunning);
 }
 
+void CCNode::schedule(const char* id, CCValue call, float interval, unsigned int repeat, float delay)
+{
+    CCAssert( interval >=0, "Argument must be positive");
+    m_pScheduler->scheduleSelector(id, call, NULL, this, interval , repeat, delay, !m_bRunning);
+}
+
 void CCNode::scheduleOnce(SEL_SCHEDULE selector, float delay)
 {
     this->schedule(selector, 0.0f, 0, delay);
@@ -1228,6 +1234,13 @@ void CCNode::unschedule(SEL_SCHEDULE selector)
         return;
 
     m_pScheduler->unscheduleSelector(selector, this);
+}
+
+void CCNode::unschedule(const char* id)
+{
+    if (id == NULL)
+        return;
+    m_pScheduler->unscheduleSelector(NULL, id, this);
 }
 
 void CCNode::unscheduleAllSelectors()
@@ -1480,6 +1493,9 @@ CC_BEGIN_CALLS(CCNode, CCObject)
 	CC_DEFINE_CALL(CCNode, zOrder)
 	CC_DEFINE_CALL(CCNode, onEvent)
 	CC_DEFINE_CALL(CCNode, removeEvent)
+	CC_DEFINE_CALL(CCNode, schedule)
+	CC_DEFINE_CALL(CCNode, scheduleOnce)
+	CC_DEFINE_CALL(CCNode, unschedule)
 // CC_END_CALLS(CCNode, CCObject)
 {NULL,NULL}};
 
@@ -1773,6 +1789,31 @@ CCValue CCNode::CALLNAME(removeEvent)(CCValueArray& params) {
 	std::string name = ccvpString(params, 0);
 	std::string id = ccvpString(params,1);
 	return CCValue::booleanValue(removeEventHandler(name.c_str(), id.c_str()));
+}
+CCValue CCNode::CALLNAME(schedule)(CCValueArray& params) {	
+	std::string id = ccvpString(params,0);
+	CCValue call = ccvp(params, 1);
+	float interval = ccvpFloat(params, 2);
+	int repeat = -1;
+	if(params.size()>3) {
+		repeat = params[3].intValue();
+	}
+	if(repeat<0)repeat = kCCRepeatForever;	
+	float delay = ccvpFloat(params, 4);
+	this->schedule(id.c_str(), call, interval, repeat, delay);
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(scheduleOnce)(CCValueArray& params) {	
+	std::string id = ccvpString(params,0);
+	CCValue call = ccvp(params, 1);
+	float delay = ccvpFloat(params, 2);
+	schedule(id.c_str(), call, 0.0f, 0, delay);
+	return CCValue::nullValue();
+}
+CCValue CCNode::CALLNAME(unschedule)(CCValueArray& params) {
+	std::string id = ccvpString(params,0);
+	unschedule(id.c_str());
+	return CCValue::nullValue();
 }
 // end cc_call
 

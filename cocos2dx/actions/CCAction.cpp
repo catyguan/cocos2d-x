@@ -31,6 +31,8 @@ THE SOFTWARE.
 #include "CCDirector.h"
 #include "cocoa/CCZone.h"
 
+#include "cocoa\CCValueSupport.h"
+
 NS_CC_BEGIN
 //
 // Action Base Class
@@ -104,6 +106,27 @@ void CCAction::update(float time)
 {
     CC_UNUSED_PARAM(time);
     CCLOG("[Action update]. override me");
+}
+
+CC_BEGIN_CALLS(CCAction, CCObject)	
+	CC_DEFINE_CALL(CCAction, id)
+	CC_DEFINE_CALL(CCAction, tag)
+CC_END_CALLS(CCAction, CCObject)
+
+CCValue CCAction::CALLNAME(id)(CCValueArray& params) {
+	if(params.size()>0) {
+		std::string v = params[0].stringValue();		
+		setId(v.c_str());
+	}
+	return CCValue::stringValue(getId());
+}
+
+CCValue CCAction::CALLNAME(tag)(CCValueArray& params) {
+	if(params.size()>0) {
+		int v = params[0].intValue();		
+		setTag(v);
+	}
+	return CCValue::intValue(getTag());
 }
 
 //

@@ -46,6 +46,11 @@ THE SOFTWARE.
 #include "shaders/ccGLStateCache.h"
 #include "shaders/CCShaderCache.h"
 
+#include "cocoa\CCValueSupport.h"
+#include "sprite_nodes\CCSprite.h"
+#include "sprite_nodes\CCSpriteFrame.h"
+#include "sprite_nodes\CCSpriteBatchNode.h"
+
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     #include "CCTextureCache.h"
 #endif
@@ -940,5 +945,64 @@ unsigned int CCTexture2D::bitsPerPixelForFormat()
 	return this->bitsPerPixelForFormat(m_ePixelFormat);
 }
 
+CC_BEGIN_CALLS(CCTexture2D, CCObject)	
+	CC_DEFINE_CALL(CCTexture2D, createFrame)
+	CC_DEFINE_CALL(CCTexture2D, createSprite)
+	CC_DEFINE_CALL(CCTexture2D, createSpriteBatch)
+	CC_DEFINE_CALL(CCTexture2D, width)
+	CC_DEFINE_CALL(CCTexture2D, height)
+	CC_DEFINE_CALL(CCTexture2D, contentSize)
+CC_END_CALLS(CCTexture2D, CCObject)
+
+CCValue CCTexture2D::CALLNAME(createFrame)(CCValueArray& params) {	
+	if(params.size()>0) {			
+		CCRect rect = CCValueUtil::rect(params[0]);
+		CCSpriteFrame* obj = CCSpriteFrame::createWithTexture(this, rect);
+		return CCValue::objectValue(obj);
+	}
+	return CCValue::nullValue();
+}
+
+CCValue CCTexture2D::CALLNAME(createSprite)(CCValueArray& params) {	
+	CCSprite* obj = NULL;
+	if(params.size()>0) {			
+		CCRect rect = CCValueUtil::rect(params[0]);
+		obj = CCSprite::createWithTexture(this, rect);
+	} else {
+		obj = CCSprite::createWithTexture(this);
+	}
+	return CCValue::objectValue(obj);
+}
+
+CCValue CCTexture2D::CALLNAME(createSpriteBatch)(CCValueArray& params) {	
+	CCSpriteBatchNode* obj;
+	if(params.size()>0) {			
+		int v = ccvpInt(params, 0);
+		obj = CCSpriteBatchNode::createWithTexture(this,v);
+	} else {
+		obj = CCSpriteBatchNode::createWithTexture(this);
+	}
+	return CCValue::objectValue(obj);
+}
+
+CCValue CCTexture2D::CALLNAME(contentSize)(CCValueArray& params) {	
+	CCSize sz = this->getContentSize();
+	return CCValueUtil::size(sz.width, sz.height);
+}
+
+CCValue CCTexture2D::CALLNAME(width)(CCValueArray& params) {	
+	CCSize sz = this->getContentSize();
+	return CCValue::intValue(sz.width);
+}
+
+CCValue CCTexture2D::CALLNAME(height)(CCValueArray& params) {	
+	CCSize sz = this->getContentSize();
+	return CCValue::intValue(sz.height);
+}
+
+CCValue CCTexture2D::CALLNAME(contentSizeInPixels)(CCValueArray& params) {	
+	CCSize sz = this->getContentSizeInPixels();
+	return CCValueUtil::size(sz.width, sz.height);
+}
 
 NS_CC_END

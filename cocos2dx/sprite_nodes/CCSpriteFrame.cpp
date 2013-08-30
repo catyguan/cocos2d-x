@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include "textures/CCTextureCache.h"
 #include "CCSpriteFrame.h"
 #include "CCDirector.h"
+#include "cocoa\CCValueSupport.h"
 
 NS_CC_BEGIN
 
@@ -186,5 +187,93 @@ CCTexture2D* CCSpriteFrame::getTexture(void)
     return NULL;
 }
 
-NS_CC_END
+CC_BEGIN_CALLS(CCSpriteFrame, CCObject)	
+	CC_DEFINE_CALL(CCSpriteFrame, rectInPixels)
+	CC_DEFINE_CALL(CCSpriteFrame, rotated)
+	CC_DEFINE_CALL(CCSpriteFrame, rect)
+	CC_DEFINE_CALL(CCSpriteFrame, offsetInPixels)
+	CC_DEFINE_CALL(CCSpriteFrame, originalSizeInPixels)
+	CC_DEFINE_CALL(CCSpriteFrame, originalSize)
+	CC_DEFINE_CALL(CCSpriteFrame, offset)	
+	CC_DEFINE_CALL(CCSpriteFrame, texture)
+CC_END_CALLS(CCSpriteFrame, CCObject)
 
+CCValue CCSpriteFrame::CALLNAME(rectInPixels)(CCValueArray& params) {
+	if(params.size()>0) {
+		CCRect rect = CCValueUtil::rect(params[0]);
+		setRectInPixels(rect);
+		return CCValue::nullValue();
+	} else {
+		CCRect rect = getRectInPixels();
+		return CCValueUtil::rect(rect);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(rotated)(CCValueArray& params) {	
+	if(params.size()>0) {
+		bool v = params[0].booleanValue();
+		setRotated(v);
+	}
+	return CCValue::booleanValue(isRotated());
+}
+
+CCValue CCSpriteFrame::CALLNAME(rect)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCRect rect = CCValueUtil::rect(params[0]);
+		setRect(rect);
+		return CCValue::nullValue();
+	} else {
+		CCRect rect = getRect();
+		return CCValueUtil::rect(rect);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(offsetInPixels)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCPoint pt = CCValueUtil::point(params[0]);
+		setOffsetInPixels(pt);
+		return CCValue::nullValue();
+	} else {
+		CCPoint pt = getOffsetInPixels();
+		return CCValueUtil::point(pt.x, pt.y);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(originalSizeInPixels)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCSize v = CCValueUtil::point(params[0]);
+		setOriginalSizeInPixels(v);
+		return CCValue::nullValue();
+	} else {
+		CCSize v = getOriginalSizeInPixels();
+		return CCValueUtil::size(v.width, v.height);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(originalSize)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCSize v = CCValueUtil::point(params[0]);
+		setOriginalSize(v);
+		return CCValue::nullValue();
+	} else {
+		CCSize v = getOriginalSize();
+		return CCValueUtil::size(v.width, v.height);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(offset)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCPoint pt = CCValueUtil::point(params[0]);
+		setOffset(pt);
+		return CCValue::nullValue();
+	} else {
+		CCPoint pt = getOffset();
+		return CCValueUtil::point(pt.x, pt.y);
+	}
+}
+
+CCValue CCSpriteFrame::CALLNAME(texture)(CCValueArray& params) {	
+	return CCValue::objectValue(getTexture());
+}
+
+NS_CC_END

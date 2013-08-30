@@ -149,6 +149,18 @@ protected:
     CCSize m_obOriginalSizeInPixels;
     CCTexture2D *m_pobTexture;
     std::string  m_strTextureFilename;
+
+	// catyguan
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(rectInPixels)
+	CC_DECLARE_CALL(rotated)
+	CC_DECLARE_CALL(rect)
+	CC_DECLARE_CALL(offsetInPixels)
+	CC_DECLARE_CALL(originalSizeInPixels)
+	CC_DECLARE_CALL(originalSize)
+	CC_DECLARE_CALL(offset)
+	CC_DECLARE_CALL(texture)
+	CC_DECLARE_CALLS_END
 };
 
 // end of sprite_nodes group

@@ -103,6 +103,16 @@ CCTimer* CCTimer::timerWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector, f
     return pTimer;
 }
 
+CCTimer* CCTimer::timerWithTarget(CCObject *pTarget, const char* id, CCValue call, float fSeconds)
+{
+    CCTimer *pTimer = new CCTimer();
+
+    pTimer->initWithTarget(pTarget, id, call, fSeconds, kCCRepeatForever, 0.0f);
+    pTimer->autorelease();
+
+    return pTimer;
+}
+
 bool CCTimer::initWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector)
 {
     return initWithTarget(pTarget, pfnSelector, 0, kCCRepeatForever, 0.0f);
@@ -118,6 +128,19 @@ bool CCTimer::initWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector, float 
     m_bUseDelay = (fDelay > 0.0f) ? true : false;
     m_uRepeat = nRepeat;
     m_bRunForever = (nRepeat == kCCRepeatForever) ? true : false;
+    return true;
+}
+
+bool CCTimer::initWithTarget(CCObject *pTarget, const char* id, CCValue call, float fSeconds, unsigned int nRepeat, float fDelay)
+{
+	initWithTarget(pTarget, NULL, fSeconds, nRepeat, fDelay);
+	if(id!=NULL) {
+		m_id = id;
+	}
+	m_call = call;
+	if(m_call.canCall()) {
+		m_call.retain();
+	}
     return true;
 }
 
@@ -138,11 +161,16 @@ void CCTimer::update(float dt)
                 if (m_pTarget && m_pfnSelector)
                 {
                     (m_pTarget->*m_pfnSelector)(m_fElapsed);
-                }
+				} else if(m_call.canCall()) {
+					CCValueArray ps;
+					ps.push_back(CCValue::objectValue(m_pTarget));
+					ps.push_back(CCValue::numberValue(m_fElapsed));
+					m_call.call(ps, false);
+				}
 
                 m_fElapsed = 0;
             }
-        }    
+        }
         else
         {//advanced usage
             m_fElapsed += dt;
@@ -153,7 +181,12 @@ void CCTimer::update(float dt)
                     if (m_pTarget && m_pfnSelector)
                     {
                         (m_pTarget->*m_pfnSelector)(m_fElapsed);
-                    }
+                    } else if(m_call.canCall()) {
+						CCValueArray ps;
+						ps.push_back(CCValue::objectValue(m_pTarget));
+						ps.push_back(CCValue::numberValue(m_fElapsed));
+						m_call.call(ps, false);
+					}
 
                     m_fElapsed = m_fElapsed - m_fDelay;
                     m_uTimesExecuted += 1;
@@ -166,8 +199,13 @@ void CCTimer::update(float dt)
                 {
                     if (m_pTarget && m_pfnSelector)
                     {
-                        (m_pTarget->*m_pfnSelector)(m_fElapsed);
-                    }
+                        (m_pTarget->*m_pfnSelector)(m_fElapsed);                    
+					} else if(m_call.canCall()) {
+						CCValueArray ps;
+						ps.push_back(CCValue::objectValue(m_pTarget));
+						ps.push_back(CCValue::numberValue(m_fElapsed));
+						m_call.call(ps, false);
+					}
                     
                     m_fElapsed = 0;
                     m_uTimesExecuted += 1;
@@ -177,7 +215,7 @@ void CCTimer::update(float dt)
 
             if (!m_bRunForever && m_uTimesExecuted > m_uRepeat)
             {    //unschedule timer
-                CCDirector::sharedDirector()->getScheduler()->unscheduleSelector(m_pfnSelector, m_pTarget);
+				CCDirector::sharedDirector()->getScheduler()->unscheduleSelector(m_pfnSelector, m_id.size()==0?NULL:m_id.c_str(), m_pTarget);
             }
         }
     }
@@ -242,7 +280,12 @@ void CCScheduler::scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, 
 
 void CCScheduler::scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, unsigned int repeat, float delay, bool bPaused)
 {
-    CCAssert(pfnSelector, "Argument selector must be non-NULL");
+	scheduleSelector(NULL, CCValue::nullValue(), pfnSelector, pTarget, fInterval, repeat, delay, bPaused);
+}
+
+void CCScheduler::scheduleSelector(const char* id, CCValue call, SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, unsigned int repeat, float delay, bool bPaused)
+{
+	CCAssert(pfnSelector || call.canCall(), "Argument selector must be non-NULL");
     CCAssert(pTarget, "Argument target must be non-NULL");
 
     tHashTimerEntry *pElement = NULL;
@@ -276,7 +319,7 @@ void CCScheduler::scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, 
         {
             CCTimer *timer = (CCTimer*)pElement->timers->arr[i];
 
-            if (pfnSelector == timer->getSelector())
+			if (timer->is(pfnSelector, id))
             {
                 CCLOG("CCScheduler#scheduleSelector. Selector already scheduled. Updating interval from: %.4f to %.4f", timer->getInterval(), fInterval);
                 timer->setInterval(fInterval);
@@ -287,15 +330,25 @@ void CCScheduler::scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, 
     }
 
     CCTimer *pTimer = new CCTimer();
-    pTimer->initWithTarget(pTarget, pfnSelector, fInterval, repeat, delay);
+	if(pfnSelector!=NULL) {
+		pTimer->initWithTarget(pTarget, pfnSelector, fInterval, repeat, delay);
+	} else {
+		pTimer->initWithTarget(pTarget, id, call, fInterval, repeat, delay);
+	}
     ccArrayAppendObject(pElement->timers, pTimer);
-    pTimer->release();    
+    pTimer->release();
 }
 
 void CCScheduler::unscheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget)
 {
+	unscheduleSelector(pfnSelector, NULL, pTarget);
+}
+
+// catyguan
+void CCScheduler::unscheduleSelector(SEL_SCHEDULE pfnSelector, const char* id, CCObject *pTarget)
+{
     // explicity handle nil arguments when removing an object
-    if (pTarget == 0 || pfnSelector == 0)
+    if (pTarget == 0 || (pfnSelector == 0 && id==NULL))
     {
         return;
     }
@@ -310,9 +363,8 @@ void CCScheduler::unscheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget
     {
         for (unsigned int i = 0; i < pElement->timers->num; ++i)
         {
-            CCTimer *pTimer = (CCTimer*)(pElement->timers->arr[i]);
-
-            if (pfnSelector == pTimer->getSelector())
+            CCTimer *pTimer = (CCTimer*)(pElement->timers->arr[i]);			
+			if (pTimer->is(pfnSelector, id))
             {
                 if (pTimer == pElement->currentTimer && (! pElement->currentTimerSalvaged))
                 {

@@ -114,6 +114,12 @@ protected:
     /** The action tag. An identifier of the action */
     int     m_nTag;
 	std::string m_nId;
+
+	// catyguan
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(id)
+	CC_DECLARE_CALL(tag)
+	CC_DECLARE_CALLS_END
 };
 
 /** 

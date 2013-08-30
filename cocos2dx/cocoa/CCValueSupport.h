@@ -45,6 +45,7 @@ public:
 	static CCValue size(float x, float y);
 	static CCValue point(float x, float y);	
 	static CCValue color3b(ccColor3B& v);
+	static CCValue rect(CCRect& rect);
 
 	static std::string toString(CCValue& v);
 };

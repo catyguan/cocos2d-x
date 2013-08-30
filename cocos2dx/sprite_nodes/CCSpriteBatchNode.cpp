@@ -40,6 +40,8 @@ THE SOFTWARE.
 // external
 #include "kazmath/GL/matrix.h"
 
+#include "cocoa\CCValueSupport.h"
+
 NS_CC_BEGIN
 
 /*
@@ -775,6 +777,31 @@ CCSpriteBatchNode * CCSpriteBatchNode::addSpriteWithoutQuad(CCSprite*child, unsi
     reorderBatch(false);
 
     return this;
+}
+
+CC_BEGIN_CALLS(CCSpriteBatchNode, CCNode)	
+	CC_DEFINE_CALL(CCSpriteBatchNode, texture)
+	CC_DEFINE_CALL(CCSpriteBatchNode, createSprite)
+CC_END_CALLS(CCSpriteBatchNode, CCNode)
+
+CCValue CCSpriteBatchNode::CALLNAME(createSprite)(CCValueArray& params) {	
+	if(params.size()>0) {			
+		CCRect rect = CCValueUtil::rect(params[0]);
+		CCSprite* obj = CCSprite::createWithTexture(getTexture(), rect);
+		bool ac = true;
+		if(params.size()>1) {
+			ac = params[1].booleanValue();			
+		}
+		if(ac) {
+			addChild(obj);
+		}
+		return CCValue::objectValue(obj);
+	}
+	return CCValue::nullValue();
+}
+
+CCValue CCSpriteBatchNode::CALLNAME(texture)(CCValueArray& params) {		
+	return CCValue::objectValue(this->getTexture());
 }
 
 NS_CC_END

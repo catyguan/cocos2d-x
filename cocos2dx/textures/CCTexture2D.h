@@ -274,6 +274,18 @@ private:
 
     /** shader program used by drawAtPoint and drawInRect */
     CC_PROPERTY(CCGLProgram*, m_pShaderProgram, ShaderProgram);
+
+	// catyguan
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(contentSize)
+	CC_DECLARE_CALL(width)
+	CC_DECLARE_CALL(height)
+	CC_DECLARE_CALL(contentSizeInPixels)	
+	CC_DECLARE_CALL(createSprite)
+	CC_DECLARE_CALL(createSpriteBatch)
+	CC_DECLARE_CALL(createFrame)
+	CC_DECLARE_CALLS_END
+
 };
 
 // end of textures group

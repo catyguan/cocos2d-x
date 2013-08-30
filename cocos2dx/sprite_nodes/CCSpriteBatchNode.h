@@ -172,6 +172,12 @@ protected:
 
     // all descendants: children, gran children, etc...
     CCArray* m_pobDescendants;
+
+	// catyguan
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(createSprite)
+	CC_DECLARE_CALL(texture)
+	CC_DECLARE_CALLS_END
 };
 
 // end of sprite_nodes group

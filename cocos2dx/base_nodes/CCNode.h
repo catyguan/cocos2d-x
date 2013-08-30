@@ -1120,6 +1120,8 @@ public:
      * @param delay     The amount of time that the first tick will wait before execution.
      */
     void schedule(SEL_SCHEDULE selector, float interval, unsigned int repeat, float delay);
+	// catyguan
+	void schedule(const char* id, CCValue call, float interval, unsigned int repeat, float delay);
     
     /**
      * Schedules a custom selector with an interval time in seconds.
@@ -1138,7 +1140,7 @@ public:
      * @param delay         The amount of time that the first tick will wait before execution.
      */
     void scheduleOnce(SEL_SCHEDULE selector, float delay);
-    
+	    
     /**
      * Schedules a custom selector, the scheduled selector will be ticked every frame
      * @see schedule(SEL_SCHEDULE, float, unsigned int, float)
@@ -1154,6 +1156,8 @@ public:
      * @param selector      A function wrapped as a selector
      */
     void unschedule(SEL_SCHEDULE selector);
+	// catyguan
+	void unschedule(const char* id);
 
     /** 
      * Unschedule all scheduled selectors: custom selectors, and the 'update' selector.
@@ -1385,6 +1389,9 @@ private:
 	CC_DECLARE_CALL(zOrder)
 	CC_DECLARE_CALL(onEvent)
 	CC_DECLARE_CALL(removeEvent)
+	CC_DECLARE_CALL(schedule)
+	CC_DECLARE_CALL(scheduleOnce)
+	CC_DECLARE_CALL(unschedule)
 	CC_DECLARE_CALLS_END
 	// end cc_call
 protected:

@@ -60,12 +60,22 @@ public:
     void setInterval(float fInterval);
     
     SEL_SCHEDULE getSelector() const;
+	std::string getId(){return m_id;};
+	bool is(SEL_SCHEDULE pfnSelector, const char* id) {
+		if(pfnSelector!=NULL) {
+			return pfnSelector==m_pfnSelector;
+		}
+		if(id!=NULL && m_id.size()>0)return m_id.compare(id)==0;
+		return false;
+	}
     
     /** Initializes a timer with a target and a selector. */
     bool initWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector);
     
     /** Initializes a timer with a target, a selector and an interval in seconds, repeat in number of times to repeat, delay in seconds. */
     bool initWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector, float fSeconds, unsigned int nRepeat, float fDelay);
+	// catyguan
+    bool initWithTarget(CCObject *pTarget, const char* id, CCValue call, float fSeconds, unsigned int nRepeat, float fDelay);
     
     /** triggers the timer */
     void update(float dt);
@@ -76,6 +86,8 @@ public:
     
     /** Allocates a timer with a target, a selector and an interval in seconds. */
     static CCTimer* timerWithTarget(CCObject *pTarget, SEL_SCHEDULE pfnSelector, float fSeconds);
+	// catyguan
+    static CCTimer* timerWithTarget(CCObject *pTarget, const char* id, CCValue call, float fSeconds);
     
 protected:
     CCObject *m_pTarget;
@@ -87,6 +99,10 @@ protected:
     float m_fDelay;
     float m_fInterval;
     SEL_SCHEDULE m_pfnSelector;
+
+	// catyguan
+	std::string m_id;
+	CCValue m_call;
 };
 
 //
@@ -140,6 +156,8 @@ public:
      @since v0.99.3, repeat and delay added in v1.1
      */
     void scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, unsigned int repeat, float delay, bool bPaused);
+	// catyguan
+	void scheduleSelector(const char* id, CCValue call,SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, unsigned int repeat, float delay, bool bPaused);
 
     /** calls scheduleSelector with kCCRepeatForever and a 0 delay */
     void scheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget, float fInterval, bool bPaused);
@@ -155,6 +173,8 @@ public:
      @since v0.99.3
      */
     void unscheduleSelector(SEL_SCHEDULE pfnSelector, CCObject *pTarget);
+	// catyguan
+	void unscheduleSelector(SEL_SCHEDULE pfnSelector, const char* id, CCObject *pTarget);
 
     /** Unschedules the update selector for a given target
      @since v0.99.3

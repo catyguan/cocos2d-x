@@ -1126,9 +1126,30 @@ void CCSprite::scaleHeight(float h)
 }
 
 CC_BEGIN_CALLS(CCSprite, CCNodeRGBA)	
+	CC_DEFINE_CALL(CCSprite, createFrame)
+	CC_DEFINE_CALL(CCSprite, displayFrame)
 	CC_DEFINE_CALL(CCSprite, scaleWidth)
 	CC_DEFINE_CALL(CCSprite, scaleHeight)
+	CC_DEFINE_CALL(CCSprite, texture)
 CC_END_CALLS(CCSprite, CCNodeRGBA)
+
+CCValue CCSprite::CALLNAME(createFrame)(CCValueArray& params) {	
+	if(params.size()>0) {
+		CCRect rect = CCValueUtil::rect(params[0]);
+		CCSpriteFrame* obj = CCSpriteFrame::createWithTexture(getTexture(), rect);
+		return CCValue::objectValue(obj);
+	}
+	return CCValue::nullValue();
+}
+
+CCValue CCSprite::CALLNAME(displayFrame)(CCValueArray& params) {	
+	CCSpriteFrame* obj = ccvpObject(params, 0, CCSpriteFrame);
+	if(obj!=NULL) {
+		setDisplayFrame(obj);
+	}
+	obj = displayFrame();
+	return CCValue::objectValue(obj);
+}
 
 CCValue CCSprite::CALLNAME(scaleWidth)(CCValueArray& params) {	
 	float v = ccvpFloat(params, 0);
@@ -1140,6 +1161,10 @@ CCValue CCSprite::CALLNAME(scaleHeight)(CCValueArray& params) {
 	float v = ccvpFloat(params, 0);
 	scaleWidth(v);
 	return CCValue::nullValue();
+}
+
+CCValue CCSprite::CALLNAME(texture)(CCValueArray& params) {	
+	return CCValue::objectValue(getTexture());
 }
 
 NS_CC_END
