@@ -69,6 +69,8 @@ public:
 	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data) = 0;
 
 	virtual void removeRunnable(int pos) =0;
+
+	virtual void resetApplication() = 0;
 };
 
 // end of platform group

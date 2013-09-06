@@ -574,10 +574,10 @@ CCPoint CCDirector::getVisibleOrigin()
 void CCDirector::runWithScene(CCScene *pScene)
 {
     CCAssert(pScene != NULL, "This command can only be used to start the CCDirector. There is already a scene present.");
-    CCAssert(m_pRunningScene == NULL, "m_pRunningScene should be null");
-
-    pushScene(pScene);
-    startAnimation();
+	CCAssert(m_pRunningScene== NULL, "fail");
+    
+	pushScene(pScene);
+	startAnimation();	
 }
 
 void CCDirector::replaceScene(CCScene *pScene)
@@ -752,7 +752,7 @@ void CCDirector::setNextScene(void)
         m_pRunningScene->release();
     }
     m_pRunningScene = m_pNextScene;
-    m_pNextScene->retain();
+    m_pRunningScene->retain();
     m_pNextScene = NULL;
 
     if ((! runningIsTransition) && m_pRunningScene)
@@ -1026,6 +1026,11 @@ CCScene* CCDirector::currentScene()
 		return m_pNextScene;
 	}
 	return getRunningScene();
+}
+
+CCScene* CCDirector::nextScene()
+{
+	return m_pNextScene;
 }
 
 /***************************************************

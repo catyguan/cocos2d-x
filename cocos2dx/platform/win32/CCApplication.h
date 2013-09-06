@@ -61,6 +61,12 @@ public:
         return m_startupScriptFilename;
     }
 
+	virtual void resetApplication(){m_reset = true;};
+
+protected:	
+	virtual void startApplication() = 0;
+	virtual void resetCloseApplication() = 0;
+
 protected:
     HINSTANCE           m_hInstance;
     HACCEL              m_hAccelTable;
@@ -74,6 +80,8 @@ protected:
 	void* appRunData[MAX_APP_RUNNABLE];
 
     static CCApplication * sm_pSharedApplication;
+
+	bool m_reset;
 };
 
 NS_CC_END

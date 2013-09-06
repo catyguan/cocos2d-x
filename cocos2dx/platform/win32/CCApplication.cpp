@@ -17,6 +17,7 @@ CCApplication * CCApplication::sm_pSharedApplication = 0;
 CCApplication::CCApplication()
 : m_hInstance(NULL)
 , m_hAccelTable(NULL)
+, m_reset(false)
 {
     m_hInstance    = GetModuleHandle(NULL);
     m_nAnimationInterval.QuadPart = 0;
@@ -61,6 +62,12 @@ int CCApplication::run()
 	QueryPerformanceCounter(&m_nStart);
     while (1)
     {
+		if(m_reset) {
+			m_reset = false;
+			resetCloseApplication();
+			startApplication();
+		}
+
         if (! PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             // Get current time tick.

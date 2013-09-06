@@ -1600,6 +1600,10 @@ CCValue CCNode::CALLNAME(removeChild)(CCValueArray& params) {
 	}
 	return CCValue::intValue(r);
 }
+CCValue CCNode::CALLNAME(removeAllChildren)(CCValueArray& params) {
+	removeAllChildren();
+	return CCValue::nullValue();
+}
 CCValue CCNode::CALLNAME(runAction)(CCValueArray& params) {
 	CCAction* obj = ccvpObject(params,0,CCAction);
 	if(obj==NULL) {

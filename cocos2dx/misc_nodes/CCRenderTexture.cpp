@@ -41,6 +41,8 @@ THE SOFTWARE.
 // extern
 #include "kazmath/GL/matrix.h"
 
+#include "cocoa\CCValueSupport.h"
+
 NS_CC_BEGIN
 
 // implementation CCRenderTexture
@@ -701,6 +703,48 @@ CCImage* CCRenderTexture::newCCImage(bool flipImage)
     CC_SAFE_DELETE_ARRAY(pTempData);
 
     return pImage;
+}
+
+CC_BEGIN_CALLS(CCRenderTexture, CCNode)	
+	CC_DEFINE_CALL(CCRenderTexture, render)
+	CC_DEFINE_CALL(CCRenderTexture, sprite)
+CC_END_CALLS(CCRenderTexture, CCNode)
+
+CCValue CCRenderTexture::CALLNAME(render)(CCValueArray& params) {
+	size_t idx = 0;
+	if(params.size()>0 && !params[0].isBoolean()) {
+		idx = 1;
+		ccColor4B clr = CCValueUtil::color4b(params[0]);
+		this->beginWithClear(clr.r,clr.g,clr.b,clr.a);
+	} else {
+		this->begin();
+	}
+	CCArray* children = getChildren();
+	if(children!=NULL) {
+		CCObject* child;
+		CCARRAY_FOREACH(children, child)
+		{
+			CCNode* pChild = (CCNode*) child;
+			if (pChild)
+			{
+				pChild->visit();
+			}
+		}
+	}
+	this->end();
+
+	bool rc = true;
+	if(params.size()>idx) {
+		rc = params[idx].booleanValue();
+	}
+	if(rc) {
+		removeAllChildren();
+	}
+	return CCValue::nullValue();
+}
+
+CCValue CCRenderTexture::CALLNAME(sprite)(CCValueArray& params) {
+	return CCValue::objectValue(getSprite());
 }
 
 NS_CC_END

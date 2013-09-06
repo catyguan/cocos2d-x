@@ -175,6 +175,13 @@ protected:
     GLclampf     m_fClearDepth;
     GLint        m_nClearStencil;
     bool         m_bAutoDraw;
+
+	// cc_call
+	CC_DECLARE_CALLS_BEGIN
+	CC_DECLARE_CALL(render)
+	CC_DECLARE_CALL(sprite)
+	CC_DECLARE_CALLS_END
+	// end_cc_call
 };
 
 // end of textures group

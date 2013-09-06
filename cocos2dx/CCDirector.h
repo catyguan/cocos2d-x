@@ -311,6 +311,7 @@ public:
 
 	// catyguan
 	CCScene* currentScene();
+	CCScene* nextScene();
 
 public:
     /** CCScheduler associated with this director

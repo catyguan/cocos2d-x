@@ -1363,6 +1363,7 @@ private:
 	CC_DECLARE_CALL(setup)
 	CC_DECLARE_CALL(addChild)
 	CC_DECLARE_CALL(removeChild)
+	CC_DECLARE_CALL(removeAllChildren)
 	CC_DECLARE_CALL(runAction)
 	CC_DECLARE_CALL(stopAllActions)
 	CC_DECLARE_CALL(stopAction)
