@@ -52,7 +52,7 @@ public:
 };
 
 typedef struct _CALL_INFO {
-	char* name;
+	const char* name;
 	CC_OBJECT_CALL call;
 } CALL_INFO;
 

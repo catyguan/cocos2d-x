@@ -19,6 +19,8 @@ CCApplication::CCApplication()
 , m_hAccelTable(NULL)
 , m_reset(false)
 {
+	m_resourceRootPath = "Resources\\";
+
     m_hInstance    = GetModuleHandle(NULL);
     m_nAnimationInterval.QuadPart = 0;
     CC_ASSERT(! sm_pSharedApplication);

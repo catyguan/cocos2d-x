@@ -34,4 +34,8 @@
 #endif
 #endif
 
+#ifndef CALLBACK
+#define CALLBACK
+#endif
+
 #endif /* __CCPLATFORMDEFINE_H__*/

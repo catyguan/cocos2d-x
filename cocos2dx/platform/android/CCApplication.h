@@ -41,6 +41,11 @@ public:
      @brief Get target platform
      */
     virtual TargetPlatform getTargetPlatform();
+	
+	// catyguan TODO
+	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data){};
+	virtual void removeRunnable(int pos){};
+	virtual void resetApplication(){};
 
 protected:
     static CCApplication * sm_pSharedApplication;

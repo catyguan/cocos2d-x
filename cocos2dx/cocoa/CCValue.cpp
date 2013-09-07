@@ -494,7 +494,7 @@ CCValue* CCValueBuilder::arrayAddV(CCValueArray* arr)
 {
 	CCValue v;
 	arr->push_back(v);
-	return (CCValue*) arr->crbegin().operator->();
+	return &arr->at(arr->size()-1);
 }
 
 CCValue* CCValueBuilder::mapAddV(CCValueMap* map, const char* key)
@@ -550,7 +550,7 @@ void CCValueReader::remove(const char* name)
 {
 	if(m_value->isMap()) {
 		CCValueMap* map = m_value->mapValue();
-		CCValueMapIterator it = map->find(name);
+		std::map<std::string, CCValue>::iterator it = map->find(name);
 		if(it!=map->end()) {
 			map->erase(it);
 		}
@@ -642,7 +642,7 @@ bool CCValueReader::beArray(int idx)
 void CCValueReader::pop()
 {
 	if(m_stack.size()>0) {
-		std::vector<CCValue*>::const_iterator it = m_stack.end();
+		std::vector<CCValue*>::iterator it = m_stack.end();
 		it--;
 		m_value = *it;
 		m_stack.erase(it);

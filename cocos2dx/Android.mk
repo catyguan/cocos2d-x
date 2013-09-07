@@ -26,6 +26,7 @@ actions/CCActionTiledGrid.cpp \
 actions/CCActionTween.cpp \
 base_nodes/CCAtlasNode.cpp \
 base_nodes/CCNode.cpp \
+base_nodes/CCNode_Events.cpp \
 cocoa/CCAffineTransform.cpp \
 cocoa/CCGeometry.cpp \
 cocoa/CCAutoreleasePool.cpp \
@@ -37,6 +38,8 @@ cocoa/CCString.cpp \
 cocoa/CCZone.cpp \
 cocoa/CCArray.cpp \
 cocoa/CCDataVisitor.cpp \
+cocoa/CCValue.cpp \
+cocoa/CCValueSupport.cpp \
 cocos2d.cpp \
 CCDirector.cpp \
 draw_nodes/CCDrawingPrimitives.cpp \
@@ -97,7 +100,6 @@ platform/android/jni/JniHelper.cpp \
 platform/android/jni/IMEJni.cpp \
 platform/android/jni/TouchesJni.cpp \
 platform/android/jni/DPIJni.cpp \
-script_support/CCScriptSupport.cpp \
 shaders/ccShaders.cpp \
 shaders/CCGLProgram.cpp \
 shaders/ccGLStateCache.cpp \
@@ -151,10 +153,6 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH) \
                     $(LOCAL_PATH)/include \
                     $(LOCAL_PATH)/kazmath/include \
                     $(LOCAL_PATH)/platform/android
-
-LOCAL_LDLIBS := -lGLESv2 \
-                -llog \
-                -lz
 
 LOCAL_EXPORT_LDLIBS := -lGLESv2 \
                        -llog \

@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include "CCApplication.h"
 // catyguan
 #include "../cocoa/CCValueSupport.h"
+#include "ccTypes.h"
 
 NS_CC_BEGIN
 
@@ -356,13 +357,13 @@ CCValue CCLabelTTF::CALLNAME(horizontalAlignment)(CCValueArray& params) {
 	return CCValue::intValue(getHorizontalAlignment());
 }
 CCValue CCLabelTTF::CALLNAME(alignLeft)(CCValueArray& params) {
-	setHorizontalAlignment(cocos2d::CCTextAlignment::kCCTextAlignmentLeft);
+	setHorizontalAlignment(kCCTextAlignmentLeft);
 	return CCValue::nullValue();
 }
 CCValue CCLabelTTF::CALLNAME(verticalAlignment)(CCValueArray& params) {
 	if(params.size()>0) {
 		int v = params[0].intValue();
-		setVerticalAlignment(cocos2d::CCVerticalTextAlignment(v));
+		setVerticalAlignment(CCVerticalTextAlignment(v));
 	}
 	return CCValue::intValue(getVerticalAlignment());
 }

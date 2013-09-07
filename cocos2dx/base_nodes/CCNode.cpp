@@ -1828,7 +1828,7 @@ void CCNode::bindMethod(const char* name, CCValue call)
 	if(m_pMethods==NULL) {
 		m_pMethods = new CCValueMap();
 	}
-	CCValueMapIterator it = m_pMethods->find(name);
+	std::map<std::string, CCValue>::iterator it = m_pMethods->find(name);
 	if(it!=m_pMethods->end()) {
 		m_pMethods->erase(it);
 	}
@@ -1838,7 +1838,7 @@ void CCNode::bindMethod(const char* name, CCValue call)
 void CCNode::removeMethod(const char* name)
 {
 	if(m_pMethods!=NULL) {
-		CCValueMapIterator it = m_pMethods->find(name);
+		std::map<std::string,CCValue>::iterator it = m_pMethods->find(name);
 		if(it!=m_pMethods->end()) {
 			m_pMethods->erase(it);
 		}
@@ -1883,7 +1883,7 @@ bool CCNode::removeAttribute(const char* name)
 	if(m_pAttributes!=NULL) {
 		CCValueMapIterator it = m_pAttributes->find(name);
 		if(it!=m_pAttributes->end()) {
-			m_pAttributes->erase(it);
+			m_pAttributes->erase(it->first);
 			return true;
 		}
 	}
@@ -1899,7 +1899,7 @@ void CCNode::clearAttributes()
 
 // catyguan
 // events
-typedef std::list<CCNodeEventHandlerItem*>::const_iterator ehitor;
+typedef std::list<CCNodeEventHandlerItem*>::iterator ehitor;
 
 bool CCNode::hasEventHandler(const char* name)
 {
@@ -1978,6 +1978,7 @@ bool CCNode::removeEventHandler(const char* name,const char* id, CCObject* obj)
 {
 	bool r = false;
 	if(m_pEventHandlers!=NULL) {
+
 		for(ehitor it=m_pEventHandlers->begin();it!=m_pEventHandlers->end();) {		
 			ehitor cur = it;
 			it++;
