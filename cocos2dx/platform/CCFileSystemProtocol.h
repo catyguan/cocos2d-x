@@ -14,20 +14,25 @@ enum FileSystemType
 {	
 	kAll,
     kResource,
-	kAppData,   
-	kUserData,
-    kLua
+	kAppData,
+    kLua,
+	kTemp
 };
 
 class CC_DLL CCFileSystemProtocol
 {
 public:
+	static CCFileSystemProtocol* sharedFileSystem();
+
 	virtual bool fileExists(FileSystemType type, const char* pszFileName) = 0;
 	virtual unsigned char* fileRead(FileSystemType type, const char* pszFileName, unsigned long* pSize) = 0;
 	virtual unsigned long fileWrite(FileSystemType type, const char* pszFileName, unsigned char* content, long size) = 0;
 	virtual bool fileDelete(FileSystemType type, const char* pszFileName) = 0;
 
 	virtual void reset() = 0;    
+
+protected:
+	static CCFileSystemProtocol* s_sharedFileSystem;    
 };
 
 typedef struct _FS4NItem {
@@ -39,8 +44,6 @@ typedef struct _FS4NItem {
 class CC_DLL CCFileSystemBase : public CCFileSystemProtocol
 {
 public:   
-    static CCFileSystemBase* sharedFileSystem();
-        
 	CCFileSystemBase();
     virtual ~CCFileSystemBase();
 
@@ -65,8 +68,6 @@ protected:
     
 protected:
     std::vector<FS4NItem> m_searchPaths;
-    
-    static CCFileSystemBase* s_sharedFileSystem;    
 };
 
 NS_CC_END

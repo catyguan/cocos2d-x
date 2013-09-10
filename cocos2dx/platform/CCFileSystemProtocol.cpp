@@ -3,9 +3,9 @@
 
 NS_CC_BEGIN
 
-CCFileSystemBase* CCFileSystemBase::s_sharedFileSystem; 
+CCFileSystemProtocol* CCFileSystemProtocol::s_sharedFileSystem; 
 
-CCFileSystemBase* CCFileSystemBase::sharedFileSystem()
+CCFileSystemProtocol* CCFileSystemProtocol::sharedFileSystem()
 {
 	return s_sharedFileSystem;
 }

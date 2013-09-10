@@ -26,6 +26,8 @@ THE SOFTWARE.
 #include "platform/CCCommon.h"
 #include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 
+#include "../CCFileSystemProtocol.h"
+
 using namespace std;
 
 NS_CC_BEGIN
@@ -56,7 +58,8 @@ CCFileUtilsAndroid::~CCFileUtilsAndroid()
 
 bool CCFileUtilsAndroid::init()
 {
-    m_strDefaultResRootPath = "assets/";
+	// m_strDefaultResRootPath = "assets/";
+    m_strDefaultResRootPath = "";	
     return CCFileUtils::init();
 }
 
@@ -66,7 +69,10 @@ bool CCFileUtilsAndroid::isFileExist(const std::string& strFilePath)
     {
         return false;
     }
+	
+	return CCFileSystemProtocol::sharedFileSystem()->fileExists(kResource, strFilePath.c_str());
 
+	/*
     bool bFound = false;
     
     // Check whether file exists in apk.
@@ -93,6 +99,7 @@ bool CCFileUtilsAndroid::isFileExist(const std::string& strFilePath)
         }
     }
     return bFound;
+	*/
 }
 
 bool CCFileUtilsAndroid::isAbsolutePath(const std::string& strPath)
@@ -111,6 +118,8 @@ bool CCFileUtilsAndroid::isAbsolutePath(const std::string& strPath)
 
 unsigned char* CCFileUtilsAndroid::getFileData(const char* pszFileName, const char* pszMode, unsigned long * pSize)
 {    
+	return CCFileSystemProtocol::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
+	/*
     unsigned char * pData = 0;
 
     if ((! pszFileName) || (! pszMode) || 0 == strlen(pszFileName))
@@ -157,6 +166,7 @@ unsigned char* CCFileUtilsAndroid::getFileData(const char* pszFileName, const ch
     }
 
     return pData;
+	*/
 }
 
 string CCFileUtilsAndroid::getWritablePath()
