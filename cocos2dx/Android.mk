@@ -85,6 +85,7 @@ platform/CCThread.cpp \
 platform/CCFileUtils.cpp \
 platform/platform.cpp \
 platform/CCEGLViewProtocol.cpp \
+platform/CCFileSystemProtocol.cpp \
 platform/android/CCDevice.cpp \
 platform/android/CCEGLView.cpp \
 platform/android/CCAccelerometer.cpp \
