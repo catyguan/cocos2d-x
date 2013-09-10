@@ -192,6 +192,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClCompile Include="..\particle_nodes\CCParticleSystem.cpp" />
     <ClCompile Include="..\particle_nodes\CCParticleSystemQuad.cpp" />
     <ClCompile Include="..\platform\CCEGLViewProtocol.cpp" />
+    <ClCompile Include="..\platform\CCFileSystemProtocol.cpp" />
     <ClCompile Include="..\platform\CCFileUtils.cpp" />
     <ClCompile Include="..\platform\CCImageCommonWebp.cpp" />
     <ClCompile Include="..\platform\CCSAXParser.cpp" />
@@ -202,6 +203,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClCompile Include="..\platform\win32\CCCommon.cpp" />
     <ClCompile Include="..\platform\win32\CCDevice.cpp" />
     <ClCompile Include="..\platform\win32\CCEGLView.cpp" />
+    <ClCompile Include="..\platform\win32\CCFileSystemWin32.cpp" />
     <ClCompile Include="..\platform\win32\CCFileUtilsWin32.cpp" />
     <ClCompile Include="..\platform\win32\CCImage.cpp" />
     <ClCompile Include="..\platform\win32\CCStdC.cpp" />
@@ -336,6 +338,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClInclude Include="..\platform\CCApplicationProtocol.h" />
     <ClInclude Include="..\platform\CCCommon.h" />
     <ClInclude Include="..\platform\CCEGLViewProtocol.h" />
+    <ClInclude Include="..\platform\CCFileSystemProtocol.h" />
     <ClInclude Include="..\platform\CCFileUtils.h" />
     <ClInclude Include="..\platform\CCImage.h" />
     <ClInclude Include="..\platform\CCImageCommon_cpp.h" />
@@ -347,6 +350,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClInclude Include="..\platform\win32\CCAccelerometer.h" />
     <ClInclude Include="..\platform\win32\CCApplication.h" />
     <ClInclude Include="..\platform\win32\CCEGLView.h" />
+    <ClInclude Include="..\platform\win32\CCFileSystemWin32.h" />
     <ClInclude Include="..\platform\win32\CCFileUtilsWin32.h" />
     <ClInclude Include="..\platform\win32\CCGL.h" />
     <ClInclude Include="..\platform\win32\CCPlatformDefine.h" />

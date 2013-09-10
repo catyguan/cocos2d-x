@@ -31,6 +31,8 @@ THE SOFTWARE.
 #include "support/zip_support/unzip.h"
 #include <stack>
 
+#include "CCFileSystemProtocol.h"
+
 using namespace std;
 
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_IOS) && (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
@@ -486,6 +488,9 @@ void CCFileUtils::purgeCachedEntries()
 
 unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* pszMode, unsigned long * pSize)
 {
+	// catyguan
+	// FileSystem
+	/*
     unsigned char * pBuffer = NULL;
     CCAssert(pszFileName != NULL && pSize != NULL && pszMode != NULL, "Invalid parameters.");
     *pSize = 0;
@@ -512,6 +517,8 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
         CCLOG("%s", msg.c_str());
     }
     return pBuffer;
+	*/
+	return CCFileSystemProtocol::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
 }
 
 unsigned char* CCFileUtils::getFileDataFromZip(const char* pszZipFilePath, const char* pszFileName, unsigned long * pSize)
@@ -584,8 +591,7 @@ std::string CCFileUtils::getPathForFilename(const std::string& filename, const s
     // searchPath + file_path + resourceDirectory
     std::string path = searchPath;
     path += file_path;
-    path += resolutionDirectory;
-    
+    path += resolutionDirectory;    
     path = getFullPathForDirectoryAndFilename(path, file);
     
     //CCLOG("getPathForFilename, fullPath = %s", path.c_str());
