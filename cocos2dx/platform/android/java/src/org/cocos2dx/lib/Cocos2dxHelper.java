@@ -98,7 +98,7 @@ public class Cocos2dxHelper {
 		return Cocos2dxHelper.sPackageName;
 	}
 
-	public static String getCocos2dxWritablePath() {
+	public static String getCocos2dxWritablePath() {		
 		return Cocos2dxHelper.sFileDirectory;
 	}
 

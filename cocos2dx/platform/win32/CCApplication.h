@@ -38,10 +38,6 @@ public:
      */
     virtual TargetPlatform getTargetPlatform();
 
-	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data);
-
-	virtual void removeRunnable(int pos);
-
     /**
      *  Sets the Resource root path.
      *  @deprecated Please use CCFileUtils::sharedFileUtils()->setSearchPaths() instead.
@@ -61,6 +57,8 @@ public:
         return m_startupScriptFilename;
     }
 
+	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data);
+	virtual void removeRunnable(int pos);
 	virtual void resetApplication(){m_reset = true;};
 
 protected:	
@@ -78,10 +76,9 @@ protected:
 
 	CCApplicationRunnable appRun[MAX_APP_RUNNABLE];
 	void* appRunData[MAX_APP_RUNNABLE];
+	bool m_reset;
 
     static CCApplication * sm_pSharedApplication;
-
-	bool m_reset;
 };
 
 NS_CC_END

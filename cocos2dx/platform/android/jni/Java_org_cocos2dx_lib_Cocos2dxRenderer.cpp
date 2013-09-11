@@ -10,20 +10,18 @@
 using namespace cocos2d;
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeRender(JNIEnv* env) {
+
+	JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
+	{
+		if (!CCDirector::sharedDirector()->getOpenGLView())
+		{
+			CCEGLView *view = CCEGLView::sharedOpenGLView();
+			view->setFrameSize(w, h);
+		}
+	}
+	
+    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeRender(JNIEnv* env, jobject thiz) {
         cocos2d::CCDirector::sharedDirector()->mainLoop();
-    }
-
-    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnPause() {
-        CCApplication::sharedApplication()->applicationDidEnterBackground();
-
-        CCNotificationCenter::sharedNotificationCenter()->postNotification(EVENT_COME_TO_BACKGROUND, NULL);
-    }
-
-    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnResume() {
-        if (CCDirector::sharedDirector()->getOpenGLView()) {
-            CCApplication::sharedApplication()->applicationWillEnterForeground();
-        }
     }
 
     JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInsertText(JNIEnv* env, jobject thiz, jstring text) {
@@ -36,7 +34,7 @@ extern "C" {
         cocos2d::CCIMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
     }
 
-    JNIEXPORT jstring JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeGetContentText() {
+    JNIEXPORT jstring JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeGetContentText(JNIEnv* env, jobject thiz) {
         JNIEnv * env = 0;
 
         if (JniHelper::getJavaVM()->GetEnv((void**)&env, JNI_VERSION_1_4) != JNI_OK || ! env) {
@@ -45,4 +43,6 @@ extern "C" {
         const char * pszText = cocos2d::CCIMEDispatcher::sharedDispatcher()->getContentText();
         return env->NewStringUTF(pszText);
     }
+	
+	
 }

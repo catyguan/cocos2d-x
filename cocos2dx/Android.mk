@@ -90,8 +90,10 @@ platform/android/CCEGLView.cpp \
 platform/android/CCAccelerometer.cpp \
 platform/android/CCApplication.cpp \
 platform/android/CCCommon.cpp \
+platform/android/CCFileSystemAndroid.cpp \
 platform/android/CCFileUtilsAndroid.cpp \
 platform/android/CCImage.cpp \
+platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxApp.cpp \
 platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxBitmap.cpp \
 platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxHelper.cpp \
 platform/android/jni/Java_org_cocos2dx_lib_Cocos2dxRenderer.cpp \

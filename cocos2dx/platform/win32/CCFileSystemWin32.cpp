@@ -10,19 +10,19 @@ CCFileSystemWin32::~CCFileSystemWin32()
 {
 }
 
-bool CCFileSystemWin32::fileExists(const char* vpathName)
+bool CCFileSystemWin32::fileExists(const char* pszFileName)
 {
-	DWORD fa = ::GetFileAttributesA(vpathName);
+	DWORD fa = ::GetFileAttributesA(pszFileName);
 	return fa != INVALID_FILE_ATTRIBUTES;
 }
 
-unsigned char* CCFileSystemWin32::fileRead(const char* vpathName, unsigned long* pSize)
+unsigned char* CCFileSystemWin32::fileRead(const char* pszFileName, unsigned long* pSize)
 {
 	int size = 0;
 	unsigned char* buf = NULL;
 	do {
 		// read the file from hardware
-		FILE *fp = fopen(vpathName, "rb");
+		FILE *fp = fopen(pszFileName, "rb");
 		CC_BREAK_IF(!fp);
         
 		fseek(fp,0,SEEK_END);
