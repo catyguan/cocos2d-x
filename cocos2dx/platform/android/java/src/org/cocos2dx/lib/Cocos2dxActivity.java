@@ -45,7 +45,8 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 	// Fields
 	// ===========================================================
 	
-	private Cocos2dxGLSurfaceView mGLSurfaceView;
+	// private Cocos2dxGLSurfaceView mGLSurfaceView;
+	private Cocos2dxApp mApp;
 	private Cocos2dxHandler mHandler;
 	private static Context sContext = null;
 	
@@ -64,8 +65,11 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
     	this.mHandler = new Cocos2dxHandler(this);
 
     	this.init();
-
 		Cocos2dxHelper.init(this, this);
+		
+		initApp(mApp);
+		
+		mApp.startup();
 	}
 
 	// ===========================================================
@@ -80,8 +84,8 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 	protected void onResume() {
 		super.onResume();
 
-		Cocos2dxHelper.onResume();
-		this.mGLSurfaceView.onResume();
+		Cocos2dxHelper.onResume();		
+		this.mApp.onResume();
 	}
 
 	@Override
@@ -89,7 +93,7 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 		super.onPause();
 
 		Cocos2dxHelper.onPause();
-		this.mGLSurfaceView.onPause();
+		this.mApp.onPause();
 	}
 
 	@Override
@@ -110,7 +114,7 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 	
 	@Override
 	public void runOnGLThread(final Runnable pRunnable) {
-		this.mGLSurfaceView.queueEvent(pRunnable);
+		this.mApp.runOnAppThread(pRunnable);
 	}
 
 	// ===========================================================
@@ -136,24 +140,30 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
         framelayout.addView(edittext);
 
         // Cocos2dxGLSurfaceView
-        this.mGLSurfaceView = this.onCreateView();
+        this.mApp = this.onCreateApp();
+                
+        Cocos2dxGLSurfaceView view = this.mApp.view();
 
         // ...add to FrameLayout
-        framelayout.addView(this.mGLSurfaceView);
+        framelayout.addView(view);
 
         // Switch to supported OpenGL (ARGB888) mode on emulator
         if (isAndroidEmulator())
-           this.mGLSurfaceView.setEGLConfigChooser(8 , 8, 8, 8, 16, 0);
+           view.setEGLConfigChooser(8 , 8, 8, 8, 16, 0);
 
-        this.mGLSurfaceView.setCocos2dxRenderer(new Cocos2dxRenderer());
-        this.mGLSurfaceView.setCocos2dxEditText(edittext);
+        view.setCocos2dxRenderer(new Cocos2dxRenderer(this.mApp));
+        view.setCocos2dxEditText(edittext);
 
         // Set framelayout as the content view
 		setContentView(framelayout);
 	}
 	
-    public Cocos2dxGLSurfaceView onCreateView() {
-    	return new Cocos2dxGLSurfaceView(this);
+    public Cocos2dxApp onCreateApp() {
+    	return new Cocos2dxApp(this);    	
+    }
+    
+    protected void initApp(Cocos2dxApp app) {
+    	
     }
 
    private final static boolean isAndroidEmulator() {

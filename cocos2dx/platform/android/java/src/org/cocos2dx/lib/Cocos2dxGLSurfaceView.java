@@ -53,6 +53,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 	private static Cocos2dxGLSurfaceView mCocos2dxGLSurfaceView;
 	private static Cocos2dxTextInputWraper sCocos2dxTextInputWraper;
 
+	private Cocos2dxApp mCocos2dxApp;
 	private Cocos2dxRenderer mCocos2dxRenderer;
 	private Cocos2dxEditText mCocos2dxEditText;
 
@@ -60,9 +61,10 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 	// Constructors
 	// ===========================================================
 
-	public Cocos2dxGLSurfaceView(final Context context) {
+	public Cocos2dxGLSurfaceView(Cocos2dxApp app, final Context context) {
 		super(context);
 
+		this.mCocos2dxApp = app;
 		this.initView();
 	}
 
@@ -162,7 +164,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 		this.queueEvent(new Runnable() {
 			@Override
 			public void run() {
-				Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleOnResume();
+				Cocos2dxGLSurfaceView.this.mCocos2dxApp.handleOnResume();
 			}
 		});
 	}
@@ -172,7 +174,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 		this.queueEvent(new Runnable() {
 			@Override
 			public void run() {
-				Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleOnPause();
+				Cocos2dxGLSurfaceView.this.mCocos2dxApp.handleOnPause();
 			}
 		});
 

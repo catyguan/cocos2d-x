@@ -41,14 +41,19 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 	// ===========================================================
 	// Fields
 	// ===========================================================
-
-	private long mLastTickInNanoSeconds;
+	private Cocos2dxApp mApp;
+	private long mStartTickInMS;
 	private int mScreenWidth;
 	private int mScreenHeight;
 
 	// ===========================================================
 	// Constructors
 	// ===========================================================
+	
+	public Cocos2dxRenderer(Cocos2dxApp app) {
+		super();
+		this.mApp = app;
+	}
 
 	// ===========================================================
 	// Getter & Setter
@@ -56,7 +61,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 
 	public static void setAnimationInterval(final double pAnimationInterval) {
 		Cocos2dxRenderer.sAnimationInterval = (long) (pAnimationInterval * Cocos2dxRenderer.NANOSECONDSPERSECOND);
-	}
+	}	
 
 	public void setScreenWidthAndHeight(final int pSurfaceWidth, final int pSurfaceHeight) {
 		this.mScreenWidth = pSurfaceWidth;
@@ -70,7 +75,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 	@Override
 	public void onSurfaceCreated(final GL10 pGL10, final EGLConfig pEGLConfig) {
 		Cocos2dxRenderer.nativeInit(this.mScreenWidth, this.mScreenHeight);
-		this.mLastTickInNanoSeconds = System.nanoTime();
+		this.mStartTickInMS = System.currentTimeMillis();
 	}
 
 	@Override
@@ -84,11 +89,10 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 		 * on some devices. So comment FPS controlling code.
 		 */
 		
-		/*
-		final long nowInNanoSeconds = System.nanoTime();
-		final long interval = nowInNanoSeconds - this.mLastTickInNanoSeconds;
-		*/
-
+		final long nowInMS = System.currentTimeMillis();
+		final long interval = nowInMS - this.mStartTickInMS;
+		
+		this.mApp.run(interval);
 		// should render a frame when onDrawFrame() is called or there is a
 		// "ghost"
 		Cocos2dxRenderer.nativeRender();
@@ -117,9 +121,7 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 	private static native void nativeTouchesCancel(final int[] pIDs, final float[] pXs, final float[] pYs);
 	private static native boolean nativeKeyDown(final int pKeyCode);
 	private static native void nativeRender();
-	private static native void nativeInit(final int pWidth, final int pHeight);
-	private static native void nativeOnPause();
-	private static native void nativeOnResume();
+	private static native void nativeInit(final int pWidth, final int pHeight);	
 
 	public void handleActionDown(final int pID, final float pX, final float pY) {
 		Cocos2dxRenderer.nativeTouchesBegin(pID, pX, pY);
@@ -139,14 +141,6 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 
 	public void handleKeyDown(final int pKeyCode) {
 		Cocos2dxRenderer.nativeKeyDown(pKeyCode);
-	}
-
-	public void handleOnPause() {
-		Cocos2dxRenderer.nativeOnPause();
-	}
-
-	public void handleOnResume() {
-		Cocos2dxRenderer.nativeOnResume();
 	}
 
 	private static native void nativeInsertText(final String pText);

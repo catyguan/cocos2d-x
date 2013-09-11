@@ -38,6 +38,20 @@ int CCApplication::run()
     return -1;
 }
 
+void CCApplication::run(long time)
+{
+	if(m_reset) {
+		m_reset = false;
+		resetCloseApplication();
+		startApplication();
+	}
+	for(int i=0;i<MAX_APP_RUNNABLE;i++) {
+		if(appRun[i]!=NULL) {
+			appRun[i](appRunData[i], time);
+		}
+	}
+}
+
 void CCApplication::setAnimationInterval(double interval)
 {
     JniMethodInfo methodInfo;
@@ -122,6 +136,20 @@ ccLanguageType CCApplication::getCurrentLanguage()
 TargetPlatform CCApplication::getTargetPlatform()
 {
     return kTargetAndroid;
+}
+
+void CCApplication::addRunnable(int pos, CCApplicationRunnable runnable, void* data)
+{
+	CC_ASSERT(pos<MAX_APP_RUNNABLE);
+	CC_ASSERT(appRun[pos] == NULL);
+	appRun[pos] = runnable;
+	appRunData[pos] = data;
+}
+
+void CCApplication::removeRunnable(int pos)
+{
+	CC_ASSERT(pos<MAX_APP_RUNNABLE);
+	appRun[pos] = NULL;
 }
 
 NS_CC_END

@@ -24,6 +24,7 @@ public:
     @brief    Run the message loop.
     */
     int run();
+	void run(long time);
 
     /**
     @brief    Get current application instance.
@@ -43,11 +44,19 @@ public:
     virtual TargetPlatform getTargetPlatform();
 	
 	// catyguan TODO
-	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data){};
-	virtual void removeRunnable(int pos){};
-	virtual void resetApplication(){};
+	virtual void addRunnable(int pos, CCApplicationRunnable runnable, void* data);
+	virtual void removeRunnable(int pos);
+	virtual void resetApplication(){m_reset = true;};
+
+protected:	
+	virtual void startApplication() = 0;
+	virtual void resetCloseApplication() = 0;
 
 protected:
+	CCApplicationRunnable appRun[MAX_APP_RUNNABLE];
+	void* appRunData[MAX_APP_RUNNABLE];
+	bool m_reset;
+	
     static CCApplication * sm_pSharedApplication;
 };
 
