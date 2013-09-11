@@ -41,6 +41,7 @@ cocoa/CCDataVisitor.cpp \
 cocoa/CCValue.cpp \
 cocoa/CCValueSupport.cpp \
 cocos2d.cpp \
+CCEConfig.cpp \
 CCDirector.cpp \
 draw_nodes/CCDrawingPrimitives.cpp \
 draw_nodes/CCDrawNode.cpp \

@@ -483,6 +483,7 @@
     <ClCompile Include="..\platform\win32\CCFileSystemWin32.cpp">
       <Filter>platform\win32</Filter>
     </ClCompile>
+    <ClCompile Include="..\CCEConfig.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base_nodes\CCAtlasNode.h">
@@ -973,5 +974,6 @@
     <ClInclude Include="..\platform\win32\CCFileSystemWin32.h">
       <Filter>platform\win32</Filter>
     </ClInclude>
+    <ClInclude Include="..\CCEConfig.h" />
   </ItemGroup>
 </Project>

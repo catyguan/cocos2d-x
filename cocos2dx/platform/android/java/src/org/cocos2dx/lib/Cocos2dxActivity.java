@@ -68,8 +68,6 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
 		Cocos2dxHelper.init(this, this);
 		
 		initApp(mApp);
-		
-		mApp.startup();
 	}
 
 	// ===========================================================

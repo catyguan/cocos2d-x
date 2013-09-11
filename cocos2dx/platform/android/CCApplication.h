@@ -4,6 +4,8 @@
 #include "platform/CCCommon.h"
 #include "platform/CCApplicationProtocol.h"
 
+#define MAX_APP_RUNNABLE	5
+
 NS_CC_BEGIN
 
 class CCRect;

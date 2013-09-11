@@ -7,6 +7,8 @@
 #include "JniHelper.h"
 #include <jni.h>
 
+#include "cocos2d.h"
+
 using namespace cocos2d;
 
 extern "C" {
@@ -34,7 +36,7 @@ extern "C" {
         cocos2d::CCIMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
     }
 
-    JNIEXPORT jstring JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeGetContentText(JNIEnv* env, jobject thiz) {
+    JNIEXPORT jstring JNICALL Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeGetContentText() {
         JNIEnv * env = 0;
 
         if (JniHelper::getJavaVM()->GetEnv((void**)&env, JNI_VERSION_1_4) != JNI_OK || ! env) {
