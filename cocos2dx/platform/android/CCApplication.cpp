@@ -43,7 +43,7 @@ void CCApplication::run(long time)
 	if(m_reset) {
 		m_reset = false;
 		resetCloseApplication();
-		startApplication();
+		// startApplication();
 	}
 	for(int i=0;i<MAX_APP_RUNNABLE;i++) {
 		if(appRun[i]!=NULL) {

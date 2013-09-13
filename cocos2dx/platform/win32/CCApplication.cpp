@@ -67,7 +67,7 @@ int CCApplication::run()
 		if(m_reset) {
 			m_reset = false;
 			resetCloseApplication();
-			startApplication();
+			// startApplication();
 		}
 
         if (! PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
