@@ -73,12 +73,17 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
 
+	private boolean mStartuped = false;
+	
 	@Override
 	public void onSurfaceCreated(final GL10 pGL10, final EGLConfig pEGLConfig) {
 		Cocos2dxRenderer.nativeInit(this.mScreenWidth, this.mScreenHeight);
-		Log.d("Cocos2dx", "APP startup");
-		this.mApp.startup();
-		this.mStartTickInMS = System.currentTimeMillis();
+		if(!mStartuped) {
+			Log.d("Cocos2dx", "Cocos2dxAPP startup");
+			mStartuped = true;
+			this.mApp.startup();
+			this.mStartTickInMS = System.currentTimeMillis();
+		}		
 	}
 
 	@Override

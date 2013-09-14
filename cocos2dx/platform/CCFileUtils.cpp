@@ -602,11 +602,12 @@ std::string CCFileUtils::getPathForFilename(const std::string& filename, const s
 std::string CCFileUtils::fullPathForFilename(const char* pszFileName)
 {
     CCAssert(pszFileName != NULL, "CCFileUtils: Invalid path");
-    
+    // CCLOG("fullPathForFilename(%s)", pszFileName);
+	
     std::string strFileName = pszFileName;
     if (isAbsolutePath(pszFileName))
     {
-        //CCLOG("Return absolute path( %s ) directly.", pszFileName);
+        // CCLOG("Return absolute path( %s ) directly.", pszFileName);
         return pszFileName;
     }
     
@@ -614,7 +615,7 @@ std::string CCFileUtils::fullPathForFilename(const char* pszFileName)
     std::map<std::string, std::string>::iterator cacheIter = m_fullPathCache.find(pszFileName);
     if (cacheIter != m_fullPathCache.end())
     {
-        //CCLOG("Return full path from cache: %s", cacheIter->second.c_str());
+        // CCLOG("Return full path from cache: %s", cacheIter->second.c_str());
         return cacheIter->second;
     }
     
@@ -628,7 +629,7 @@ std::string CCFileUtils::fullPathForFilename(const char* pszFileName)
         for (std::vector<std::string>::iterator resOrderIter = m_searchResolutionsOrderArray.begin();
              resOrderIter != m_searchResolutionsOrderArray.end(); ++resOrderIter) {
             
-            //CCLOG("\n\nSEARCHING: %s, %s, %s", newFilename.c_str(), resOrderIter->c_str(), searchPathsIter->c_str());
+            // CCLOG("\n\nSEARCHING: %s, %s, %s", newFilename.c_str(), resOrderIter->c_str(), searchPathsIter->c_str());
             
             fullpath = this->getPathForFilename(newFilename, *resOrderIter, *searchPathsIter);
             
@@ -642,7 +643,7 @@ std::string CCFileUtils::fullPathForFilename(const char* pszFileName)
         }
     }
     
-    //CCLOG("cocos2d: fullPathForFilename: No file found at %s. Possible missing file.", pszFileName);
+    // CCLOG("cocos2d: fullPathForFilename: No file found at %s. Possible missing file.", pszFileName);
 
     // The file wasn't found, return the file name passed in.
     return pszFileName;

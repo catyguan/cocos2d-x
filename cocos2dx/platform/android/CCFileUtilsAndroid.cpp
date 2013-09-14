@@ -108,7 +108,7 @@ bool CCFileUtilsAndroid::isAbsolutePath(const std::string& strPath)
     // 1) Files in APK, e.g. assets/path/path/file.png
     // 2) Files not in APK, e.g. /data/data/org.cocos2dx.hellocpp/cache/path/path/file.png, or /sdcard/path/path/file.png.
     // So these two situations need to be checked on Android.
-    if (strPath[0] == '/' || strPath.find(m_strDefaultResRootPath) == 0)
+    if (strPath[0] == '/' || strPath.find("assets/") == 0)
     {
         return true;
     }

@@ -27,11 +27,12 @@ ZipFile* getZipFile()
 
 bool CCFileSystemAndroid::fileExists(const char* pszFileName)
 {
+	// CCLOG("check %s", pszFileName);
 	if (pszFileName[0] != '/')
     {
         std::string strPath = pszFileName;
         if (strPath.find("assets/") == 0)
-        {
+        {			
 			return getZipFile()->fileExists(strPath);
         }
     }

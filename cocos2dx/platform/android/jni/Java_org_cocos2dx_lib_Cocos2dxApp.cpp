@@ -38,7 +38,7 @@ extern "C" {
 		const char *strName = env->GetStringUTFChars(name, 0);
         switch(type) {
 		case 0:
-			CCEConfig::set(strName, CCValue::booleanValue(v1!=0));
+			CCEConfig::set(strName, CCValue::intValue(v1));			
 			break;
 		case 1: {
 			const char *strValue = env->GetStringUTFChars(v2, 0);
@@ -47,7 +47,7 @@ extern "C" {
 			break;
 			}
 		case 2:
-			CCEConfig::set(strName, CCValue::intValue(v1));
+			CCEConfig::set(strName, CCValue::booleanValue(v1!=0));
 			break;
 		}
 		env->ReleaseStringUTFChars(name, strName);
