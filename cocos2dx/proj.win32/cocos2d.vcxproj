@@ -192,7 +192,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClCompile Include="..\particle_nodes\CCParticleSystem.cpp" />
     <ClCompile Include="..\particle_nodes\CCParticleSystemQuad.cpp" />
     <ClCompile Include="..\platform\CCEGLViewProtocol.cpp" />
-    <ClCompile Include="..\platform\CCFileSystemProtocol.cpp" />
+    <ClCompile Include="..\platform\CCFileSystem.cpp" />
     <ClCompile Include="..\platform\CCFileUtils.cpp" />
     <ClCompile Include="..\platform\CCImageCommonWebp.cpp" />
     <ClCompile Include="..\platform\CCSAXParser.cpp" />
@@ -339,7 +339,7 @@ xcopy /Y /Q "$(ProjectDir)..\platform\third_party\win32\libraries\*.*" "$(OutDir
     <ClInclude Include="..\platform\CCApplicationProtocol.h" />
     <ClInclude Include="..\platform\CCCommon.h" />
     <ClInclude Include="..\platform\CCEGLViewProtocol.h" />
-    <ClInclude Include="..\platform\CCFileSystemProtocol.h" />
+    <ClInclude Include="..\platform\CCFileSystem.h" />
     <ClInclude Include="..\platform\CCFileUtils.h" />
     <ClInclude Include="..\platform\CCImage.h" />
     <ClInclude Include="..\platform\CCImageCommon_cpp.h" />

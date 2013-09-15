@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "platform/CCCommon.h"
 #include <Shlobj.h>
 
-#include "../CCFileSystemProtocol.h"
+#include "../CCFileSystem.h"
 
 using namespace std;
 
@@ -81,7 +81,7 @@ bool CCFileUtilsWin32::isFileExist(const std::string& strFilePath)
     //    strPath.insert(0, m_strDefaultResRootPath);
     // }	
     // return GetFileAttributesA(strPath.c_str()) != -1 ? true : false;
-	return CCFileSystemProtocol::sharedFileSystem()->fileExists(kResource, strPath.c_str());
+	return CCFileSystem::sharedFileSystem()->fileExists(kResource, strPath.c_str());
 }
 
 bool CCFileUtilsWin32::isAbsolutePath(const std::string& strPath)

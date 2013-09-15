@@ -31,7 +31,7 @@ THE SOFTWARE.
 #include "support/zip_support/unzip.h"
 #include <stack>
 
-#include "CCFileSystemProtocol.h"
+#include "CCFileSystem.h"
 
 using namespace std;
 
@@ -518,7 +518,7 @@ unsigned char* CCFileUtils::getFileData(const char* pszFileName, const char* psz
     }
     return pBuffer;
 	*/
-	return CCFileSystemProtocol::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
+	return CCFileSystem::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
 }
 
 unsigned char* CCFileUtils::getFileDataFromZip(const char* pszZipFilePath, const char* pszFileName, unsigned long * pSize)

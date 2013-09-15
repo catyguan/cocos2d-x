@@ -1,5 +1,5 @@
-#ifndef __CC_FILESYSTEM_PROTOCOL_H__
-#define __CC_FILESYSTEM_PROTOCOL_H__
+#ifndef __CC_FILESYSTEM_H__
+#define __CC_FILESYSTEM_H__
 
 #include <string>
 #include <vector>
@@ -19,10 +19,10 @@ enum FileSystemType
 	kTemp
 };
 
-class CC_DLL CCFileSystemProtocol
+class CC_DLL CCFileSystem
 {
 public:
-	static CCFileSystemProtocol* sharedFileSystem();
+	static CCFileSystem* sharedFileSystem();
 
 	virtual bool fileExists(FileSystemType type, const char* pszFileName) = 0;
 	virtual unsigned char* fileRead(FileSystemType type, const char* pszFileName, unsigned long* pSize) = 0;
@@ -31,8 +31,11 @@ public:
 
 	virtual void reset() = 0;    
 
+	std::string fileReadString(FileSystemType type, const char* pszFileName);
+	bool fileWriteString(FileSystemType type, const char* pszFileName, std::string content);
+
 protected:
-	static CCFileSystemProtocol* s_sharedFileSystem;    
+	static CCFileSystem* s_sharedFileSystem;    
 };
 
 typedef struct _FS4NItem {
@@ -41,7 +44,7 @@ typedef struct _FS4NItem {
 	bool readonly;
 } FS4NItem;
 
-class CC_DLL CCFileSystemBase : public CCFileSystemProtocol
+class CC_DLL CCFileSystemBase : public CCFileSystem
 {
 public:   
 	CCFileSystemBase();

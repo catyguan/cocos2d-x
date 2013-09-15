@@ -1,13 +1,31 @@
-#include "CCFileSystemProtocol.h"
+#include "CCFileSystem.h"
 #include "CCCommon.h"
 
 NS_CC_BEGIN
 
-CCFileSystemProtocol* CCFileSystemProtocol::s_sharedFileSystem; 
+CCFileSystem* CCFileSystem::s_sharedFileSystem; 
 
-CCFileSystemProtocol* CCFileSystemProtocol::sharedFileSystem()
+CCFileSystem* CCFileSystem::sharedFileSystem()
 {
 	return s_sharedFileSystem;
+}
+
+std::string CCFileSystem::fileReadString(FileSystemType type, const char* pszFileName)
+{
+	unsigned long size;
+	unsigned char* buf = fileRead(type, pszFileName, &size);
+	if(buf!=NULL) {
+		std::string r((char*) buf, size);
+		delete[] buf;
+		return r;
+	}
+	return "";
+}
+
+bool CCFileSystem::fileWriteString(FileSystemType type, const char* pszFileName, std::string content)
+{
+	size_t size = content.size();
+	return fileWrite(type,pszFileName, (unsigned char*) content.c_str(), size)==size;
 }
 
 CCFileSystemBase::CCFileSystemBase()

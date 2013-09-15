@@ -1,7 +1,7 @@
 #ifndef __CC_FILESYSTEM_WIN32_H__
 #define __CC_FILESYSTEM_WIN32_H__
 
-#include "../CCFileSystemProtocol.h"
+#include "../CCFileSystem.h"
 
 NS_CC_BEGIN
 

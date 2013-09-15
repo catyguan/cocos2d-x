@@ -477,13 +477,13 @@
     <ClCompile Include="..\base_nodes\CCNode_Events.cpp">
       <Filter>base_nodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\platform\CCFileSystemProtocol.cpp">
-      <Filter>platform</Filter>
-    </ClCompile>
     <ClCompile Include="..\platform\win32\CCFileSystemWin32.cpp">
       <Filter>platform\win32</Filter>
     </ClCompile>
     <ClCompile Include="..\CCEConfig.cpp" />
+    <ClCompile Include="..\platform\CCFileSystem.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base_nodes\CCAtlasNode.h">
@@ -968,12 +968,12 @@
     <ClInclude Include="..\support\component\CCComponentContainer.h">
       <Filter>support\component</Filter>
     </ClInclude>
-    <ClInclude Include="..\platform\CCFileSystemProtocol.h">
-      <Filter>platform</Filter>
-    </ClInclude>
     <ClInclude Include="..\platform\win32\CCFileSystemWin32.h">
       <Filter>platform\win32</Filter>
     </ClInclude>
     <ClInclude Include="..\CCEConfig.h" />
+    <ClInclude Include="..\platform\CCFileSystem.h">
+      <Filter>platform</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

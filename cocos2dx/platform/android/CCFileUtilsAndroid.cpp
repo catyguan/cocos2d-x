@@ -26,7 +26,7 @@ THE SOFTWARE.
 #include "platform/CCCommon.h"
 #include "jni/Java_org_cocos2dx_lib_Cocos2dxHelper.h"
 
-#include "../CCFileSystemProtocol.h"
+#include "../CCFileSystem.h"
 
 using namespace std;
 
@@ -70,7 +70,7 @@ bool CCFileUtilsAndroid::isFileExist(const std::string& strFilePath)
         return false;
     }
 	
-	return CCFileSystemProtocol::sharedFileSystem()->fileExists(kResource, strFilePath.c_str());
+	return CCFileSystem::sharedFileSystem()->fileExists(kResource, strFilePath.c_str());
 
 	/*
     bool bFound = false;
@@ -118,7 +118,7 @@ bool CCFileUtilsAndroid::isAbsolutePath(const std::string& strPath)
 
 unsigned char* CCFileUtilsAndroid::getFileData(const char* pszFileName, const char* pszMode, unsigned long * pSize)
 {    
-	return CCFileSystemProtocol::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
+	return CCFileSystem::sharedFileSystem()->fileRead(kResource, pszFileName, pSize);
 	/*
     unsigned char * pData = 0;
 
