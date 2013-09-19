@@ -68,6 +68,7 @@ unsigned char* CCFileSystemAndroid::fileRead(const char* pszFileName, unsigned l
     return pData;
 }
 
+#include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -88,6 +89,7 @@ static int make_dirs(char *new_path, int perms)
            
        if ((rc = stat(saved_path, &st)) >= 0) {
            if (!S_ISDIR(st.st_mode)) {
+		   CCLOG("%s not dir", saved_path);
                errno = ENOTDIR;
                rc = -1;
                break;
@@ -95,10 +97,13 @@ static int make_dirs(char *new_path, int perms)
        } 
        else {
            if (errno != ENOENT ) {
+			CCLOG("%s stat fail 1", saved_path);
               break;
            }
            
+		   CCLOG("mkdir %s", saved_path);
            if ((rc = mkdir(saved_path, perms)) < 0 ) {
+				CCLOG("mkdir %s fail %d,%d", saved_path,rc,errno);
                if (errno != EEXIST)
                    break;
                
@@ -128,20 +133,27 @@ static int make_dirs(char *new_path, int perms)
 unsigned long CCFileSystemAndroid::fileWrite(const char* pszFileName, unsigned char* content, long size)
 {
 	char dirname[1024];
-	char* pos = strchr(pszFileName,'/');
-	if(pos) {
-		size_t len = pos-pszFileName;
-		strncpy(dirname,pszFileName,len);
-		dirname[len] = 0;
-		CCLOG("mkdirs(%s)", dirname);
-		make_dirs(dirname, 0x777);
+	int pos = -1;
+	int c = strlen(pszFileName);
+	for(int i=c-1;i>0;i--) {
+		if(pszFileName[i]=='/') {
+			pos = i;
+			break;
+		}
+	}
+	if(pos>0) {
+		strncpy(dirname,pszFileName,pos);
+		dirname[pos] = 0;
+		make_dirs(dirname, 0777);
     }
 	FILE *fp = fopen(pszFileName, "wb");
 	bool r = false;
 	size_t wcount = 0;
 	if(fp) {
-		wcount = fwrite(content, size,1, fp);
+		wcount = fwrite(content, 1, size, fp);
 		fclose(fp);	
+	} else {
+		CCLOG("fileWrite(%s) open fail", pszFileName);
 	}
 	return wcount;
 }

@@ -54,7 +54,7 @@ extern "C" {
     }
 
 	JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxApp_nativeAddFileSystem(JNIEnv* env, jobject thiz, jint type, jstring path, jboolean readonly) {
-		if(CCFileSystemProtocol::sharedFileSystem()==NULL) {
+		if(CCFileSystem::sharedFileSystem()==NULL) {
 			g_fs.install();
 		}
 		const char *strPath = env->GetStringUTFChars(path, 0);		
