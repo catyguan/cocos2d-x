@@ -29,6 +29,8 @@ public:
 	virtual unsigned long fileWrite(FileSystemType type, const char* pszFileName, unsigned char* content, long size) = 0;
 	virtual bool fileDelete(FileSystemType type, const char* pszFileName) = 0;
 
+	virtual std::string getFilePath(FileSystemType type, const char* pszFileName, bool forRead) =0;
+
 	virtual void reset() = 0;    
 
 	std::string fileReadString(FileSystemType type, const char* pszFileName);
@@ -56,6 +58,7 @@ public:
 	virtual unsigned char* fileRead(FileSystemType type, const char* pszFileName, unsigned long* pSize);
 	virtual unsigned long fileWrite(FileSystemType type, const char* pszFileName, unsigned char* content, long size);
 	virtual bool fileDelete(FileSystemType type, const char* pszFileName);
+	virtual std::string getFilePath(FileSystemType type, const char* pszFileName, bool forRead);
     
 	virtual void reset();    
 	

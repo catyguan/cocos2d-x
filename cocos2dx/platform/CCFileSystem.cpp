@@ -102,6 +102,26 @@ unsigned long CCFileSystemBase::fileWrite(FileSystemType type, const char* pszFi
 	return 0;
 }
 
+std::string CCFileSystemBase::getFilePath(FileSystemType type, const char* pszFileName, bool forRead)
+{	
+	std::string name(pszFileName);
+	std::vector<FS4NItem>::const_iterator it = m_searchPaths.begin();
+	for(;it!=m_searchPaths.end();it++) {
+		if(it->type==kAll || it->type==type) {
+			if(forRead) {		
+				std::string file = getPath(&(*it), name);
+				if(fileExists(file.c_str())) {
+					return file;
+				}			
+			} else {
+				if(it->readonly)continue;
+				return getPath(&(*it), name);
+			}
+		}
+	}
+	return std::string(pszFileName);
+}
+
 bool CCFileSystemBase::fileDelete(FileSystemType type, const char* pszFileName)
 {
 	bool r = false;

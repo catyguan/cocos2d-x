@@ -195,6 +195,8 @@ void* getFuncPtr(const char *value)
 
 int getFileDescriptor(const char * filename, off_t & start, off_t & length)
 {
+	if(filename[0]=='/')return FILE_NOT_FOUND;
+	
 	JniMethodInfo methodInfo;
 	if (! getStaticMethodInfo(methodInfo, ASSET_MANAGER_GETTER, "()Landroid/content/res/AssetManager;"))
 	{
