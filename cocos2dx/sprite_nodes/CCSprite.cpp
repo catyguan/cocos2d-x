@@ -1159,7 +1159,7 @@ CCValue CCSprite::CALLNAME(scaleWidth)(CCValueArray& params) {
 
 CCValue CCSprite::CALLNAME(scaleHeight)(CCValueArray& params) {	
 	float v = ccvpFloat(params, 0);
-	scaleWidth(v);
+	scaleHeight(v);
 	return CCValue::nullValue();
 }
 
