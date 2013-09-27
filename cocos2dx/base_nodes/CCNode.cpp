@@ -722,10 +722,8 @@ CCObject* CCNode::findChildById(const char* id)
         CCARRAY_FOREACH(m_pChildren, child)
         {
             CCNode* pNode = (CCNode*) child;
-			if(pNode->m_nId.size()==0) {
-				CCObject* r = pNode->findChildById(id);
-				if(r!=NULL)return r;
-			}
+			CCObject* r = pNode->findChildById(id);
+			if(r!=NULL)return r;			
         }
     }
     return NULL;

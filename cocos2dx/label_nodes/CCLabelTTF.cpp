@@ -337,8 +337,8 @@ CCValue CCLabelTTF::CALLNAME(enableStroke)(CCValueArray& params) {
 }
 CCValue CCLabelTTF::CALLNAME(fontColor)(CCValueArray& params) {
 	if(params.size()>0) {
-		ccColor4B c4b = ccvpColor(params,1);
-		setFontFillColor(ccc3(c4b.r, c4b.g, c4b.b));
+		ccColor3B c = ccvpColor3B(params, 0);
+		setColor(c);
 	}
 	return CCValue::nullValue();
 }
