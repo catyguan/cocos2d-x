@@ -1569,6 +1569,9 @@ CCValue CCNode::CALLNAME(addChild)(CCValueArray& params) {
 	CCNode* ch = ccvpObject(params,0,CCNode);	
 	bool r = false;
 	if(ch!=NULL) {
+		if( ch->m_pParent != NULL) {
+			throw new std::string("child already added, can't be added again");
+		}
 		if(params.size()>1) {
 			int zOrder = ccvpInt(params,1);
 			if(params.size()>2) {
