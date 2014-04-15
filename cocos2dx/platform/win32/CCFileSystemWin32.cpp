@@ -1,5 +1,6 @@
 #include "CCFileSystemWin32.h"
 #include <list>
+#include <Windows.h>
 
 NS_CC_BEGIN
 
